@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>行业与同业对比 · 宁德时代 300750 · 股析 SA</title>
+<link rel="stylesheet" href="_shared/tokens.css">
+<link rel="stylesheet" href="_shared/tailwind.css">
+<link rel="stylesheet" href="_shared/components.css">
+<style>
+  .trend-toolbar { position: sticky; top: 0; z-index: 20; background: var(--bg-root); padding: 10px 0; }
+  .chain-node { border: 1px solid var(--border-soft); border-radius: 10px; padding: 10px 12px; background: var(--bg-sunken); }
+  .chain-node.is-self { border-color: var(--brand); background: var(--brand-soft); }
+  .boom-bar { height: 5px; border-radius: 3px; background: var(--border-soft); overflow: hidden; margin-top: 6px; }
+  .boom-bar > i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--brand), var(--accent)); }
+</style>
+</head>
+<body data-page="stock-industry">
+
+<div class="sa-app">
+  <div class="sa-brand">
+    <div class="sa-logo">SA</div>
+    <div class="sa-brand-text">
+      <div class="sa-brand-name">股析</div>
+      <div class="sa-brand-sub">Stock Analysis</div>
+    </div>
+  </div>
+  <header class="sa-topbar" id="saTop"></header>
+  <nav class="sa-sidenav" id="saNav"></nav>
+  <main class="sa-main">
+    <div class="sa-page">
+
+      <div class="breadcrumb">
+        <a href="market.html">市场概览</a><span class="sep">/</span>
+        <a href="stock.html">宁德时代 300750</a><span class="sep">/</span>
+        <span>行业与同业对比</span>
+      </div>
+
+      <div id="quoteStrip"></div>
+
+      <div class="trend-toolbar mt-4">
+        <div class="tabbar is-pill" id="modTabs"></div>
+      </div>
+
+      <div class="sa-split">
+        <div class="col gap-4">
+
+          <!-- 产业链传导拓扑 -->
+          <div class="card is-accent">
+            <div class="card-head">
+              <span class="card-title">产业链传导拓扑</span>
+              <span class="card-sub">上游原材料 → 中游电池 → 下游应用 · 带宽 = 成本占比 / 供货占比 · 可拖拽节点</span>
+              <div class="card-tools">
+                <span class="segmented" id="segChain">
+                  <span class="is-active" data-v="sankey">桑基传导图</span>
+                  <span data-v="cards">环节卡片</span>
+                </span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="graph-panel is-active" data-panel="sankey">
+                <div id="chainSankey" class="chart chart-2xl"></div>
+              </div>
+              <div class="graph-panel" data-panel="cards">
+                <div class="grid grid-3" id="chainCards"></div>
+              </div>
+              <div class="legend-block mt-3">
+                <b>读图</b>：上游正极材料占电池成本约 42%，是成本传导的关键环节；
+                中游宁德时代全球市占率 36.8%；下游储能景气度最高（82），毛利率优于动力电池，
+                是当前公司利润弹性的主要来源。景气度取值 0–100，由开工率、价格、订单与库存合成。
+              </div>
+            </div>
+          </div>
+
+          <!-- 行业景气与估值 -->
+          <div class="grid grid-3">
+            <div class="card">
+              <div class="card-head"><span class="card-title">行业景气度</span><span class="card-sub">电池 · 0–100</span></div>
+              <div class="card-body">
+                <div id="boomGauge" class="chart chart-sm"></div>
+                <div class="col gap-2 mt-2">
+                  <div class="row-between"><span class="fs-12 t-2">开工率</span><span class="mono fs-12 t-up">82%</span></div>
+                  <div class="row-between"><span class="fs-12 t-2">订单能见度</span><span class="mono fs-12 t-up">2.4 季度</span></div>
+                  <div class="row-between"><span class="fs-12 t-2">库存天数</span><span class="mono fs-12 t-up">38 天（健康）</span></div>
+                  <div class="row-between"><span class="fs-12 t-2">产品价格趋势</span><span class="mono fs-12 t-up">企稳回升</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="card-title">行业估值分位</span><span class="card-sub">电池行业 PE 历史分位</span></div>
+              <div class="card-body">
+                <div id="indPe" class="chart chart-sm"></div>
+                <div class="col gap-2 mt-2">
+                  <div class="row-between"><span class="fs-12 t-2">行业 PE</span><span class="mono fs-12">26.8</span></div>
+                  <div class="row-between"><span class="fs-12 t-2">历史中位数</span><span class="mono fs-12">32.4</span></div>
+                  <div class="row-between"><span class="fs-12 t-2">当前分位</span><span class="mono fs-12 t-up">38%</span></div>
+                  <div class="row-between"><span class="fs-12 t-2">本股 PE</span><span class="mono fs-12 t-up">22.4（折价 16%）</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="card-title">市占率格局</span><span class="card-sub">全球动力电池装机份额</span></div>
+              <div class="card-body">
+                <div id="shareDonut" class="chart chart-sm"></div>
+                <div class="col gap-2 mt-2">
+                  <div class="row-between"><span class="fs-12 t-2">宁德时代</span><span class="mono fs-12 t-up">36.8%</span></div>
+                  <div class="row-between"><span class="fs-12 t-2">比亚迪弗迪</span><span class="mono fs-12">15.2%</span></div>
+                  <div class="row-between"><span class="fs-12 t-2">中创新航</span><span class="mono fs-12">6.8%</span></div>
+                  <div class="row-between"><span class="fs-12 t-2">其他</span><span class="mono fs-12">41.2%</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 同业对比表 -->
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">同业对比</span>
+              <span class="card-sub">2025 年报口径 · 单位：亿元 · 点击表头排序</span>
+              <div class="card-tools">
+                <span class="tag tag-outline">已选 3 家对比</span>
+                <button class="btn btn-sm btn-outline" data-open="dlgPeer">调整对比公司</button>
+              </div>
+            </div>
+            <div class="card-body is-flush">
+              <div class="tbl-wrap">
+                <table class="tbl is-comfort" id="peerTbl">
+                  <thead>
+                    <tr>
+                      <th class="is-sortable">公司 <span class="sort-caret">▼</span></th>
+                      <th class="is-sortable">营收 <span class="sort-caret">▼</span></th>
+                      <th class="is-sortable">净利润 <span class="sort-caret">▼</span></th>
+                      <th class="is-sortable">毛利率 <span class="sort-caret">▼</span></th>
+                      <th class="is-sortable">ROE <span class="sort-caret">▼</span></th>
+                      <th class="is-sortable">PE <span class="sort-caret">▼</span></th>
+                      <th class="is-sortable">PB <span class="sort-caret">▼</span></th>
+                      <th class="is-sortable">总市值 <span class="sort-caret">▼</span></th>
+                      <th class="is-sortable">涨跌幅 <span class="sort-caret">▼</span></th>
+                      <th style="width:90px">估值</th>
+                    </tr>
+                  </thead>
+                  <tbody id="peerBody"></tbody>
+                </table>
+              </div>
+              <div class="tbl-foot">
+                <span>数据口径：2025 年年报 + 最新收盘价；PE 为静态 PE，亏损公司显示「亏损」</span>
+                <a class="t-brand" href="stock-finance.html" style="margin-left:auto">看完整财务对比 →</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- 雷达 + 散点 -->
+          <div class="grid grid-2">
+            <div class="card">
+              <div class="card-head">
+                <span class="card-title">多指标雷达对比</span>
+                <span class="card-sub">最多同时对比 5 家</span>
+                <div class="card-tools">
+                  <span class="segmented" id="segRadar">
+                    <span class="is-active" data-v="3">3 家</span>
+                    <span data-v="6">6 家</span>
+                  </span>
+                </div>
+              </div>
+              <div class="card-body">
+                <div id="peerRadar" class="chart chart-lg"></div>
+                <div class="chart-legend mt-2" id="radarLegend"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="card-title">估值 × 盈利散点</span><span class="card-sub">气泡大小 = 总市值 · 红点为当前股</span></div>
+              <div class="card-body">
+                <div id="peerBubble" class="chart chart-lg"></div>
+                <div class="legend-block mt-3">
+                  <b>解读</b>：宁德时代位于「低 PE + 高 ROE」象限，
+                  在同业中性价比最优；欣旺达、国轩高科位于「高 PE + 低 ROE」象限，估值性价比偏弱。
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 产业链环节明细 -->
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">产业链环节明细</span>
+              <span class="card-sub">各环节景气度、公司参与度与代表标的</span>
+            </div>
+            <div class="card-body is-flush">
+              <div class="tbl-wrap">
+                <table class="tbl is-comfort">
+                  <thead><tr><th style="width:88px">环节</th><th>细分</th><th style="width:120px" class="num">景气度</th><th class="num">公司参与度</th><th>说明</th><th style="width:170px">代表标的</th></tr></thead>
+                  <tbody id="chainBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <aside class="col gap-4">
+          <div class="card">
+            <div class="card-head"><span class="card-title">行业地位</span><span class="tag tag-up">龙头</span></div>
+            <div class="card-body col gap-3">
+              <div class="row-between"><span class="fs-12 t-2">行业排名（按市值）</span><span class="mono fs-12 t-up">1 / 86</span></div>
+              <div class="row-between"><span class="fs-12 t-2">全球市占率</span><span class="mono fs-12 t-up">36.8%</span></div>
+              <div class="row-between"><span class="fs-12 t-2">国内市占率</span><span class="mono fs-12 t-up">42.6%</span></div>
+              <div class="row-between"><span class="fs-12 t-2">营收行业占比</span><span class="mono fs-12">34.2%</span></div>
+              <div class="row-between"><span class="fs-12 t-2">净利润行业占比</span><span class="mono fs-12 t-up">48.6%</span></div>
+              <div class="row-between"><span class="fs-12 t-2">研发投入行业占比</span><span class="mono fs-12">31.4%</span></div>
+              <div>
+                <div class="row-between"><span class="fs-12 t-2">行业定价权</span><span class="mono fs-12 t-up">强</span></div>
+                <div class="meter mt-2"><i style="width:88%"></i></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">上下游依赖</span></div>
+            <div class="card-body col gap-2">
+              <div class="row-between"><span class="fs-12 t-2">前五大客户占比</span><span class="mono fs-12 t-warn">42.4%</span></div>
+              <div class="row-between"><span class="fs-12 t-2">前五大供应商占比</span><span class="mono fs-12 t-warn">38.6%</span></div>
+              <div class="row-between"><span class="fs-12 t-2">海外收入占比</span><span class="mono fs-12 t-up">32.8%</span></div>
+              <div class="row-between"><span class="fs-12 t-2">储能收入占比</span><span class="mono fs-12 t-up">26.4%</span></div>
+              <div class="legend-block mt-2">
+                客户集中度 42.4% 处于行业中等水平；储能业务占比提升至 26.4%，
+                海外收入占比 32.8%，受关税与汇率影响需持续跟踪。
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">同业涨跌排行</span><span class="card-sub">电池行业今日</span></div>
+            <div class="card-body"><div id="peerBar" class="chart chart-md"></div></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">数据口径</span></div>
+            <div class="card-body">
+              <div class="legend-block">
+                行业分类：申万一级「电池」+ 概念板块；<br>
+                市占率：公开装机量统计，季度更新；<br>
+                景气度：由开工率、价格、订单、库存合成（0–100）；<br>
+                同业财务：2025 年年报；<br>
+                更新时间 2026-09-18 · 演示数据。
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- 调整对比公司 -->
+<div class="overlay" id="dlgPeer">
+  <div class="dialog">
+    <div class="dialog-head">
+      <h3>调整对比公司（最多 5 家）</h3>
+      <button class="icon-btn" data-close="dlgPeer" style="margin-left:auto">✕</button>
+    </div>
+    <div class="dialog-body col gap-2">
+      <div class="hint">勾选后雷达图与对比表将同步更新；宁德时代为当前股，不可取消。</div>
+      <label class="check"><input type="checkbox" checked disabled> 宁德时代 300750（当前股）</label>
+      <label class="check"><input type="checkbox" checked> 比亚迪 002594</label>
+      <label class="check"><input type="checkbox" checked> 亿纬锂能 300014</label>
+      <label class="check"><input type="checkbox"> 欣旺达 300207</label>
+      <label class="check"><input type="checkbox"> 孚能科技 688567</label>
+      <label class="check"><input type="checkbox"> 贝特瑞 835185</label>
+      <label class="check"><input type="checkbox"> 国轩高科 002074</label>
+      <label class="check"><input type="checkbox"> 鹏辉能源 300438</label>
+      <div class="legend-block mt-3">原型说明：勾选状态仅作演示，不改变图表数据。</div>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-ghost" data-close="dlgPeer">取消</button>
+      <button class="btn btn-primary" data-close="dlgPeer">应用对比</button>
+    </div>
+  </div>
+</div>
+
+<script src="_shared/vendor/echarts.min.js"></script>
+<script src="_shared/data.js"></script>
+<script src="_shared/charts.js"></script>
+<script src="_shared/app.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F, ind = D.industry;
+
+  /* 桑基 */
+  F.sankey("#chainSankey", {
+    nodes: ind.chain.nodes.map(function (n, i) {
+      var color = n.stage === "上游" ? C.cv("--chart-4") : n.stage === "中游" ? C.cv("--chart-1") : C.cv("--chart-2");
+      return { name: n.name, level: n.stage === "上游" ? 0 : n.stage === "中游" ? 1 : 2, color: color, note: n.note + (n.share ? " · 市占率 " + n.share + "%" : "") + " · 景气度 " + n.boom };
+    }),
+    links: ind.chain.links,
+    categories: [
+      { depth: 0, itemStyle: { color: C.cv("--chart-4") } },
+      { depth: 1, itemStyle: { color: C.cv("--chart-1") } },
+      { depth: 2, itemStyle: { color: C.cv("--chart-2") } }
+    ]
+  });
+
+  /* 环节卡片 */
+  document.getElementById("chainCards").innerHTML = ["上游", "中游", "下游"].map(function (stage) {
+    var nodes = ind.chain.nodes.filter(function (n) { return n.stage === stage; });
+    return '<div class="col gap-2"><div class="fs-13 fw-600">' + stage + " · " + nodes.length + " 个环节</div>" +
+      nodes.map(function (n) {
+        return '<div class="chain-node' + (n.name === "宁德时代" ? " is-self" : "") + '">' +
+          '<div class="row-between"><span class="fs-12 fw-600">' + n.name + "</span>" +
+          '<span class="mono fs-11 ' + (n.boom >= 65 ? "t-up" : n.boom >= 50 ? "t-2" : "t-down") + '">' + n.boom + "</span></div>" +
+          '<div class="hint">' + n.note + (n.share ? " · 市占率 " + n.share + "%" : "") + "</div>" +
+          '<div class="boom-bar"><i style="width:' + n.boom + '%"></i></div>' +
+          "</div>";
+      }).join("") + "</div>";
+  }).join("");
+
+  SA.qsa("#segChain > *").forEach(function (el) {
+    el.addEventListener("click", function () {
+      SA.qsa("#segChain > *").forEach(function (o) { o.classList.toggle("is-active", o === el); });
+      SA.qsa(".graph-panel").forEach(function (p) {
+        p.classList.toggle("is-active", p.getAttribute("data-panel") === el.getAttribute("data-v"));
+      });
+    });
+  });
+
+  /* 景气 / 估值 / 市占 */
+  F.gauge("#boomGauge", { value: 68, max: 100, name: "电池行业景气度", warnAt: 40, dangerAt: 60 });
+  F.area("#indPe", { labels: Array.from({ length: 36 }, function (_, i) { return "M" + (i + 1); }), data: ind.valuation.industryPe.history, unit: "倍" });
+  F.donut("#shareDonut", {
+    center: ["38%", "50%"], radius: ["48%", "70%"], label: false,
+    data: [
+      { name: "宁德时代", value: 36.8, color: C.cv("--chart-1") },
+      { name: "比亚迪弗迪", value: 15.2, color: C.cv("--chart-2") },
+      { name: "中创新航", value: 6.8, color: C.cv("--chart-3") },
+      { name: "亿纬锂能", value: 4.6, color: C.cv("--chart-4") },
+      { name: "其他", value: 36.6, color: C.cv("--flat") }
+    ]
+  });
+
+  /* 同业表 */
+  document.getElementById("peerBody").innerHTML = ind.peers.map(function (p) {
+    var cls = p.pct >= 0 ? "t-up" : "t-down";
+    var val = p.self ? '<span class="tag tag-up">低估</span>'
+      : p.pe === 0 ? '<span class="tag tag-warn">亏损</span>'
+      : p.pe < 22 ? '<span class="tag tag-up">低估</span>'
+      : p.pe < 30 ? '<span class="tag">合理</span>' : '<span class="tag tag-down">偏高</span>';
+    return '<tr data-chg="' + (p.pct >= 0 ? "up" : "down") + '" class="is-clickable" data-href="stock.html?code=' + p.code + '">' +
+      '<td class="fw-600">' + p.name + (p.self ? ' <span class="tag tag-brand">本股</span>' : "") + "</td>" +
+      '<td class="num">' + p.revenue.toFixed(1) + "</td>" +
+      '<td class="num ' + (p.netProfit >= 0 ? "" : "t-down") + '">' + p.netProfit.toFixed(1) + "</td>" +
+      '<td class="num">' + p.grossMargin.toFixed(1) + "%</td>" +
+      '<td class="num ' + (p.roe >= 0 ? "t-up" : "t-down") + '">' + p.roe.toFixed(1) + "%</td>" +
+      '<td class="num">' + (p.pe ? p.pe.toFixed(1) : "亏损") + "</td>" +
+      '<td class="num">' + p.pb.toFixed(2) + "</td>" +
+      '<td class="num">' + p.cap.toLocaleString() + "</td>" +
+      '<td class="num ' + cls + '">' + (p.pct >= 0 ? "+" : "") + p.pct.toFixed(2) + "%</td>" +
+      "<td>" + val + "</td></tr>";
+  }).join("");
+
+  /* 雷达 */
+  function drawRadar(n) {
+    document.getElementById("peerRadar").innerHTML = "";
+    F.radar("#peerRadar", {
+      indicators: ind.peerRadar.indicators,
+      series: ind.peerRadar.series.slice(0, n === 3 ? 3 : 3).concat(n === 6 ? [
+        { name: "欣旺达", values: [14.2, 3.9, 9.8, 14.6, 3.2, 2.4] },
+        { name: "贝特瑞", values: [21.4, 8.4, 12.8, 18.2, 4.1, 3.1] },
+        { name: "国轩高科", values: [16.8, 4.2, 6.4, 22.4, 4.8, 3.6] }
+      ] : []),
+      radius: "62%"
+    });
+    C.rebuildAll();
+  }
+  drawRadar(3);
+  SA.qsa("#segRadar > *").forEach(function (el) {
+    el.addEventListener("click", function () {
+      SA.qsa("#segRadar > *").forEach(function (o) { o.classList.toggle("is-active", o === el); });
+      drawRadar(parseInt(el.getAttribute("data-v"), 10));
+    });
+  });
+
+  /* 散点 */
+  F.bubble("#peerBubble", { data: ind.valuation.peersScatter });
+
+  /* 产业链明细表 */
+  document.getElementById("chainBody").innerHTML = ind.chain.nodes.map(function (n) {
+    var boom = n.boom;
+    var lv = boom >= 70 ? "t-up" : boom >= 55 ? "t-2" : "t-down";
+    var peers = n.stage === "上游" ? "天齐锂业 / 赣锋锂业 / 恩捷股份"
+      : n.stage === "中游" ? "宁德时代 / 比亚迪 / 亿纬锂能" : "比亚迪 / 阳光电源 / 特斯拉";
+    return "<tr>" +
+      '<td><span class="tag tag-outline">' + n.stage + "</span></td>" +
+      '<td class="fw-600">' + n.name + "</td>" +
+      '<td class="num ' + lv + '">' + boom + " <span class=\"minibar\"><i style=\"width:" + boom + '%"></i></span></td>' +
+      '<td class="num">' + (n.share ? n.share + "%" : "—") + "</td>" +
+      '<td class="ellipsis" style="max-width:300px">' + n.note + "</td>" +
+      "<td>" + peers + "</td></tr>";
+  }).join("");
+
+  /* 同业涨跌排行 */
+  F.hbar("#peerBar", {
+    data: ind.peers.filter(function (p) { return !p.self; }).concat([{ name: "国轩高科", pct: 1.86, flow: 0.42 }, { name: "鹏辉能源", pct: -0.64, flow: -0.28 }])
+  });
+
+  SA.startLiveTicker("#qLive", { interval: 3000 });
+})();
+</script>
+</body>
+</html>

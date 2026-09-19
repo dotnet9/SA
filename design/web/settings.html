@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>个人设置 · 股析 SA</title>
+<link rel="stylesheet" href="_shared/tokens.css">
+<link rel="stylesheet" href="_shared/tailwind.css">
+<link rel="stylesheet" href="_shared/components.css">
+</head>
+<body data-page="settings">
+
+<div class="sa-app">
+  <div class="sa-brand">
+    <div class="sa-logo">SA</div>
+    <div class="sa-brand-text">
+      <div class="sa-brand-name">股析</div>
+      <div class="sa-brand-sub">Stock Analysis</div>
+    </div>
+  </div>
+  <header class="sa-topbar" id="saTop"></header>
+  <nav class="sa-sidenav" id="saNav"></nav>
+  <main class="sa-main">
+    <div class="sa-page">
+
+      <div class="sa-pagehead">
+        <div>
+          <div class="breadcrumb"><a href="market.html">市场概览</a><span class="sep">/</span><span>个人设置</span></div>
+          <h1>个人设置</h1>
+          <div class="sub">外观、刷新频率、指标参数、通知偏好 · 改动即时生效并保存在本机</div>
+        </div>
+        <div class="sa-pagehead-actions">
+          <button class="btn btn-outline btn-sm" id="btnReset">恢复默认</button>
+          <button class="btn btn-primary btn-sm" id="btnSave">保存设置</button>
+        </div>
+      </div>
+
+      <div class="sa-split">
+        <div class="col gap-4">
+
+          <!-- 外观 -->
+          <div class="card is-accent">
+            <div class="card-head"><span class="card-title">外观</span><span class="card-sub">全站生效</span></div>
+            <div class="card-body grid grid-2">
+              <div class="field">
+                <label class="label">主题</label>
+                <div class="segmented" id="setTheme">
+                  <span data-v="dark" class="is-active">深色（默认）</span>
+                  <span data-v="light">浅色</span>
+                </div>
+                <span class="hint">深色为默认主题，适合长时间盯盘；浅色在强光环境下更易读。</span>
+              </div>
+              <div class="field">
+                <label class="label">涨跌颜色</label>
+                <div class="segmented" id="setUpdown">
+                  <span data-v="red-up" class="is-active">红涨绿跌（A 股习惯）</span>
+                  <span data-v="green-up">绿涨红跌（国际习惯）</span>
+                </div>
+                <span class="hint">影响所有图表、表格与数字颜色，切换后立即重建图表。</span>
+              </div>
+              <div class="field">
+                <label class="label">表格密度</label>
+                <div class="segmented" id="setDensity">
+                  <span data-v="compact" class="is-active">紧凑（行高 32px）</span>
+                  <span data-v="comfort">舒适（行高 40px）</span>
+                </div>
+              </div>
+              <div class="field">
+                <label class="label">数字字体</label>
+                <div class="segmented" id="setFont">
+                  <span data-v="mono" class="is-active">等宽（推荐）</span>
+                  <span data-v="ui">跟随界面字体</span>
+                </div>
+                <span class="hint">等宽数字可让小数点竖直对齐，便于纵向扫读。</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 刷新 -->
+          <div class="card">
+            <div class="card-head"><span class="card-title">刷新与推送</span><span class="card-sub">仅自选股盘中实时</span></div>
+            <div class="card-body grid grid-2">
+              <div class="field">
+                <label class="label">自选股推送间隔</label>
+                <select class="select" id="setInterval">
+                  <option>3 秒（推荐）</option>
+                  <option>5 秒</option>
+                  <option>10 秒</option>
+                  <option>关闭实时推送</option>
+                </select>
+                <span class="hint">服务端通过 SignalR 推送，仅推送自选股，减少带宽与算力占用。</span>
+              </div>
+              <div class="field">
+                <label class="label">默认首页</label>
+                <select class="select" id="setHome">
+                  <option>市场概览</option>
+                  <option>自选股盯盘</option>
+                  <option>条件选股器</option>
+                  <option>通知中心</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="label">数字变动闪烁</label>
+                <label class="switch"><input type="checkbox" checked><span class="track"></span>推送到达时高亮 600ms</label>
+                <span class="hint">仅改变底色，不做位移，避免列表跳动。</span>
+              </div>
+              <div class="field">
+                <label class="label">行情时间戳</label>
+                <label class="switch"><input type="checkbox" checked><span class="track"></span>在顶栏常驻显示「最后更新」时间</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- 指标参数 -->
+          <div class="card">
+            <div class="card-head"><span class="card-title">指标参数</span><span class="card-sub">影响 K 线、选股器与提醒规则</span></div>
+            <div class="card-body grid grid-2">
+              <div class="field">
+                <label class="label">均线周期</label>
+                <div class="row gap-2">
+                  <input class="input input-num input-sm" value="5" style="width:64px">
+                  <input class="input input-num input-sm" value="10" style="width:64px">
+                  <input class="input input-num input-sm" value="20" style="width:64px">
+                  <input class="input input-num input-sm" value="60" style="width:64px">
+                </div>
+                <span class="hint">最多 6 条；日线默认 5/10/20/60。</span>
+              </div>
+              <div class="field">
+                <label class="label">复权方式</label>
+                <div class="segmented" id="setAdj">
+                  <span data-v="qfq" class="is-active">前复权</span>
+                  <span data-v="hfq">后复权</span>
+                  <span data-v="none">不复权</span>
+                </div>
+                <span class="hint">趋势分析建议前复权；计算历史真实收益用后复权。</span>
+              </div>
+              <div class="field">
+                <label class="label">MACD 参数</label>
+                <div class="row gap-2">
+                  <input class="input input-num input-sm" value="12" style="width:64px">
+                  <input class="input input-num input-sm" value="26" style="width:64px">
+                  <input class="input input-num input-sm" value="9" style="width:64px">
+                </div>
+              </div>
+              <div class="field">
+                <label class="label">主力资金口径</label>
+                <select class="select">
+                  <option>超大单 + 大单（推荐）</option>
+                  <option>仅超大单</option>
+                  <option>超大单 + 大单 + 中单</option>
+                </select>
+                <span class="hint">口径变更后历史资金流会重新计算，仅影响本机展示。</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 通知偏好 -->
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">通知偏好</span>
+              <div class="card-tools"><span class="tag tag-ok tag-dot">浏览器通知已授权</span></div>
+            </div>
+            <div class="card-body grid grid-2">
+              <div class="field">
+                <label class="label">通知渠道</label>
+                <div class="col gap-2">
+                  <label class="check"><input type="checkbox" checked> 站内通知中心</label>
+                  <label class="check"><input type="checkbox" checked> 浏览器通知栏（PWA）</label>
+                  <label class="check"><input type="checkbox" checked> 震动（移动端）</label>
+                  <label class="check"><input type="checkbox"> 邮件（未接入）</label>
+                </div>
+              </div>
+              <div class="field">
+                <label class="label">免打扰</label>
+                <div class="row gap-2">
+                  <input class="input input-sm" value="23:00" style="width:88px">
+                  <span class="hint">至</span>
+                  <input class="input input-sm" value="08:30" style="width:88px">
+                </div>
+                <span class="hint">免打扰期间仅保留站内通知，不触发通知栏与震动。</span>
+                <label class="switch mt-3"><input type="checkbox" checked><span class="track"></span>收盘后汇总一条日报</label>
+              </div>
+              <div class="field span-2" style="grid-column:span 2">
+                <label class="label">通知类型开关</label>
+                <div class="grid grid-4">
+                  <label class="check"><input type="checkbox" checked> 价格与涨跌幅</label>
+                  <label class="check"><input type="checkbox" checked> 技术指标</label>
+                  <label class="check"><input type="checkbox" checked> 资金流异动</label>
+                  <label class="check"><input type="checkbox" checked> 公告与事件</label>
+                </div>
+              </div>
+            </div>
+            <div class="card-foot">
+              <a class="t-brand" href="alerts.html">管理提醒规则 →</a>
+              <a class="t-brand" href="notifications.html">查看通知中心 →</a>
+              <a class="t-brand" href="../app/notify-preview.html">查看提醒形态预览 →</a>
+            </div>
+          </div>
+
+          <!-- PWA -->
+          <div class="card">
+            <div class="card-head"><span class="card-title">PWA 安装</span><span class="card-sub">手机端获得通知栏提醒与震动的前提</span></div>
+            <div class="card-body grid grid-2">
+              <div class="col gap-3">
+                <div class="row gap-2"><span class="tag tag-ok tag-dot">HTTPS 已就绪</span><span class="tag tag-ok tag-dot">Service Worker 已注册</span></div>
+                <div class="fold">
+                  <div class="fold-head">Android（Chrome / Edge）<span class="caret">▼</span></div>
+                  <div class="fold-body hint">打开站点后浏览器会弹出「添加到主屏幕」提示；也可点右上角菜单 →「安装应用」。安装后通知栏提醒与震动可用，桌面小组件需第三方 App，本项目不做。</div>
+                </div>
+                <div class="fold is-collapsed">
+                  <div class="fold-head">iOS（Safari）<span class="caret">▼</span></div>
+                  <div class="fold-body hint">必须用 Safari 打开 → 分享按钮 →「添加到主屏幕」。从主屏图标启动后才会出现通知授权提示；iOS 不支持桌面小组件与震动 API。</div>
+                </div>
+                <div class="fold is-collapsed">
+                  <div class="fold-head">桌面端（Chrome / Edge）<span class="caret">▼</span></div>
+                  <div class="fold-body hint">地址栏右侧出现安装图标，点击即可作为独立窗口应用运行，支持系统级通知。</div>
+                </div>
+              </div>
+              <div class="col gap-3">
+                <div class="kpi"><span class="kpi-label">安装状态</span><span class="kpi-value is-sm">未安装（浏览器访问中）</span><span class="kpi-delta t-3">安装后可用离线缓存</span></div>
+                <button class="btn btn-primary" id="btnInstall">立即安装到主屏</button>
+                <button class="btn btn-outline" id="btnTestNotify">测试通知（发送一条测试提醒）</button>
+                <div class="legend-block">
+                  <b>为什么需要 HTTPS</b><br>
+                  Service Worker、Web Push、通知栏 API、震动 API 都只在安全上下文（HTTPS 或 localhost）下可用。
+                  本机调试用 http://localhost 即可，手机访问必须走域名 HTTPS。
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 右侧信息栏 -->
+        <aside class="col gap-4">
+          <div class="card">
+            <div class="card-head"><span class="card-title">账号</span></div>
+            <div class="card-body col gap-3">
+              <div class="row gap-3">
+                <span class="avatar" style="width:38px;height:38px;font-size:14px">管</span>
+                <div class="grow">
+                  <div class="fs-14 fw-600">管理员</div>
+                  <div class="hint">admin · 创建于 2026-01-06</div>
+                </div>
+              </div>
+              <div class="row-between"><span class="fs-12 t-2">角色</span><span class="tag tag-brand">管理员</span></div>
+              <div class="row-between"><span class="fs-12 t-2">权限功能点</span><span class="mono fs-12">全部 24 项</span></div>
+              <div class="row-between"><span class="fs-12 t-2">二次验证</span><span class="tag tag-ok">已开启</span></div>
+              <div class="row-between"><span class="fs-12 t-2">在线设备</span><span class="mono fs-12">2 台</span></div>
+              <a class="btn btn-outline btn-block" href="admin-security.html">安全设置与会话</a>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">我的数据</span></div>
+            <div class="card-body col gap-2">
+              <div class="row-between"><span class="fs-12 t-2">自选股</span><a class="mono fs-12 t-brand" href="watchlist.html">14 只</a></div>
+              <div class="row-between"><span class="fs-12 t-2">保存的策略</span><a class="mono fs-12 t-brand" href="screener.html">6 个</a></div>
+              <div class="row-between"><span class="fs-12 t-2">提醒规则</span><a class="mono fs-12 t-brand" href="alerts.html">10 条（8 启用）</a></div>
+              <div class="row-between"><span class="fs-12 t-2">未读通知</span><a class="mono fs-12 t-brand" href="notifications.html">4 条</a></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">数据口径</span></div>
+            <div class="card-body">
+              <div class="legend-block">
+                <b>行情</b>：东方财富 + 新浪财经公开接口，交易时段每 3 秒快照；<br>
+                <b>财务</b>：合并报表披露值，每交易日 18:00 同步；<br>
+                <b>资金流</b>：按成交金额分层统计，交易日 15:20 采集；<br>
+                <b>事件与影响</b>：规则引擎自动抽取 + 人工标注（0–100）；<br>
+                <b>北向资金</b>：按持股变动估算，非官方净买入额；<br>
+                <b>更新时间</b>：2026-09-18 15:00 · 演示数据。
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">关于</span></div>
+            <div class="card-body col gap-2">
+              <div class="row-between"><span class="fs-12 t-2">版本</span><span class="mono fs-12">原型 v0.1</span></div>
+              <div class="row-between"><span class="fs-12 t-2">服务端</span><span class="fs-12">ASP.NET Core Web API</span></div>
+              <div class="row-between"><span class="fs-12 t-2">前端</span><span class="fs-12">React + ECharts</span></div>
+              <div class="row-between"><span class="fs-12 t-2">移动端</span><span class="fs-12">响应式 Web + PWA</span></div>
+              <a class="btn btn-ghost btn-block" href="styleguide.html">查看设计规范</a>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="_shared/vendor/echarts.min.js"></script>
+<script src="_shared/data.js"></script>
+<script src="_shared/charts.js"></script>
+<script src="_shared/app.js"></script>
+<script>
+(function () {
+  /* 主题 */
+  SA.qsa("#setTheme > *").forEach(function (el) {
+    el.addEventListener("click", function () {
+      SA.set(SA.LS.theme, el.getAttribute("data-v"));
+      SA.applyTheme();
+      SA.qsa("#setTheme > *").forEach(function (o) { o.classList.toggle("is-active", o === el); });
+    });
+  });
+  /* 涨跌色 */
+  SA.qsa("#setUpdown > *").forEach(function (el) {
+    el.addEventListener("click", function () {
+      SA.set(SA.LS.updown, el.getAttribute("data-v"));
+      SA.applyTheme();
+      SA.qsa("#setUpdown > *").forEach(function (o) { o.classList.toggle("is-active", o === el); });
+      SA.toast("涨跌色已切换", "info");
+    });
+  });
+  /* 密度 */
+  SA.qsa("#setDensity > *").forEach(function (el) {
+    el.addEventListener("click", function () {
+      var v = el.getAttribute("data-v");
+      SA.set(SA.LS.density, v);
+      SA.qsa(".tbl").forEach(function (t) { t.classList.toggle("is-comfort", v === "comfort"); });
+      SA.qsa("#setDensity > *").forEach(function (o) { o.classList.toggle("is-active", o === el); });
+    });
+  });
+  /* 数字字体 */
+  SA.qsa("#setFont > *").forEach(function (el) {
+    el.addEventListener("click", function () {
+      SA.qsa("#setFont > *").forEach(function (o) { o.classList.toggle("is-active", o === el); });
+      SA.toast(el.textContent.trim() === "等宽（推荐）" ? "已切换为等宽数字" : "已切换为界面字体数字", "info");
+    });
+  });
+  /* 复权 */
+  SA.qsa("#setAdj > *").forEach(function (el) {
+    el.addEventListener("click", function () {
+      SA.qsa("#setAdj > *").forEach(function (o) { o.classList.toggle("is-active", o === el); });
+    });
+  });
+
+  /* 初始化回填 */
+  var theme = SA.get(SA.LS.theme, "dark");
+  SA.qsa("#setTheme > *").forEach(function (o) { o.classList.toggle("is-active", o.getAttribute("data-v") === theme); });
+  var ud = SA.get(SA.LS.updown, "red-up");
+  SA.qsa("#setUpdown > *").forEach(function (o) { o.classList.toggle("is-active", o.getAttribute("data-v") === ud); });
+
+  document.getElementById("btnSave").addEventListener("click", function () {
+    SA.toast("设置已保存到本机", "ok");
+  });
+  document.getElementById("btnReset").addEventListener("click", function () {
+    SA.set(SA.LS.theme, "dark");
+    SA.set(SA.LS.updown, "red-up");
+    SA.applyTheme();
+    SA.toast("已恢复默认设置", "info");
+  });
+
+  /* PWA 安装与测试通知 */
+  document.getElementById("btnInstall").addEventListener("click", function () {
+    SA.toast("请用浏览器地址栏的安装图标，或菜单「安装应用 / 添加到主屏幕」完成安装", "info");
+  });
+  document.getElementById("btnTestNotify").addEventListener("click", function () {
+    if (window.Notification && Notification.permission === "granted") {
+      try {
+        new Notification("股析 SA · 测试通知", { body: "这是一条演示通知，用于验证通知渠道是否可用。" });
+        SA.toast("已发送浏览器通知", "ok");
+        return;
+      } catch (e) { /* 落到下面的提示 */ }
+    }
+    SA.toast("未获得通知权限或环境不支持，已改为站内提示（原型不实现真实推送）", "warn");
+  });
+})();
+</script>
+</body>
+</html>

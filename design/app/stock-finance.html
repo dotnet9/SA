@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>盈利与财务表现 · 股析 SA（移动端）</title>
+<link rel="stylesheet" href="../web/_shared/tokens.css">
+<link rel="stylesheet" href="../web/_shared/tailwind.css">
+<link rel="stylesheet" href="../web/_shared/components.css">
+<style>
+  .hscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .hscroll::-webkit-scrollbar { display: none; }
+  .freeze-tbl td:first-child, .freeze-tbl th:first-child {
+    position: sticky; left: 0; z-index: 2; background: var(--bg-panel);
+    box-shadow: 1px 0 0 var(--border-soft);
+  }
+</style>
+</head>
+<body data-page="stock-finance" data-title="盈利与财务表现" data-desc="指标卡横向滑动、柱线图纵向堆叠、增速表横向滚动（首列冻结）。手机端表格靠横向滚动 + 冻结首列保持可读。">
+<div id="appScreen">
+  <div class="m-topbar">
+    <a class="icon-btn" href="stock.html">←</a>
+    <span class="m-title">盈利与财务表现</span>
+    <span class="mono fs-11 t-3" style="margin-left:auto">300750</span>
+  </div>
+
+  <div class="m-page">
+
+    <div class="row-between">
+      <span class="segmented">
+        <span class="is-active">年度</span><span>单季度</span>
+      </span>
+      <span class="tag tag-outline">2025 年报</span>
+    </div>
+
+    <!-- 核心指标横滑 -->
+    <div class="m-section-title">盈利概览</div>
+    <div class="m-scroll-x" id="finCards"></div>
+
+    <!-- 营收利润 -->
+    <div class="m-section-title">营收 · 净利润 · 毛利率</div>
+    <div class="m-card" style="padding:8px 4px">
+      <div id="mRev" class="chart" style="height:240px"></div>
+    </div>
+    <div class="legend-block mt-2">
+      <b>看点</b>：2024 年营收回落但净利逆势增长；2025 年营收恢复 +17.9%，毛利率 25.8% 创近 4 年新高。
+    </div>
+
+    <!-- 盈利能力 -->
+    <div class="m-section-title">盈利能力</div>
+    <div class="m-card" style="padding:8px 4px">
+      <div id="mProfit" class="chart" style="height:220px"></div>
+    </div>
+
+    <!-- 现金流 -->
+    <div class="m-section-title">现金流质量</div>
+    <div class="m-card" style="padding:8px 4px">
+      <div id="mCash" class="chart" style="height:220px"></div>
+      <div class="m-kpi-row mt-3" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi"><span class="kpi-label">净现比</span><span class="kpi-value is-sm t-up">1.63</span></div>
+        <div class="kpi"><span class="kpi-label">收现比</span><span class="kpi-value is-sm t-up">1.08</span></div>
+        <div class="kpi"><span class="kpi-label">自由现金流</span><span class="kpi-value is-sm t-up">486.2</span></div>
+      </div>
+    </div>
+
+    <!-- 增速表 -->
+    <div class="m-section-title">
+      单季度增速表
+      <span class="hint" style="margin-left:auto">← 左右滑动 →</span>
+    </div>
+    <div class="m-card" style="padding:0">
+      <div class="hscroll">
+        <table class="tbl freeze-tbl" id="mGrowth" style="min-width:640px"></table>
+      </div>
+    </div>
+
+    <!-- 资产负债关键项 -->
+    <div class="m-section-title">资产负债表关键项</div>
+    <div class="m-card" style="padding:0">
+      <div class="hscroll">
+        <table class="tbl freeze-tbl" style="min-width:560px">
+          <thead><tr><th>项目</th><th class="num">2023</th><th class="num">2024</th><th class="num">2025</th><th class="num">同比</th></tr></thead>
+          <tbody>
+            <tr><td class="t-2">货币资金</td><td class="num">2,468.2</td><td class="num">2,842.6</td><td class="num">3,186.4</td><td class="num t-up">+12.1%</td></tr>
+            <tr><td class="t-2">应收账款</td><td class="num">512.4</td><td class="num">486.8</td><td class="num">542.6</td><td class="num t-down">+11.5%</td></tr>
+            <tr><td class="t-2">存货</td><td class="num">812.4</td><td class="num">742.6</td><td class="num">786.2</td><td class="num t-down">+5.9%</td></tr>
+            <tr><td class="t-2">商誉</td><td class="num">24.6</td><td class="num">22.8</td><td class="num">22.8</td><td class="num t-flat">0.0%</td></tr>
+            <tr><td class="t-2">有息负债</td><td class="num">986.2</td><td class="num">1,024.6</td><td class="num">1,086.2</td><td class="num t-down">+6.0%</td></tr>
+            <tr><td class="t-2">资产负债率</td><td class="num">65.8%</td><td class="num">62.4%</td><td class="num">60.2%</td><td class="num t-up">-2.2pct</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 同业对比 -->
+    <div class="m-section-title">
+      同业财务对比
+      <a class="fs-11 t-brand" style="margin-left:auto" href="stock-industry.html">完整对比 →</a>
+    </div>
+    <div class="m-card" style="padding:0">
+      <div class="hscroll">
+        <table class="tbl freeze-tbl" style="min-width:680px" id="mPeer"></table>
+      </div>
+    </div>
+
+    <div class="legend-block mt-4">
+      <b>数据口径</b>：合并报表披露值，每交易日 18:00 同步；单季度由累计值差分还原；
+      2026E 为机构一致预期，非公司披露。演示数据，不构成投资建议。
+    </div>
+
+  </div>
+</div>
+
+<script src="../web/_shared/vendor/echarts.min.js"></script>
+<script src="../web/_shared/data.js"></script>
+<script src="../web/_shared/charts.js"></script>
+<script src="../web/_shared/app.js"></script>
+<script src="../web/_shared/mock-frame.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F, fin = D.finance, q = D.financeQuarters;
+
+  /* 指标横滑卡 */
+  var cards = [
+    { k: "营业收入", v: fin.revenue[4].toFixed(1), u: "亿元", d: "+17.9%", up: true },
+    { k: "净利润", v: fin.netProfit[4].toFixed(1), u: "亿元", d: "+22.8%", up: true },
+    { k: "毛利率", v: fin.grossMargin[4].toFixed(1), u: "%", d: "+1.4pct", up: true },
+    { k: "净利率", v: fin.netMargin[4].toFixed(1), u: "%", d: "+0.6pct", up: true },
+    { k: "ROE", v: fin.roe[4].toFixed(1), u: "%", d: "+1.4pct", up: true },
+    { k: "经营现金流", v: fin.ocf[4].toFixed(1), u: "亿元", d: "+16.9%", up: true },
+    { k: "研发投入", v: fin.rd[4].toFixed(1), u: "亿元", d: "+17.3%", up: true },
+    { k: "资产负债率", v: fin.assetLiability[4].toFixed(1), u: "%", d: "-2.2pct", up: true },
+    { k: "EPS", v: "11.96", u: "元", d: "+22.8%", up: true },
+    { k: "一致预期 PE", v: "16.9", u: "倍", d: "2026E", up: true }
+  ];
+  document.getElementById("finCards").innerHTML = cards.map(function (c) {
+    return '<div class="kpi" style="flex:0 0 132px">' +
+      '<span class="kpi-label">' + c.k + "</span>" +
+      '<span class="kpi-value is-sm">' + c.v + '<span class="fs-11 t-3"> ' + c.u + "</span></span>" +
+      '<span class="kpi-delta ' + (c.up ? "t-up" : "t-down") + '">' + c.d + "</span></div>";
+  }).join("");
+
+  /* 营收利润 */
+  F.combo("#mRev", {
+    labels: fin.years, unit: "亿元", unit2: "%",
+    bars: [{ name: "营业收入", data: fin.revenue }],
+    lines: [
+      { name: "净利润", data: fin.netProfit, axis: 2, color: C.cv("--chart-4") },
+      { name: "毛利率 %", data: fin.grossMargin, axis: 2, color: C.cv("--chart-2") }
+    ],
+    rotate: 30
+  });
+
+  /* 盈利能力 */
+  F.combo("#mProfit", {
+    labels: fin.years, unit: "%",
+    bars: [{ name: "ROE", data: fin.roe }],
+    lines: [{ name: "净利率", data: fin.netMargin, axis: 2, color: C.cv("--chart-2") }],
+    unit2: "%",
+    rotate: 30
+  });
+
+  /* 现金流 */
+  F.stacked("#mCash", {
+    labels: fin.years, unit: "亿元",
+    series: [
+      { name: "经营", data: fin.ocf, color: C.cv("--chart-6") },
+      { name: "投资", data: [-486.2, -642.8, -726.4, -586.2, -526.2, -482.6] },
+      { name: "筹资", data: [186.4, 242.6, -86.4, -124.2, -86.2, -64.8] }
+    ]
+  });
+
+  /* 增速表 */
+  var rows = [
+    { k: "营业收入", v: q.revenue, unit: "亿" },
+    { k: "净利润", v: q.netProfit, unit: "亿" },
+    { k: "毛利率", v: q.grossMargin, unit: "%" },
+    { k: "净利率", v: q.netMargin, unit: "%" },
+    { k: "营收同比", v: q.yoy, unit: "%" },
+    { k: "营收环比", v: q.qoq, unit: "%" }
+  ];
+  document.getElementById("mGrowth").innerHTML =
+    "<thead><tr><th>指标</th>" + q.labels.map(function (l) { return '<th class="num">' + l + "</th>"; }).join("") + "</tr></thead><tbody>" +
+    rows.map(function (r) {
+      return "<tr><td class=\"fw-600\">" + r.k + "</td>" + r.v.map(function (v) {
+        var isPct = r.unit === "%";
+        var cls = r.k.indexOf("率") >= 0 ? "" : v >= 0 ? "t-up" : "t-down";
+        return '<td class="num ' + cls + '">' + (v >= 0 && (r.k.indexOf("同比") >= 0 || r.k.indexOf("环比") >= 0) ? "+" : "") + v.toFixed(1) + (isPct ? "%" : "") + "</td>";
+      }).join("") + "</tr>";
+    }).join("") + "</tbody>";
+
+  /* 同业 */
+  document.getElementById("mPeer").innerHTML =
+    '<thead><tr><th>公司</th><th class="num">营收</th><th class="num">净利</th><th class="num">毛利率</th><th class="num">ROE</th><th class="num">PE</th></tr></thead><tbody>' +
+    D.industry.peers.map(function (p) {
+      return '<tr data-chg="' + (p.pct >= 0 ? "up" : "down") + '" class="is-clickable" data-href="stock.html?code=' + p.code + '">' +
+        '<td class="fw-600">' + p.name + (p.self ? ' <span class="tag tag-brand">本股</span>' : "") + "</td>" +
+        '<td class="num">' + p.revenue.toFixed(1) + "</td>" +
+        '<td class="num">' + p.netProfit.toFixed(1) + "</td>" +
+        '<td class="num">' + p.grossMargin.toFixed(1) + "%</td>" +
+        '<td class="num ' + (p.roe >= 0 ? "t-up" : "t-down") + '">' + p.roe.toFixed(1) + "%</td>" +
+        '<td class="num">' + (p.pe ? p.pe.toFixed(1) : "亏损") + "</td></tr>";
+    }).join("") + "</tbody>";
+
+  /* 周期切换 */
+  SA.qsa(".segmented > *").forEach(function (el) {
+    el.addEventListener("click", function () {
+      SA.qsa(".segmented > *", el.parentNode).forEach(function (o) { o.classList.toggle("is-active", o === el); });
+      var isQ = el.textContent.trim() === "单季度";
+      document.getElementById("mRev").innerHTML = "";
+      F.combo("#mRev", {
+        labels: isQ ? q.labels : fin.years, unit: "亿元", unit2: "%",
+        bars: [{ name: "营业收入", data: isQ ? q.revenue : fin.revenue }],
+        lines: [
+          { name: "净利润", data: isQ ? q.netProfit : fin.netProfit, axis: 2, color: C.cv("--chart-4") },
+          { name: "毛利率 %", data: isQ ? q.grossMargin : fin.grossMargin, axis: 2, color: C.cv("--chart-2") }
+        ],
+        rotate: 30
+      });
+      C.rebuildAll();
+      SA.toast("已切换到" + el.textContent.trim() + "口径", "info");
+    });
+  });
+})();
+</script>
+</body>
+</html>

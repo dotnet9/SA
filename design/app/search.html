@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>搜索 · 股析 SA（移动端）</title>
+<link rel="stylesheet" href="../web/_shared/tokens.css">
+<link rel="stylesheet" href="../web/_shared/tailwind.css">
+<link rel="stylesheet" href="../web/_shared/components.css">
+<style>
+  .search-bar {
+    display: flex; align-items: center; gap: 8px; height: 40px;
+    padding: 0 12px; border-radius: 10px; background: var(--bg-sunken);
+    border: 1px solid var(--brand); box-shadow: var(--glow-brand);
+  }
+  .res-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid var(--border-soft); min-height: 60px;
+  }
+  .res-row:last-child { border-bottom: none; }
+</style>
+</head>
+<body data-page="search" data-title="搜索" data-desc="搜索框聚焦态、历史搜索、热词、结果列表带 sparkline、行内加自选。手机端搜索是最高频入口，故独立成页。">
+<div id="appScreen">
+  <div class="m-topbar">
+    <span class="icon-btn">←</span>
+    <div class="search-bar grow">
+      <span class="t-3">⌕</span>
+      <input class="input" id="mKw" style="height:auto;border:none;background:transparent;padding:0;box-shadow:none" value="宁德" placeholder="代码 / 名称 / 拼音首字母">
+      <span class="t-3" id="mClear">✕</span>
+    </div>
+    <span class="fs-13 t-brand">搜索</span>
+  </div>
+
+  <div class="m-page">
+
+    <!-- 历史与热词 -->
+    <div class="m-section-title">
+      历史搜索
+      <span class="fs-11 t-3" style="margin-left:auto" id="mHistClear">清空</span>
+    </div>
+    <div class="row gap-2 wrap">
+      <span class="tag tag-lg tag-outline histKw">300750</span>
+      <span class="tag tag-lg tag-outline histKw">寒武纪</span>
+      <span class="tag tag-lg tag-outline histKw">hgyy</span>
+      <span class="tag tag-lg tag-outline histKw">电池</span>
+      <span class="tag tag-lg tag-outline histKw">固态电池</span>
+    </div>
+
+    <div class="m-section-title">热门搜索</div>
+    <div class="row gap-2 wrap">
+      <span class="tag tag-lg tag-brand hotKw">宁德时代</span>
+      <span class="tag tag-lg tag-outline hotKw">贵州茅台</span>
+      <span class="tag tag-lg tag-outline hotKw">中际旭创</span>
+      <span class="tag tag-lg tag-outline hotKw">寒武纪</span>
+      <span class="tag tag-lg tag-outline hotKw">贝特瑞</span>
+      <span class="tag tag-lg tag-outline hotKw">赛力斯</span>
+    </div>
+
+    <!-- 结果 -->
+    <div class="m-section-title">
+      搜索结果
+      <span class="tag tag-outline" style="margin-left:auto" id="mCount">命中 2 只</span>
+    </div>
+    <div class="m-card" style="padding:0 12px" id="mResults"></div>
+
+    <div class="legend-block mt-4">
+      <b>搜索规则</b><br>
+      6 位代码精确匹配 · 中文名称模糊匹配 · 拼音首字母匹配 · 行业与概念关键词。
+      数据范围受角色权限限制（访客仅返回自选股范围内的结果）。
+    </div>
+
+  </div>
+</div>
+
+<script src="../web/_shared/vendor/echarts.min.js"></script>
+<script src="../web/_shared/data.js"></script>
+<script src="../web/_shared/charts.js"></script>
+<script src="../web/_shared/app.js"></script>
+<script src="../web/_shared/mock-frame.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, F = window.SA_CHARTS.F;
+  var kw = "宁德";
+
+  function render() {
+    var k = (kw || "").trim().toLowerCase();
+    var list = D.stocks.filter(function (s) {
+      return !k || s.code.indexOf(k) >= 0 || s.name.toLowerCase().indexOf(k) >= 0 || s.py.indexOf(k) >= 0;
+    });
+    document.getElementById("mCount").textContent = "命中 " + list.length + " 只";
+
+    if (!list.length) {
+      document.getElementById("mResults").innerHTML =
+        '<div class="empty"><div class="em-icon">◌</div><div class="fs-13">没有匹配的股票</div>' +
+        '<div class="hint">试试输入代码或拼音首字母</div></div>';
+      return;
+    }
+
+    document.getElementById("mResults").innerHTML = list.slice(0, 12).map(function (s) {
+      var cls = s.pct >= 0 ? "is-up" : "is-down";
+      var inWatch = D.watchlist.items.some(function (w) { return w.code === s.code; });
+      return '<div class="res-row">' +
+        '<div class="grow" data-href="stock.html?code=' + s.code + '" style="min-width:0">' +
+          '<div class="row gap-2"><span class="fs-13 fw-600">' + s.name + "</span>" +
+          (inWatch ? '<span class="tag tag-brand">自选</span>' : "") + "</div>" +
+          '<div class="row gap-2"><span class="mono fs-10 t-3">' + s.code + "</span>" +
+          '<span class="hint">' + s.board + " · " + s.industry + "</span></div>" +
+        "</div>" +
+        '<div class="chart chart-xs" style="width:56px;flex:0 0 auto" id="msp_' + s.code + '"></div>' +
+        '<div style="text-align:right;flex:0 0 auto;width:78px">' +
+          '<div class="mono fs-13 fw-600 ' + (s.pct >= 0 ? "t-up" : "t-down") + '">' + s.price.toFixed(2) + "</div>" +
+          '<div class="mono fs-11 ' + (s.pct >= 0 ? "t-up" : "t-down") + '">' + (s.pct >= 0 ? "+" : "") + s.pct.toFixed(2) + "%</div>" +
+        "</div>" +
+        '<button class="icon-btn addBtn" data-code="' + s.code + '" title="加自选">' + (inWatch ? "★" : "+") + "</button>" +
+        "</div>";
+    }).join("");
+
+    list.slice(0, 12).forEach(function (s) { F.spark("#msp_" + s.code, s.spark, { up: s.pct >= 0 }); });
+
+    SA.qsa(".addBtn").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var s = D.stockByCode[b.getAttribute("data-code")];
+        SA.toast("已加入自选：" + s.name, "ok");
+        b.textContent = "★";
+        b.classList.add("is-on");
+      });
+    });
+  }
+
+  document.getElementById("mKw").addEventListener("input", function () {
+    kw = this.value;
+    render();
+  });
+  document.getElementById("mClear").addEventListener("click", function () {
+    document.getElementById("mKw").value = "";
+    kw = "";
+    render();
+  });
+  SA.qsa(".histKw, .hotKw").forEach(function (t) {
+    t.addEventListener("click", function () {
+      var v = t.textContent.trim();
+      document.getElementById("mKw").value = v;
+      kw = v;
+      render();
+    });
+  });
+  document.getElementById("mHistClear").addEventListener("click", function () {
+    SA.qsa(".histKw").forEach(function (t) { t.remove(); });
+    SA.toast("已清空历史搜索", "info");
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

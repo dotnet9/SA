@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>市场概览 · 股析 SA</title>
+<link rel="stylesheet" href="_shared/tokens.css">
+<link rel="stylesheet" href="_shared/tailwind.css">
+<link rel="stylesheet" href="_shared/components.css">
+</head>
+<body data-page="market">
+
+<div class="sa-app">
+  <div class="sa-brand">
+    <div class="sa-logo">SA</div>
+    <div class="sa-brand-text">
+      <div class="sa-brand-name">股析</div>
+      <div class="sa-brand-sub">Stock Analysis</div>
+    </div>
+  </div>
+  <header class="sa-topbar" id="saTop"></header>
+  <nav class="sa-sidenav" id="saNav"></nav>
+  <main class="sa-main">
+    <div class="sa-page">
+
+      <div class="sa-pagehead">
+        <div>
+          <h1>市场概览</h1>
+          <div class="sub">2026-09-18 星期五 · 收盘 · 数据更新于 15:00 · <span class="t-3">演示数据</span></div>
+        </div>
+        <div class="sa-pagehead-actions">
+          <span class="segmented">
+            <span class="is-active">今日</span><span>近 5 日</span><span>近 20 日</span><span>近 60 日</span>
+          </span>
+          <button class="btn btn-outline btn-sm" id="btnExportMarket">导出</button>
+          <button class="btn btn-primary btn-sm" id="btnRefreshMarket">刷新数据</button>
+        </div>
+      </div>
+
+      <!-- 指数卡片 -->
+      <div class="grid grid-auto" id="indexCards"></div>
+
+      <!-- 市场宽度 + 资金 -->
+      <div class="grid grid-3 mt-4">
+        <div class="card is-accent">
+          <div class="card-head">
+            <span class="card-title">涨跌家数 <span class="infoq" data-tip="口径：全市场（含北交所）当日收盘涨跌家数统计，含 ST 与新股。">?</span></span>
+            <span class="card-sub">全市场 5,428 只</span>
+          </div>
+          <div class="card-body">
+            <div id="breadthDonut" class="chart chart-md"></div>
+            <div class="grid grid-3 mt-3">
+              <div class="kpi"><span class="kpi-label">涨停</span><span class="kpi-value t-up" id="kLimitUp">68</span><span class="kpi-delta t-3">含一字板</span></div>
+              <div class="kpi"><span class="kpi-label">跌停</span><span class="kpi-value t-down" id="kLimitDown">12</span><span class="kpi-delta t-3">含一字板</span></div>
+              <div class="kpi"><span class="kpi-label">涨跌比</span><span class="kpi-value t-up">1.75</span><span class="kpi-delta t-3">多头占优</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">北向资金 <span class="infoq" data-tip="口径：陆股通（沪股通 + 深股通）净买入额，单位亿元。2024 年起官方仅披露持股数据，本原型按持股变动估算。">?</span></span>
+            <span class="card-sub">近 5 个交易日</span>
+            <div class="card-tools"><span class="tag tag-up">今日 +42.6 亿</span></div>
+          </div>
+          <div class="card-body">
+            <div id="northArea" class="chart chart-md"></div>
+            <div class="legend-block mt-3">
+              <b>连续 3 日净流入</b>：电池（+28.6 亿）、半导体（+22.8 亿）为主要流入方向；房地产开发（-9.2 亿）流出居前。
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">两市资金与杠杆</span><span class="card-sub">收盘快照</span></div>
+          <div class="card-body col gap-3">
+            <div class="kpi"><span class="kpi-label">两市成交额 <span class="infoq" data-tip="口径：沪深两市 A 股成交金额合计，单位亿元。">?</span></span>
+              <span class="kpi-value is-xl">10,982 <span class="fs-14 t-3">亿</span></span>
+              <span class="kpi-delta t-up">↑ 较上一交易日 +8.6%</span></div>
+            <div class="row gap-3">
+              <div class="kpi grow"><span class="kpi-label">融资余额</span><span class="kpi-value is-sm">18,426 亿</span><span class="kpi-delta t-up">↑ +0.62%</span></div>
+              <div class="kpi grow"><span class="kpi-label">融券余额</span><span class="kpi-value is-sm">862 亿</span><span class="kpi-delta t-down">↓ -1.24%</span></div>
+            </div>
+            <div class="fold is-collapsed">
+              <div class="fold-head">资金分层（全市场主力）<span class="caret">▼</span></div>
+              <div class="fold-body col gap-2">
+                <div class="row-between"><span class="fs-12 t-2">超大单净额</span><span class="mono t-up">+86.4 亿</span></div>
+                <div class="row-between"><span class="fs-12 t-2">大单净额</span><span class="mono t-up">+42.6 亿</span></div>
+                <div class="row-between"><span class="fs-12 t-2">中单净额</span><span class="mono t-down">-38.2 亿</span></div>
+                <div class="row-between"><span class="fs-12 t-2">小单净额</span><span class="mono t-down">-90.8 亿</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 行业 -->
+      <div class="grid grid-2 mt-4">
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">行业热力</span>
+            <span class="card-sub">面积 = 涨跌幅强度 · 颜色 = 涨跌</span>
+            <div class="card-tools">
+              <span class="segmented"><span class="is-active">申万一级</span><span>概念板块</span></span>
+            </div>
+          </div>
+          <div class="card-body"><div id="industryTree" class="chart chart-lg"></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">行业涨跌排行</span>
+            <span class="card-sub">含主力净流入与估值分位</span>
+          </div>
+          <div class="card-body"><div id="industryBar" class="chart chart-lg"></div></div>
+        </div>
+      </div>
+
+      <!-- 事件热点 -->
+      <div class="card mt-4">
+        <div class="card-head">
+          <span class="card-title">今日事件热点</span>
+          <span class="card-sub">规则引擎自动抽取 · 影响方向与强度由标注给出</span>
+          <div class="card-tools">
+            <span class="tag tag-up">利好 6</span><span class="tag tag-down">利空 2</span>
+            <a class="btn btn-sm btn-ghost" href="stock-events.html">查看全部事件 →</a>
+          </div>
+        </div>
+        <div class="card-body is-flush">
+          <div class="tbl-wrap">
+            <table class="tbl" id="hotEventsTbl">
+              <thead>
+                <tr>
+                  <th style="width:74px" class="is-sortable">日期 <span class="sort-caret">▼</span></th>
+                  <th style="width:74px">类型</th>
+                  <th>事件</th>
+                  <th style="width:96px">影响方向</th>
+                  <th style="width:88px" class="num is-sortable">强度 <span class="sort-caret">▼</span></th>
+                  <th style="width:180px">相关股票</th>
+                </tr>
+              </thead>
+              <tbody id="hotEventsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 榜单 -->
+      <div class="grid grid-3 mt-4">
+        <div class="card">
+          <div class="card-head"><span class="card-title">成交额榜</span><span class="card-sub">亿元</span></div>
+          <div class="card-body is-flush"><div class="tbl-wrap"><table class="tbl" id="rankAmount"></table></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">涨幅榜</span><span class="card-sub">剔除新股与 ST</span></div>
+          <div class="card-body is-flush"><div class="tbl-wrap"><table class="tbl" id="rankGainers"></table></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">跌幅榜</span><span class="card-sub">剔除新股与 ST</span></div>
+          <div class="card-body is-flush"><div class="tbl-wrap"><table class="tbl" id="rankLosers"></table></div></div>
+        </div>
+      </div>
+
+      <div class="legend-block mt-4">
+        <b>数据来源与口径</b><br>
+        指数与行情：东方财富 + 新浪财经公开接口，交易时段每 3 秒快照，收盘后 15:30 入库；<br>
+        资金流与两融：东方财富公开接口，交易日 15:20 / 19:00 采集；北向资金为按持股变动估算值；<br>
+        行业分类：申万一级行业；事件与影响强度：规则引擎自动抽取 + 人工标注（0–100）；<br>
+        本页所有数值均为演示数据，非实时行情，不构成投资建议。
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="_shared/vendor/echarts.min.js"></script>
+<script src="_shared/data.js"></script>
+<script src="_shared/charts.js"></script>
+<script src="_shared/app.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F;
+
+  /* ---------- 指数卡片 ---------- */
+  document.getElementById("indexCards").innerHTML = D.indices.map(function (ix, i) {
+    var cls = ix.pct >= 0 ? "is-up" : "is-down";
+    return '<div class="card is-accent">' +
+      '<div class="card-body is-tight">' +
+        '<div class="row-between">' +
+          '<span class="fs-13 fw-600">' + ix.name + "</span>" +
+          '<span class="mono fs-11 t-3">' + ix.code + "</span>" +
+        "</div>" +
+        '<div class="row-between mt-2" style="align-items:flex-end">' +
+          "<div>" +
+            '<div class="mono fs-22 fw-700 ' + cls + '">' + ix.price.toFixed(2) + "</div>" +
+            '<div class="chg ' + cls + ' fs-12">' + (ix.pct >= 0 ? "+" : "") + ix.chg.toFixed(2) +
+              " <span>" + (ix.pct >= 0 ? "+" : "") + ix.pct.toFixed(2) + "%</span></div>" +
+          "</div>" +
+          '<div style="width:96px"><div class="chart chart-xs" id="ixSpark' + i + '"></div></div>' +
+        "</div>" +
+        '<div class="row-between mt-2">' +
+          '<span class="hint">成交 ' + ix.amount + " 亿</span>" +
+          '<span class="hint">' + D.meta.asOf + "</span>" +
+        "</div>" +
+      "</div></div>";
+  }).join("");
+
+  D.indices.forEach(function (ix, i) {
+    F.spark("#ixSpark" + i, ix.spark, { up: ix.pct >= 0 });
+  });
+
+  /* ---------- 涨跌家数环形 ---------- */
+  F.donut("#breadthDonut", {
+    legendOrient: "vertical",
+    center: ["34%", "50%"],
+    radius: ["50%", "72%"],
+    data: [
+      { name: "上涨", value: D.breadth.up, color: C.cv("--up") },
+      { name: "下跌", value: D.breadth.down, color: C.cv("--down") },
+      { name: "平盘", value: D.breadth.flat, color: C.cv("--flat") }
+    ]
+  });
+
+  /* ---------- 北向资金 ---------- */
+  F.combo("#northArea", {
+    labels: ["09-12", "09-15", "09-16", "09-17", "09-18"],
+    unit: "亿元",
+    bars: [{
+      name: "北向净流入",
+      data: D.breadth.northbound5,
+      color: {
+        type: "linear", x: 0, y: 0, x2: 0, y2: 1,
+        colorStops: [{ offset: 0, color: C.cv("--chart-1") }, { offset: 1, color: "transparent" }]
+      }
+    }],
+    lines: [{ name: "累计", data: [18.2, 5.8, 32.6, 42.2, 84.8], area: true, color: C.cv("--chart-2") }]
+  });
+
+  /* ---------- 行业热力 ---------- */
+  F.treemap("#industryTree", { data: D.industries });
+
+  /* ---------- 行业排行 ---------- */
+  F.hbar("#industryBar", { data: D.industries });
+
+  /* ---------- 事件热点 ---------- */
+  var evHtml = D.hotEvents.map(function (e) {
+    var cls = e.level === "up" ? "is-up" : e.level === "down" ? "is-down" : "is-flat";
+    var strength = 40 + Math.round(Math.random() * 50);
+    var stocks = e.related.length
+      ? e.related.map(function (c) {
+          var s = D.stockByCode[c];
+          return s ? '<a class="tag tag-outline" href="stock.html?code=' + c + '">' + s.name + " " + c + "</a>" : "";
+        }).join(" ")
+      : '<span class="hint">全市场</span>';
+    return '<tr data-chg="' + (e.level === "up" ? "up" : e.level === "down" ? "down" : "flat") + '">' +
+      '<td class="mono fs-11 t-3">' + e.date + "</td>" +
+      '<td><span class="tag tag-outline">' + e.tag + "</span></td>" +
+      '<td class="ellipsis" style="max-width:520px">' + e.title + "</td>" +
+      '<td><span class="tag ' + (e.level === "up" ? "tag-up" : "tag-down") + '">' + (e.level === "up" ? "利好" : "利空") + "</span></td>" +
+      '<td class="num" data-v="' + strength + '">' + strength + "</td>" +
+      "<td>" + stocks + "</td>" +
+      "</tr>";
+  }).join("");
+  document.getElementById("hotEventsBody").innerHTML = evHtml;
+
+  /* ---------- 榜单 ---------- */
+  function rankTable(sel, rows, valKey, label, unit) {
+    var html = '<thead><tr><th>名称</th><th class="num">' + label + "</th></tr></thead><tbody>";
+    html += rows.map(function (r) {
+      var cls = r.pct >= 0 ? "is-up" : "is-down";
+      var v = valKey === "amount" ? r.amount.toFixed(1) : (r.pct >= 0 ? "+" : "") + r.pct.toFixed(2) + "%";
+      return '<tr data-chg="' + (r.pct >= 0 ? "up" : "down") + '" class="is-clickable" data-href="stock.html?code=' + r.code + '">' +
+        '<td><span class="stock-cell"><span class="sc-name">' + r.name + '</span><span class="sc-code">' + r.code + "</span></span></td>" +
+        '<td class="num ' + (valKey === "amount" ? "" : cls) + '">' + v + (valKey === "amount" ? " 亿" : "") + "</td></tr>";
+    }).join("");
+    html += "</tbody>";
+    document.querySelector(sel).innerHTML = html;
+  }
+  rankTable("#rankAmount", D.rankings.amount, "amount", "成交额");
+  rankTable("#rankGainers", D.rankings.gainers, "pct", "涨跌幅");
+  rankTable("#rankLosers", D.rankings.losers, "pct", "涨跌幅");
+
+  /* ---------- 顶部操作 ---------- */
+  document.getElementById("btnExportMarket").addEventListener("click", function () {
+    SA.toast("已导出指数、行业与榜单为 CSV（原型不产生文件）", "ok");
+  });
+  document.getElementById("btnRefreshMarket").addEventListener("click", function () {
+    var btn = this;
+    btn.textContent = "刷新中…";
+    btn.classList.add("is-disabled");
+    setTimeout(function () {
+      btn.textContent = "刷新数据";
+      btn.classList.remove("is-disabled");
+      SA.toast("已刷新至 2026-09-18 15:00 收盘快照（演示数据）", "ok");
+    }, 900);
+  });
+})();
+</script>
+</body>
+</html>

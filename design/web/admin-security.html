@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>登录与安全 · 股析 SA</title>
+<link rel="stylesheet" href="_shared/tokens.css">
+<link rel="stylesheet" href="_shared/tailwind.css">
+<link rel="stylesheet" href="_shared/components.css">
+<style>
+  .strength-bar { display: flex; gap: 3px; margin-top: 6px; }
+  .strength-bar > i { flex: 1; height: 4px; border-radius: 2px; background: var(--border-soft); }
+  .strength-bar > i.on-weak { background: var(--danger); }
+  .strength-bar > i.on-mid { background: var(--warn); }
+  .strength-bar > i.on-strong { background: var(--ok); }
+  .risk-note { border-left: 3px solid var(--danger); background: var(--danger-soft); padding: 12px; border-radius: 0 8px 8px 0; }
+</style>
+</head>
+<body data-page="admin-security">
+
+<div class="sa-app">
+  <div class="sa-brand">
+    <div class="sa-logo">SA</div>
+    <div class="sa-brand-text">
+      <div class="sa-brand-name">股析</div>
+      <div class="sa-brand-sub">Stock Analysis</div>
+    </div>
+  </div>
+  <header class="sa-topbar" id="saTop"></header>
+  <nav class="sa-sidenav" id="saNav"></nav>
+  <main class="sa-main">
+    <div class="sa-page">
+
+      <div class="sa-pagehead">
+        <div>
+          <div class="breadcrumb"><a href="market.html">市场概览</a><span class="sep">/</span><span>系统管理</span><span class="sep">/</span><span>登录与安全</span></div>
+          <h1>登录与安全</h1>
+          <div class="sub">密码策略 · 二次验证 · 会话管理 · 登录日志 · 失败锁定</div>
+        </div>
+        <div class="sa-pagehead-actions">
+          <button class="btn btn-outline btn-sm" id="btnExportLog">导出登录日志</button>
+          <button class="btn btn-primary btn-sm" id="btnSavePolicy">保存安全策略</button>
+        </div>
+      </div>
+
+      <div class="grid grid-4">
+        <div class="kpi"><span class="kpi-label">在线会话</span><span class="kpi-value is-xl">5</span><span class="kpi-delta t-3">跨 3 个账号</span></div>
+        <div class="kpi"><span class="kpi-label">今日登录</span><span class="kpi-value is-xl">6</span><span class="kpi-delta t-3">4 成功 · 2 失败</span></div>
+        <div class="kpi"><span class="kpi-label">被拦截的异常登录</span><span class="kpi-value is-xl t-warn">1</span><span class="kpi-delta t-3">IP 198.51.100.7</span></div>
+        <div class="kpi"><span class="kpi-label">二次验证覆盖</span><span class="kpi-value is-xl t-up">100%</span><span class="kpi-delta t-3">全部启用账号</span></div>
+      </div>
+
+      <div class="sa-split mt-4">
+        <div class="col gap-4">
+
+          <!-- 修改密码 -->
+          <div class="card is-accent">
+            <div class="card-head"><span class="card-title">修改我的密码</span><span class="card-sub">当前登录账号：admin</span></div>
+            <div class="card-body grid grid-3">
+              <div class="field">
+                <label class="label">当前密码</label>
+                <input class="input is-mono" type="password" value="admin123">
+              </div>
+              <div class="field">
+                <label class="label">新密码</label>
+                <input class="input is-mono" type="password" id="newPwd" value="SA@2026#Secure">
+                <div class="strength-bar">
+                  <i class="on-strong"></i><i class="on-strong"></i><i class="on-strong"></i><i class="on-strong"></i>
+                </div>
+                <span class="hint t-up">强度：强（长度 14，含大小写 / 数字 / 符号）</span>
+              </div>
+              <div class="field">
+                <label class="label">确认新密码</label>
+                <input class="input is-mono" type="password" value="SA@2026#Secure">
+                <span class="hint">修改后需重新登录，所有设备会话失效</span>
+              </div>
+              <div class="span-full" style="grid-column:1/-1">
+                <button class="btn btn-primary" id="btnChangePwd">确认修改</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 安全策略 -->
+          <div class="card">
+            <div class="card-head"><span class="card-title">安全策略</span><span class="card-sub">对全部账号生效</span></div>
+            <div class="card-body grid grid-2">
+              <div class="field">
+                <label class="label">密码最小长度</label>
+                <input class="input input-num" value="10" style="width:100px">
+                <span class="hint">建议 ≥ 10；每 90 天强制更换</span>
+              </div>
+              <div class="field">
+                <label class="label">密码有效期</label>
+                <div class="segmented">
+                  <span data-v="30">30 天</span><span class="is-active" data-v="90">90 天</span><span data-v="180">180 天</span><span data-v="0">永久</span>
+                </div>
+              </div>
+              <div class="field">
+                <label class="label">密码复杂度</label>
+                <div class="col gap-2">
+                  <label class="check"><input type="checkbox" checked> 必须包含大写字母</label>
+                  <label class="check"><input type="checkbox" checked> 必须包含小写字母</label>
+                  <label class="check"><input type="checkbox" checked> 必须包含数字</label>
+                  <label class="check"><input type="checkbox" checked> 必须包含特殊符号</label>
+                  <label class="check"><input type="checkbox" checked> 不得与最近 5 次密码重复</label>
+                </div>
+              </div>
+              <div class="field">
+                <label class="label">登录失败锁定</label>
+                <div class="row gap-2">
+                  <span class="hint">连续失败</span>
+                  <input class="input input-sm input-num" value="5" style="width:64px">
+                  <span class="hint">次后锁定</span>
+                  <input class="input input-sm input-num" value="15" style="width:64px">
+                  <span class="hint">分钟</span>
+                </div>
+                <label class="check mt-3"><input type="checkbox" checked> 锁定期间记录来源 IP 并触发告警</label>
+                <label class="check"><input type="checkbox" checked> 同一 IP 1 小时内失败 20 次则封禁 24 小时</label>
+              </div>
+              <div class="field">
+                <label class="label">会话</label>
+                <div class="row gap-2">
+                  <span class="hint">会话有效期</span>
+                  <input class="input input-sm input-num" value="72" style="width:64px">
+                  <span class="hint">小时</span>
+                </div>
+                <label class="switch mt-3"><input type="checkbox" checked><span class="track"></span>单账号最多 5 个并发会话</label>
+                <label class="switch"><input type="checkbox"><span class="track"></span>启用 IP 白名单（仅允许内网与指定 IP）</label>
+              </div>
+              <div class="field">
+                <label class="label">二次验证（TOTP）</label>
+                <label class="switch"><input type="checkbox" checked><span class="track"></span>全部账号强制启用</label>
+                <label class="switch mt-3"><input type="checkbox" checked><span class="track"></span>异地登录时额外验证</label>
+                <span class="hint">异地 = 与最近一次成功登录 IP 不在同一 /24 网段</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 在线会话 -->
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">在线会话</span>
+              <span class="card-sub">点击「强制下线」会立即失效该会话的令牌</span>
+              <div class="card-tools"><button class="btn btn-sm btn-danger" id="btnOfflineAll">全部强制下线</button></div>
+            </div>
+            <div class="card-body is-flush">
+              <div class="tbl-wrap">
+                <table class="tbl is-comfort">
+                  <thead>
+                    <tr><th style="width:110px">用户</th><th>设备</th><th style="width:150px">登录 IP</th><th style="width:150px">登录时间</th><th style="width:110px">最后活跃</th><th style="width:90px">当前</th><th class="col-actions" style="width:110px">操作</th></tr>
+                  </thead>
+                  <tbody id="sessBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- 登录日志 -->
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">登录日志</span>
+              <span class="card-sub">近 8 条 · 含失败与拒绝记录</span>
+              <div class="card-tools">
+                <select class="select input-sm" id="fLogResult" style="width:110px">
+                  <option value="all">全部结果</option>
+                  <option value="成功">仅成功</option>
+                  <option value="失败">仅失败</option>
+                  <option value="拒绝">仅拒绝</option>
+                </select>
+              </div>
+            </div>
+            <div class="card-body is-flush">
+              <div class="tbl-wrap">
+                <table class="tbl is-comfort">
+                  <thead>
+                    <tr><th style="width:150px">时间</th><th style="width:100px">用户</th><th style="width:150px">IP</th><th>设备</th><th style="width:80px">结果</th><th>备注</th></tr>
+                  </thead>
+                  <tbody id="logBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <aside class="col gap-4">
+          <div class="card">
+            <div class="card-head"><span class="card-title">安全评分</span><span class="tag tag-ok">良好</span></div>
+            <div class="card-body">
+              <div id="secGauge" class="chart chart-sm"></div>
+              <div class="col gap-2 mt-2">
+                <div class="row-between"><span class="fs-12 t-2">密码策略</span><span class="mono fs-12 t-up">95</span></div>
+                <div class="row-between"><span class="fs-12 t-2">二次验证</span><span class="mono fs-12 t-up">100</span></div>
+                <div class="row-between"><span class="fs-12 t-2">会话管理</span><span class="mono fs-12 t-up">82</span></div>
+                <div class="row-between"><span class="fs-12 t-2">传输安全</span><span class="mono fs-12 t-up">90</span></div>
+                <div class="row-between"><span class="fs-12 t-2">防爆破</span><span class="mono fs-12 t-warn">72</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">待处理安全提示</span></div>
+            <div class="card-body col gap-3">
+              <div class="risk-note">
+                <div class="fs-13 fw-600 t-danger">检测到异常登录尝试</div>
+                <div class="fs-12 t-2 mt-1" style="line-height:1.7">
+                  2026-09-16 22:14，IP 198.51.100.7 使用 curl 尝试 42 次登录不存在的账号，
+                  已被限流拦截。建议确认是否需要加入永久黑名单。
+                </div>
+                <button class="btn btn-sm btn-danger mt-2" id="btnBlacklist">加入黑名单</button>
+              </div>
+              <div class="notice" style="border-left:3px solid var(--warn);background:var(--warn-soft);padding:12px;border-radius:0 8px 8px 0">
+                <div class="fs-13 fw-600 t-warn">IP 白名单未启用</div>
+                <div class="fs-12 t-2 mt-1" style="line-height:1.7">
+                  当前允许任意 IP 访问登录页。若使用 VPN 或反向代理，建议启用白名单以进一步降低风险。
+                </div>
+              </div>
+              <div class="notice" style="border-left:3px solid var(--brand);background:var(--brand-soft);padding:12px;border-radius:0 8px 8px 0">
+                <div class="fs-13 fw-600 t-brand">HTTPS 已就绪</div>
+                <div class="fs-12 t-2 mt-1" style="line-height:1.7">
+                  Service Worker 与 Web Push 需要安全上下文。手机外网访问请使用域名 HTTPS，
+                  本机调试可用 http://localhost。
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">登录结果分布</span><span class="card-sub">近 7 日</span></div>
+            <div class="card-body"><div id="loginDonut" class="chart chart-md"></div></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">数据口径</span></div>
+            <div class="card-body">
+              <div class="legend-block">
+                登录日志保留 180 天；会话令牌为 JWT + 刷新令牌，存于 HttpOnly Cookie；<br>
+                密码使用 PBKDF2 / Argon2id 加盐哈希存储；<br>
+                二次验证为 TOTP（兼容 Google Authenticator / 微软验证器）；<br>
+                更新时间 2026-09-18 · 演示数据。
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="_shared/vendor/echarts.min.js"></script>
+<script src="_shared/data.js"></script>
+<script src="_shared/charts.js"></script>
+<script src="_shared/app.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F, sec = D.security;
+
+  /* 会话 */
+  document.getElementById("sessBody").innerHTML = sec.sessions.map(function (s, i) {
+    return "<tr" + (s.current ? ' class="is-selected"' : "") + ">" +
+      '<td class="mono fw-600">' + s.user + "</td>" +
+      "<td>" + s.device + "</td>" +
+      '<td class="mono fs-11 t-3">' + s.ip + "</td>" +
+      '<td class="mono fs-11 t-3">' + s.login + "</td>" +
+      '<td class="fs-11 t-2">' + s.active + "</td>" +
+      '<td>' + (s.current ? '<span class="tag tag-ok">当前</span>' : '<span class="tag tag-outline">其他</span>') + "</td>" +
+      '<td class="col-actions">' + (s.current ? '<span class="hint">—</span>'
+        : '<button class="btn btn-sm btn-ghost sessKill" data-i="' + i + '">强制下线</button>') + "</td>" +
+      "</tr>";
+  }).join("");
+
+  SA.qsa(".sessKill").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var s = sec.sessions[parseInt(b.getAttribute("data-i"), 10)];
+      SA.toast("已强制下线：" + s.user + " · " + s.device, "warn");
+      b.closest("tr").style.opacity = "0.45";
+      b.disabled = true;
+      b.textContent = "已下线";
+    });
+  });
+  document.getElementById("btnOfflineAll").addEventListener("click", function () {
+    SA.toast("已强制下线除当前会话外的全部会话", "warn");
+  });
+
+  /* 日志 */
+  function renderLogs() {
+    var f = document.getElementById("fLogResult").value;
+    var rows = sec.loginLogs.filter(function (l) { return f === "all" || l.result === f; });
+    document.getElementById("logBody").innerHTML = rows.map(function (l) {
+      var tag = l.result === "成功" ? "tag-ok" : l.result === "失败" ? "tag-warn" : "tag-danger";
+      return "<tr>" +
+        '<td class="mono fs-11 t-3">' + l.time + "</td>" +
+        '<td class="mono fs-12">' + l.user + "</td>" +
+        '<td class="mono fs-11 t-3">' + l.ip + "</td>" +
+        '<td class="fs-11 t-2">' + l.device + "</td>" +
+        '<td><span class="tag ' + tag + '">' + l.result + "</span></td>" +
+        '<td class="fs-11 t-2">' + l.note + "</td>" +
+        "</tr>";
+    }).join("");
+  }
+  renderLogs();
+  document.getElementById("fLogResult").addEventListener("change", renderLogs);
+
+  /* 策略交互 */
+  SA.qsa(".segmented > *").forEach(function (el) {
+    el.addEventListener("click", function () {
+      SA.qsa(".segmented > *", el.parentNode).forEach(function (o) { o.classList.toggle("is-active", o === el); });
+    });
+  });
+  document.getElementById("btnSavePolicy").addEventListener("click", function () {
+    SA.toast("安全策略已保存，将在下次登录时对全部账号生效", "ok");
+  });
+  document.getElementById("btnChangePwd").addEventListener("click", function () {
+    SA.toast("密码已修改，请用新密码重新登录（全部设备会话已失效）", "ok");
+  });
+  document.getElementById("btnExportLog").addEventListener("click", function () {
+    SA.toast("已导出登录日志为 CSV（原型不产生文件）", "ok");
+  });
+  document.getElementById("btnBlacklist").addEventListener("click", function () {
+    SA.toast("已把 IP 198.51.100.7 加入永久黑名单", "warn");
+  });
+
+  /* 图表 */
+  F.gauge("#secGauge", { value: 88, max: 100, name: "综合安全评分", warnAt: 50, dangerAt: 75 });
+
+  var cnt = { 成功: 0, 失败: 0, 拒绝: 0 };
+  sec.loginLogs.forEach(function (l) { cnt[l.result] = (cnt[l.result] || 0) + 1; });
+  F.donut("#loginDonut", {
+    legendOrient: "vertical", center: ["36%", "50%"], radius: ["48%", "70%"],
+    data: [
+      { name: "成功", value: cnt["成功"], color: C.cv("--ok") },
+      { name: "失败", value: cnt["失败"], color: C.cv("--warn") },
+      { name: "拒绝", value: cnt["拒绝"], color: C.cv("--danger") }
+    ]
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>自选股盯盘 · 股析 SA</title>
+<link rel="stylesheet" href="_shared/tokens.css">
+<link rel="stylesheet" href="_shared/tailwind.css">
+<link rel="stylesheet" href="_shared/components.css">
+<style>
+  .wl-row.dragging { opacity: .4; }
+  .wl-row.drop-target { box-shadow: inset 0 2px 0 var(--brand); }
+  .grip { cursor: grab; color: var(--text-3); font-size: 11px; letter-spacing: 1px; }
+</style>
+</head>
+<body data-page="watchlist">
+
+<div class="sa-app">
+  <div class="sa-brand">
+    <div class="sa-logo">SA</div>
+    <div class="sa-brand-text">
+      <div class="sa-brand-name">股析</div>
+      <div class="sa-brand-sub">Stock Analysis</div>
+    </div>
+  </div>
+  <header class="sa-topbar" id="saTop"></header>
+  <nav class="sa-sidenav" id="saNav"></nav>
+  <main class="sa-main">
+    <div class="sa-page">
+
+      <div class="sa-pagehead">
+        <div>
+          <h1>自选股盯盘</h1>
+          <div class="sub">14 只 · 4 个分组 · 拖动行可排序 · 顺序保存在本机</div>
+        </div>
+        <div class="sa-pagehead-actions">
+          <span class="row gap-2"><span class="dot dot-live"></span><span class="fs-12 t-2">实时推送中（3 秒）</span></span>
+          <button class="btn btn-outline btn-sm" id="btnCols" data-menu="menuCols">列设置 ▾</button>
+          <button class="btn btn-outline btn-sm" id="btnPause">暂停刷新</button>
+          <button class="btn btn-primary btn-sm" data-open="dlgAdd">+ 添加自选</button>
+        </div>
+      </div>
+
+      <!-- 大盘窄条 -->
+      <div class="statbar">
+        <span class="statbar-item"><span class="k">上证</span><span class="v t-up">3286.42 +0.45%</span></span>
+        <span class="statbar-item"><span class="k">深证</span><span class="v t-up">10412.35 +0.76%</span></span>
+        <span class="statbar-item"><span class="k">创业板</span><span class="v t-up">2148.66 +1.24%</span></span>
+        <span class="statbar-item"><span class="k">成交额</span><span class="v">10,982 亿</span></span>
+        <span class="statbar-item"><span class="k">北向</span><span class="v t-up">+42.6 亿</span></span>
+        <span class="statbar-item"><span class="k">涨跌家数</span><span class="v"><span class="t-up">3124</span> / <span class="t-down">1786</span></span></span>
+        <span class="statbar-item" style="margin-left:auto"><span class="row gap-2"><span class="dot dot-live"></span><span class="k">15:00 收盘 · 演示数据</span></span></span>
+      </div>
+
+      <!-- 分组 -->
+      <div class="row-between mt-4 wrap gap-3">
+        <div class="tabbar is-pill" id="groupTabs">
+          <div class="tab is-active" data-group="all">全部 <span class="mono fs-11 t-3">14</span></div>
+          <div class="tab" data-group="core">核心持仓 <span class="mono fs-11 t-3">4</span></div>
+          <div class="tab" data-group="watch">重点观察 <span class="mono fs-11 t-3">6</span></div>
+          <div class="tab" data-group="chain">产业链跟踪 <span class="mono fs-11 t-3">4</span></div>
+        </div>
+        <div class="row gap-2">
+          <select class="select input-sm" id="sortBy" style="width:150px">
+            <option value="custom">自定义顺序</option>
+            <option value="pct">按涨跌幅</option>
+            <option value="d5">按 5 日涨幅</option>
+            <option value="flow">按主力净流入</option>
+            <option value="cap">按市值</option>
+          </select>
+          <span class="tag tag-outline" id="wlCount">14 只</span>
+        </div>
+      </div>
+
+      <!-- 自选表 -->
+      <div class="card mt-3">
+        <div class="card-body is-flush">
+          <div class="tbl-wrap">
+            <table class="tbl is-comfort" id="wlTbl">
+              <thead>
+                <tr>
+                  <th style="width:28px"></th>
+                  <th style="width:36px"><input type="checkbox" id="chkAll"></th>
+                  <th class="is-sortable">名称 / 代码 <span class="sort-caret">▼</span></th>
+                  <th class="num is-sortable">现价 <span class="sort-caret">▼</span></th>
+                  <th class="num is-sortable">涨跌幅 <span class="sort-caret">▼</span></th>
+                  <th class="num is-sortable">5 日 <span class="sort-caret">▼</span></th>
+                  <th class="num is-sortable">20 日 <span class="sort-caret">▼</span></th>
+                  <th class="num">量比</th>
+                  <th class="num">换手率</th>
+                  <th class="num is-sortable">主力净流入 <span class="sort-caret">▼</span></th>
+                  <th>所属行业</th>
+                  <th style="width:96px">近 24 日</th>
+                  <th style="width:56px" class="num">提醒</th>
+                  <th class="col-actions" style="width:130px">操作</th>
+                </tr>
+              </thead>
+              <tbody id="wlBody"></tbody>
+            </table>
+          </div>
+          <div class="tbl-foot">
+            <span id="wlFoot">共 14 只 · 已选 0 只</span>
+            <div class="row gap-2" style="margin-left:auto">
+              <button class="btn btn-sm btn-ghost" id="btnBatchAlert">批量设提醒</button>
+              <button class="btn btn-sm btn-ghost" id="btnBatchGroup">批量分组</button>
+              <button class="btn btn-sm btn-danger" id="btnBatchDel">批量移除</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分组概览 -->
+      <div class="grid grid-4 mt-4" id="groupCards"></div>
+
+      <div class="grid grid-2 mt-4">
+        <div class="card">
+          <div class="card-head"><span class="card-title">自选股行业分布</span><span class="card-sub">按分组</span></div>
+          <div class="card-body"><div id="wlIndustry" class="chart chart-md"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">自选股资金流对比</span><span class="card-sub">今日主力净流入（亿元）</span></div>
+          <div class="card-body"><div id="wlFlow" class="chart chart-md"></div></div>
+        </div>
+      </div>
+
+      <div class="legend-block mt-4">
+        <b>说明</b>：自选股实时推送仅针对本列表（3 秒一次，SignalR），全市场数据为每日批量更新；
+        拖动行首的 ⣿ 手柄可调整顺序，顺序保存在本机；列设置可控制显示哪些列。
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- 列设置菜单 -->
+<div class="menu" id="menuCols">
+  <div class="menu-label">显示列</div>
+  <label class="menu-item"><input type="checkbox" checked data-col="5"> 5 日涨幅</label>
+  <label class="menu-item"><input type="checkbox" checked data-col="20"> 20 日涨幅</label>
+  <label class="menu-item"><input type="checkbox" checked data-col="vr"> 量比</label>
+  <label class="menu-item"><input type="checkbox" checked data-col="to"> 换手率</label>
+  <label class="menu-item"><input type="checkbox" checked data-col="mf"> 主力净流入</label>
+  <label class="menu-item"><input type="checkbox" checked data-col="ind"> 所属行业</label>
+  <label class="menu-item"><input type="checkbox" checked data-col="sp"> 近 24 日走势</label>
+</div>
+
+<!-- 添加自选 -->
+<div class="overlay" id="dlgAdd">
+  <div class="dialog">
+    <div class="dialog-head">
+      <h3>添加自选股</h3>
+      <button class="icon-btn" data-close="dlgAdd" style="margin-left:auto">✕</button>
+    </div>
+    <div class="dialog-body col gap-4">
+      <div class="field">
+        <label class="label">搜索股票</label>
+        <input class="input" id="addKw" placeholder="输入代码 / 名称 / 拼音首字母，如 300750、宁德时代、ndsd">
+      </div>
+      <div class="field">
+        <label class="label">加入分组</label>
+        <select class="select">
+          <option>核心持仓</option>
+          <option>重点观察</option>
+          <option>产业链跟踪</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="label">同时创建提醒</label>
+        <div class="col gap-2">
+          <label class="check"><input type="checkbox"> 涨跌幅超过 ±5% 时提醒</label>
+          <label class="check"><input type="checkbox"> 跌破 MA20 时提醒</label>
+        </div>
+      </div>
+      <div class="legend-block">原型说明：搜索为本地演示数据匹配，不请求服务端。</div>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-ghost" data-close="dlgAdd">取消</button>
+      <button class="btn btn-primary" data-close="dlgAdd" onclick="SA.toast('已加入自选股','ok')">加入自选</button>
+    </div>
+  </div>
+</div>
+
+<script src="_shared/vendor/echarts.min.js"></script>
+<script src="_shared/data.js"></script>
+<script src="_shared/charts.js"></script>
+<script src="_shared/app.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F, wl = D.watchlist;
+  var group = "all", sortBy = "custom";
+  var selected = {};
+  var ticker = null;
+
+  function rows() {
+    var list = wl.items.filter(function (i) { return group === "all" || i.group === group; });
+    list = list.slice();
+    if (sortBy === "pct") list.sort(function (a, b) { return b.pct - a.pct; });
+    if (sortBy === "d5") list.sort(function (a, b) { return b.d5 - a.d5; });
+    if (sortBy === "flow") list.sort(function (a, b) { return b.mainFlow - a.mainFlow; });
+    if (sortBy === "cap") list.sort(function (a, b) { return (D.stockByCode[b.code] || {}).cap - (D.stockByCode[a.code] || {}).cap; });
+    return list;
+  }
+
+  function render() {
+    var list = rows();
+    document.getElementById("wlCount").textContent = list.length + " 只";
+    document.getElementById("wlFoot").textContent = "共 " + list.length + " 只 · 已选 " + Object.keys(selected).length + " 只";
+
+    if (!list.length) {
+      document.getElementById("wlBody").innerHTML = '<tr><td colspan="14"><div class="empty">' +
+        '<div class="em-icon">◌</div><div class="fs-13">该分组暂无自选股</div>' +
+        '<div class="hint">从「股票搜索」页或点右上角「添加自选」加入</div></div></td></tr>';
+      return;
+    }
+
+    document.getElementById("wlBody").innerHTML = list.map(function (s) {
+      var cls = s.pct >= 0 ? "is-up" : "is-down";
+      var flowCls = s.mainFlow >= 0 ? "t-up" : "t-down";
+      return '<tr class="wl-row" draggable="true" data-code="' + s.code + '" data-chg="' + (s.pct >= 0 ? "up" : "down") + '">' +
+        '<td><span class="grip">⣿</span></td>' +
+        '<td><input type="checkbox" class="wlChk" data-code="' + s.code + '"' + (selected[s.code] ? " checked" : "") + "></td>" +
+        '<td class="is-clickable" data-href="stock.html?code=' + s.code + '">' +
+          '<span class="stock-cell"><span class="sc-name">' + s.name + "</span>" +
+          '<span class="sc-code">' + s.code + " · " + (s.group === "core" ? "核心持仓" : s.group === "watch" ? "重点观察" : "产业链跟踪") + "</span></span></td>" +
+        '<td class="num fw-600" style="color:var(--' + (s.pct >= 0 ? "up" : "down") + ')" data-live data-price="' + s.price + '">' + s.price.toFixed(2) + "</td>" +
+        '<td class="num"><span class="chg ' + cls + '" data-live-pct data-pct="' + s.pct + '">' + (s.pct >= 0 ? "+" : "") + s.pct.toFixed(2) + "%</span></td>" +
+        '<td class="num ' + (s.d5 >= 0 ? "t-up" : "t-down") + '">' + (s.d5 >= 0 ? "+" : "") + s.d5.toFixed(2) + "%</td>" +
+        '<td class="num ' + (s.d20 >= 0 ? "t-up" : "t-down") + '">' + (s.d20 >= 0 ? "+" : "") + s.d20.toFixed(2) + "%</td>" +
+        '<td class="num">' + s.volRatio.toFixed(2) + "</td>" +
+        '<td class="num">' + s.turnover.toFixed(2) + "%</td>" +
+        '<td class="num ' + flowCls + '">' + (s.mainFlow >= 0 ? "+" : "") + s.mainFlow.toFixed(2) + " 亿</td>" +
+        '<td><span class="tag tag-outline">' + s.industry + "</span></td>" +
+        '<td><div class="chart chart-xs" id="wlspark_' + s.code + '"></div></td>' +
+        '<td class="num">' + (s.alert
+          ? '<a class="icon-btn is-on" href="alerts.html" title="已设提醒">◔</a>'
+          : '<a class="icon-btn" href="alerts.html" title="未设提醒">◔</a>') + "</td>" +
+        '<td class="col-actions">' +
+          '<button class="btn btn-sm btn-ghost wlDel" data-code="' + s.code + '">移除</button> ' +
+          '<a class="btn btn-sm btn-ghost" href="stock.html?code=' + s.code + '">分析</a>' +
+        "</td></tr>";
+    }).join("");
+
+    list.forEach(function (s) { F.spark("#wlspark_" + s.code, s.spark, { up: s.pct >= 0 }); });
+
+    SA.qsa(".wlChk").forEach(function (c) {
+      c.addEventListener("change", function () {
+        var code = c.getAttribute("data-code");
+        if (c.checked) selected[code] = true; else delete selected[code];
+        document.getElementById("wlFoot").textContent = "共 " + list.length + " 只 · 已选 " + Object.keys(selected).length + " 只";
+      });
+    });
+    SA.qsa(".wlDel").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var code = b.getAttribute("data-code");
+        var s = D.stockByCode[code];
+        SA.toast("已从自选股移除：" + (s ? s.name : code), "info");
+      });
+    });
+    bindDrag();
+  }
+
+  function bindDrag() {
+    var dragEl = null;
+    SA.qsa(".wl-row").forEach(function (row) {
+      row.addEventListener("dragstart", function (e) {
+        dragEl = row; row.classList.add("dragging"); e.dataTransfer.effectAllowed = "move";
+      });
+      row.addEventListener("dragend", function () {
+        row.classList.remove("dragging");
+        SA.qsa(".wl-row").forEach(function (r) { r.classList.remove("drop-target"); });
+        dragEl = null;
+      });
+      row.addEventListener("dragover", function (e) {
+        if (!dragEl || dragEl === row) return;
+        e.preventDefault(); row.classList.add("drop-target");
+      });
+      row.addEventListener("dragleave", function () { row.classList.remove("drop-target"); });
+      row.addEventListener("drop", function (e) {
+        if (!dragEl || dragEl === row) return;
+        e.preventDefault(); row.classList.remove("drop-target");
+        var rect = row.getBoundingClientRect();
+        var after = e.clientY > rect.top + rect.height / 2;
+        row.parentNode.insertBefore(dragEl, after ? row.nextSibling : row);
+      });
+    });
+  }
+
+  /* 分组切换 */
+  SA.qsa("#groupTabs .tab").forEach(function (t) {
+    t.addEventListener("click", function () {
+      SA.qsa("#groupTabs .tab").forEach(function (o) { o.classList.toggle("is-active", o === t); });
+      group = t.getAttribute("data-group");
+      render();
+    });
+  });
+  document.getElementById("sortBy").addEventListener("change", function () {
+    sortBy = this.value;
+    if (sortBy !== "custom") SA.toast("已按" + this.options[this.selectedIndex].text + "排序", "info");
+    render();
+  });
+
+  document.getElementById("chkAll").addEventListener("change", function () {
+    var on = this.checked;
+    SA.qsa(".wlChk").forEach(function (c) {
+      c.checked = on;
+      var code = c.getAttribute("data-code");
+      if (on) selected[code] = true; else delete selected[code];
+    });
+    render();
+  });
+
+  document.getElementById("btnBatchDel").addEventListener("click", function () {
+    var n = Object.keys(selected).length;
+    if (!n) { SA.toast("请先勾选要移除的股票", "warn"); return; }
+    SA.toast("已移除 " + n + " 只自选股", "info");
+    selected = {}; render();
+  });
+  document.getElementById("btnBatchAlert").addEventListener("click", function () {
+    var n = Object.keys(selected).length;
+    if (!n) { SA.toast("请先勾选股票", "warn"); return; }
+    SA.toast("已为 " + n + " 只股票批量创建提醒规则", "ok");
+  });
+  document.getElementById("btnBatchGroup").addEventListener("click", function () {
+    var n = Object.keys(selected).length;
+    if (!n) { SA.toast("请先勾选股票", "warn"); return; }
+    SA.toast("已移动 " + n + " 只股票到「重点观察」分组", "ok");
+  });
+
+  /* 暂停刷新 */
+  document.getElementById("btnPause").addEventListener("click", function () {
+    if (ticker) {
+      clearInterval(ticker); ticker = null;
+      this.textContent = "恢复刷新";
+      this.classList.add("btn-warn");
+      SA.toast("已暂停实时刷新", "warn");
+    } else {
+      ticker = startTicker();
+      this.textContent = "暂停刷新";
+      this.classList.remove("btn-warn");
+      SA.toast("已恢复实时刷新（3 秒）", "ok");
+    }
+  });
+
+  function startTicker() {
+    return setInterval(function () {
+      SA.qsa("[data-live]").forEach(function (el) {
+        var base = parseFloat(el.getAttribute("data-price") || "0");
+        if (!base) return;
+        var drift = (Math.random() - 0.48) * base * 0.0016;
+        var next = base + drift;
+        el.setAttribute("data-price", next.toFixed(2));
+        el.textContent = next.toFixed(2);
+        el.classList.remove("flash-up", "flash-down");
+        void el.offsetWidth;
+        el.classList.add(drift >= 0 ? "flash-up" : "flash-down");
+        var pctEl = el.parentNode.querySelector("[data-live-pct]");
+        if (pctEl) {
+          var pb = parseFloat(pctEl.getAttribute("data-pct") || "0");
+          var np = pb + drift / base * 100;
+          pctEl.setAttribute("data-pct", np.toFixed(2));
+          pctEl.textContent = (np >= 0 ? "+" : "") + np.toFixed(2) + "%";
+          pctEl.className = "chg " + (np >= 0 ? "is-up" : "is-down");
+        }
+      });
+    }, 3000);
+  }
+  ticker = startTicker();
+
+  /* 分组概览卡片 */
+  var groupMeta = { core: "核心持仓", watch: "重点观察", chain: "产业链跟踪" };
+  document.getElementById("groupCards").innerHTML = Object.keys(groupMeta).map(function (g) {
+    var items = wl.items.filter(function (i) { return i.group === g; });
+    var avg = items.reduce(function (a, b) { return a + b.pct; }, 0) / items.length;
+    var flow = items.reduce(function (a, b) { return a + b.mainFlow; }, 0);
+    return '<div class="card"><div class="card-body is-tight">' +
+      '<div class="row-between"><span class="fs-13 fw-600">' + groupMeta[g] + "</span>" +
+      '<span class="mono fs-11 t-3">' + items.length + " 只</span></div>" +
+      '<div class="row-between mt-2"><span class="hint">平均涨跌幅</span>' +
+      '<span class="mono fs-14 fw-600 ' + (avg >= 0 ? "t-up" : "t-down") + '">' + (avg >= 0 ? "+" : "") + avg.toFixed(2) + "%</span></div>" +
+      '<div class="row-between"><span class="hint">合计主力净流入</span>' +
+      '<span class="mono fs-12 ' + (flow >= 0 ? "t-up" : "t-down") + '">' + (flow >= 0 ? "+" : "") + flow.toFixed(2) + " 亿</span></div>" +
+      '<div class="hint mt-2">' + items.map(function (i) { return i.name; }).join(" · ") + "</div>" +
+      "</div></div>";
+  }).join("");
+
+  /* 行业分布 */
+  var indMap = {};
+  wl.items.forEach(function (i) { indMap[i.industry] = (indMap[i.industry] || 0) + 1; });
+  F.donut("#wlIndustry", {
+    legendOrient: "vertical", center: ["34%", "52%"], radius: ["50%", "72%"],
+    data: Object.keys(indMap).map(function (k) { return { name: k, value: indMap[k] }; })
+  });
+
+  /* 资金流对比 */
+  F.hbar("#wlFlow", { data: wl.items.map(function (i) { return { name: i.name, pct: i.mainFlow }; }) });
+
+  /* 列设置 */
+  SA.qsa("#menuCols input[data-col]").forEach(function (c) {
+    c.addEventListener("change", function () {
+      SA.toast((c.checked ? "显示" : "隐藏") + "列：" + c.parentNode.textContent.trim(), "info");
+    });
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

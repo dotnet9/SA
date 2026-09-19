@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>自选股盯盘 · 股析 SA（移动端）</title>
+<link rel="stylesheet" href="../web/_shared/tokens.css">
+<link rel="stylesheet" href="../web/_shared/tailwind.css">
+<link rel="stylesheet" href="../web/_shared/components.css">
+<style>
+  .wl-row {
+    position: relative; overflow: hidden; background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .wl-inner {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; min-height: 60px;
+    background: var(--bg-panel); position: relative; z-index: 2;
+    transition: transform var(--t-base);
+  }
+  .wl-actions {
+    position: absolute; right: 0; top: 0; bottom: 0; z-index: 1;
+    display: flex;
+  }
+  .wl-actions > * {
+    width: 68px; display: grid; place-items: center; color: #fff; font-size: 12px;
+  }
+  .swipe-hint { font-size: 10px; color: var(--text-3); }
+</style>
+</head>
+<body data-page="watchlist" data-title="自选股盯盘" data-desc="双列指标卡 + 列表，实时刷新闪烁，左滑删除、长按拖拽排序。手机端用手势替代桌面端的列设置与批量操作。">
+<div id="appScreen">
+
+  <div class="m-topbar">
+    <span class="m-title">自选股盯盘</span>
+    <span class="row gap-2" style="margin-left:auto"><span class="dot dot-live"></span><span class="fs-11 t-2">实时 3s</span></span>
+    <button class="icon-btn" id="mPause">⏸</button>
+  </div>
+
+  <div class="m-page">
+
+    <!-- 大盘窄条 -->
+    <div class="statbar" style="margin-bottom:12px">
+      <span class="statbar-item"><span class="k">上证</span><span class="v t-up">3286.42 +0.45%</span></span>
+      <span class="statbar-item"><span class="k">创业板</span><span class="v t-up">2148.66 +1.24%</span></span>
+      <span class="statbar-item"><span class="k">北向</span><span class="v t-up">+42.6 亿</span></span>
+    </div>
+
+    <!-- 分组 -->
+    <div class="m-scroll-x" style="margin-bottom:10px" id="mGroups">
+      <span class="tag tag-lg tag-brand" data-g="all">全部 14</span>
+      <span class="tag tag-lg tag-outline" data-g="core">核心持仓 4</span>
+      <span class="tag tag-lg tag-outline" data-g="watch">重点观察 6</span>
+      <span class="tag tag-lg tag-outline" data-g="chain">产业链跟踪 4</span>
+    </div>
+
+    <!-- 概览卡 -->
+    <div class="m-kpi-row" style="grid-template-columns:repeat(3,1fr)">
+      <div class="kpi"><span class="kpi-label">平均涨跌幅</span><span class="kpi-value is-sm t-up">+3.42%</span></div>
+      <div class="kpi"><span class="kpi-label">合计主力净流入</span><span class="kpi-value is-sm t-up">+38.6 亿</span></div>
+      <div class="kpi"><span class="kpi-label">已设提醒</span><span class="kpi-value is-sm">5 只</span></div>
+    </div>
+
+    <!-- 列表 -->
+    <div class="m-section-title">
+      自选列表
+      <span class="swipe-hint" style="margin-left:auto">左滑删除 · 长按拖动排序</span>
+    </div>
+    <div class="m-card" style="padding:0;overflow:hidden" id="mList"></div>
+
+    <div class="legend-block mt-4">
+      <b>说明</b>：仅自选股享受 3 秒实时推送（SignalR），全市场数据为每日批量更新。
+      数字变动时用涨/跌软底色高亮 600ms，不做位移以免列表跳动。
+      演示数据，不构成投资建议。
+    </div>
+
+  </div>
+</div>
+
+<div id="appActions" class="m-actions" style="display:none">
+  <button class="btn btn-outline" id="mAddAlert">批量设提醒</button>
+  <button class="btn btn-primary" id="mAdd">+ 添加自选</button>
+</div>
+
+<script src="../web/_shared/vendor/echarts.min.js"></script>
+<script src="../web/_shared/data.js"></script>
+<script src="../web/_shared/charts.js"></script>
+<script src="../web/_shared/app.js"></script>
+<script src="../web/_shared/mock-frame.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, wl = D.watchlist;
+  var group = "all";
+  var ticker = null;
+
+  function rows() {
+    return wl.items.filter(function (i) { return group === "all" || i.group === group; });
+  }
+
+  function render() {
+    var list = rows();
+    document.getElementById("mList").innerHTML = list.map(function (s) {
+      var isUp = s.pct >= 0;
+      return '<div class="wl-row" draggable="true" data-code="' + s.code + '">' +
+        '<div class="wl-actions">' +
+          '<div style="background:var(--brand)" class="actAlert" data-code="' + s.code + '">提醒</div>' +
+          '<div style="background:var(--danger)" class="actDel" data-code="' + s.code + '">移除</div>' +
+        "</div>" +
+        '<div class="wl-inner">' +
+          '<div class="grow" data-href="stock.html?code=' + s.code + '" style="min-width:0">' +
+            '<div class="row gap-2"><span class="fs-13 fw-600">' + s.name + "</span>" +
+            (s.alert ? '<span class="tag tag-brand">提醒</span>' : "") + "</div>" +
+            '<div class="row gap-2"><span class="mono fs-10 t-3">' + s.code + "</span>" +
+            '<span class="hint">' + s.industry + "</span></div>" +
+          "</div>" +
+          '<div style="text-align:right;flex:0 0 auto;width:74px">' +
+            '<div class="mono fs-13 fw-600 ' + (isUp ? "t-up" : "t-down") + '" data-live data-price="' + s.price + '">' + s.price.toFixed(2) + "</div>" +
+            '<div class="mono fs-11 ' + (isUp ? "t-up" : "t-down") + '" data-live-pct data-pct="' + s.pct + '">' + (isUp ? "+" : "") + s.pct.toFixed(2) + "%</div>" +
+          "</div>" +
+          '<div style="text-align:right;flex:0 0 auto;width:62px">' +
+            '<div class="mono fs-11 ' + (s.mainFlow >= 0 ? "t-up" : "t-down") + '">' + (s.mainFlow >= 0 ? "+" : "") + s.mainFlow.toFixed(2) + "</div>" +
+            '<div class="fs-10 t-3">主力亿</div>' +
+          "</div>" +
+        "</div>" +
+        "</div>";
+    }).join("");
+
+    /* 左滑 */
+    SA.qsa(".wl-inner").forEach(function (inner) {
+      var sx = 0, dx = 0, dragging = false;
+      inner.addEventListener("touchstart", function (e) {
+        sx = e.touches[0].clientX; dx = 0; dragging = true;
+      }, { passive: true });
+      inner.addEventListener("touchmove", function (e) {
+        if (!dragging) return;
+        dx = e.touches[0].clientX - sx;
+        if (dx < 0 && dx > -140) inner.style.transform = "translateX(" + dx + "px)";
+      }, { passive: true });
+      inner.addEventListener("touchend", function () {
+        dragging = false;
+        inner.style.transform = dx < -60 ? "translateX(-136px)" : "";
+      });
+      /* 桌面端演示：点击行右侧空白也可展开 */
+      inner.addEventListener("dblclick", function () {
+        inner.style.transform = inner.style.transform ? "" : "translateX(-136px)";
+      });
+    });
+
+    SA.qsa(".actDel").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var s = D.stockByCode[b.getAttribute("data-code")];
+        SA.toast("已从自选移除：" + (s ? s.name : ""), "info");
+        b.closest(".wl-row").remove();
+      });
+    });
+    SA.qsa(".actAlert").forEach(function (b) {
+      b.addEventListener("click", function () {
+        SA.toast("已为该股票创建提醒规则", "ok");
+      });
+    });
+
+    bindDrag();
+  }
+
+  function bindDrag() {
+    var dragEl = null;
+    SA.qsa(".wl-row").forEach(function (row) {
+      row.addEventListener("dragstart", function () { dragEl = row; row.style.opacity = ".4"; });
+      row.addEventListener("dragend", function () {
+        row.style.opacity = "";
+        if (dragEl && dragEl.parentNode) {
+          var rowsArr = SA.qsa(".wl-row");
+          rowsArr.forEach(function (r, i) { r.setAttribute("data-order", i); });
+        }
+        dragEl = null;
+      });
+      row.addEventListener("dragover", function (e) { if (dragEl && dragEl !== row) e.preventDefault(); });
+      row.addEventListener("drop", function (e) {
+        if (!dragEl || dragEl === row) return;
+        e.preventDefault();
+        var rect = row.getBoundingClientRect();
+        var after = e.clientY > rect.top + rect.height / 2;
+        row.parentNode.insertBefore(dragEl, after ? row.nextSibling : row);
+      });
+    });
+  }
+
+  SA.qsa("#mGroups > *").forEach(function (t) {
+    t.addEventListener("click", function () {
+      SA.qsa("#mGroups > *").forEach(function (o) {
+        o.classList.toggle("tag-brand", o === t);
+        o.classList.toggle("tag-outline", o !== t);
+      });
+      group = t.getAttribute("data-g");
+      render();
+    });
+  });
+
+  function startTicker() {
+    return setInterval(function () {
+      SA.qsa("[data-live]").forEach(function (el) {
+        var base = parseFloat(el.getAttribute("data-price") || "0");
+        if (!base) return;
+        var drift = (Math.random() - 0.48) * base * 0.0018;
+        var next = base + drift;
+        el.setAttribute("data-price", next.toFixed(2));
+        el.textContent = next.toFixed(2);
+        el.classList.remove("flash-up", "flash-down");
+        void el.offsetWidth;
+        el.classList.add(drift >= 0 ? "flash-up" : "flash-down");
+        var pctEl = el.parentNode.querySelector("[data-live-pct]");
+        if (pctEl) {
+          var pb = parseFloat(pctEl.getAttribute("data-pct") || "0");
+          var np = pb + drift / base * 100;
+          pctEl.setAttribute("data-pct", np.toFixed(2));
+          pctEl.textContent = (np >= 0 ? "+" : "") + np.toFixed(2) + "%";
+          pctEl.className = "mono fs-11 " + (np >= 0 ? "t-up" : "t-down");
+        }
+      });
+    }, 3000);
+  }
+
+  document.getElementById("mPause").addEventListener("click", function () {
+    if (ticker) {
+      clearInterval(ticker); ticker = null;
+      this.textContent = "▶";
+      SA.toast("已暂停实时刷新", "warn");
+    } else {
+      ticker = startTicker();
+      this.textContent = "⏸";
+      SA.toast("已恢复实时刷新（3 秒）", "ok");
+    }
+  });
+
+  document.getElementById("mAdd").addEventListener("click", function () {
+    SA.toast("已打开发送搜索页，可搜索后加入自选", "info");
+    setTimeout(function () { window.location.href = "search.html"; }, 450);
+  });
+  document.getElementById("mAddAlert").addEventListener("click", function () {
+    SA.toast("已打开批量设提醒（见「提醒规则」页）", "info");
+  });
+
+  render();
+  ticker = startTicker();
+})();
+</script>
+</body>
+</html>

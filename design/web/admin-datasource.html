@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>数据源与采集监控 · 股析 SA</title>
+<link rel="stylesheet" href="_shared/tokens.css">
+<link rel="stylesheet" href="_shared/tailwind.css">
+<link rel="stylesheet" href="_shared/components.css">
+<style>
+  .src-card { border: 1px solid var(--border); border-radius: 12px; padding: 14px; background: var(--bg-panel); position: relative; overflow: hidden; }
+  .src-card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 1px; background: linear-gradient(90deg, var(--brand), transparent 70%); }
+  .src-card.is-warn::before { background: linear-gradient(90deg, var(--warn), transparent 70%); }
+  .src-card.is-err::before { background: linear-gradient(90deg, var(--danger), transparent 70%); }
+  .src-card.is-idle::before { background: linear-gradient(90deg, var(--neutral), transparent 70%); }
+  .log-box {
+    font-family: var(--font-num); font-size: 11px; line-height: 1.9;
+    background: var(--bg-sunken); border: 1px solid var(--border-soft); border-radius: 10px;
+    padding: 12px; max-height: 320px; overflow: auto;
+  }
+  .log-line { display: flex; gap: 10px; white-space: nowrap; }
+  .log-time { color: var(--text-3); flex: 0 0 auto; }
+  .log-lv { flex: 0 0 46px; }
+  .log-lv.INFO { color: var(--brand); }
+  .log-lv.WARN { color: var(--warn); }
+  .log-lv.ERROR { color: var(--danger); }
+</style>
+</head>
+<body data-page="admin-datasource">
+
+<div class="sa-app">
+  <div class="sa-brand">
+    <div class="sa-logo">SA</div>
+    <div class="sa-brand-text">
+      <div class="sa-brand-name">股析</div>
+      <div class="sa-brand-sub">Stock Analysis</div>
+    </div>
+  </div>
+  <header class="sa-topbar" id="saTop"></header>
+  <nav class="sa-sidenav" id="saNav"></nav>
+  <main class="sa-main">
+    <div class="sa-page is-wide">
+
+      <div class="sa-pagehead">
+        <div>
+          <div class="breadcrumb"><a href="market.html">市场概览</a><span class="sep">/</span><span>系统管理</span><span class="sep">/</span><span>数据源与采集监控</span></div>
+          <h1>数据源与采集监控</h1>
+          <div class="sub">6 个数据源 · 12 个采集任务 · 近 5 条失败记录 · 采集层为纯 C# 直连公开 HTTP 接口，不依赖 Python</div>
+        </div>
+        <div class="sa-pagehead-actions">
+          <span class="row gap-2"><span class="dot dot-live"></span><span class="fs-12 t-2">监控中（每 5 分钟探测）</span></span>
+          <button class="btn btn-outline btn-sm" id="btnProbe">立即探测全部数据源</button>
+          <button class="btn btn-primary btn-sm" id="btnRunAll">手动触发全部采集</button>
+        </div>
+      </div>
+
+      <div class="grid grid-5">
+        <div class="kpi"><span class="kpi-label">数据源</span><span class="kpi-value is-xl">6</span><span class="kpi-delta t-3">4 正常 · 1 延迟 · 1 空闲</span></div>
+        <div class="kpi"><span class="kpi-label">采集任务</span><span class="kpi-value is-xl">12</span><span class="kpi-delta t-3">11 成功 · 1 告警</span></div>
+        <div class="kpi"><span class="kpi-label">今日采集行数</span><span class="kpi-value is-xl">18.4 万</span><span class="kpi-delta t-3">含行情与财务</span></div>
+        <div class="kpi"><span class="kpi-label">今日失败</span><span class="kpi-value is-xl t-warn">5</span><span class="kpi-delta t-3">均已自动重试</span></div>
+        <div class="kpi"><span class="kpi-label">平均响应</span><span class="kpi-value is-xl">446<span class="fs-12 t-3">ms</span></span><span class="kpi-delta t-3">含限流退避</span></div>
+      </div>
+
+      <!-- 数据源卡片 -->
+      <div class="card mt-4">
+        <div class="card-head">
+          <span class="card-title">数据源状态</span>
+          <span class="card-sub">连通性 · 最近成功时间 · 响应延迟 · 失败次数 · 覆盖数据域</span>
+          <div class="card-tools">
+            <span class="tag tag-ok tag-dot">正常</span>
+            <span class="tag tag-warn tag-dot">延迟 / 限流</span>
+            <span class="tag tag-danger tag-dot">失败</span>
+            <span class="tag tag-dot">空闲</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="grid grid-3" id="srcGrid"></div>
+        </div>
+      </div>
+
+      <!-- 采集任务 -->
+      <div class="card mt-4">
+        <div class="card-head">
+          <span class="card-title">采集任务</span>
+          <span class="card-sub">调度周期 · 最近执行 · 耗时 · 状态 · 下次执行 · 写入行数</span>
+          <div class="card-tools">
+            <select class="select input-sm" id="fTaskStatus" style="width:120px">
+              <option value="all">全部状态</option>
+              <option value="ok">仅成功</option>
+              <option value="warn">仅告警</option>
+            </select>
+            <input class="input input-sm" id="fTaskKw" placeholder="搜索任务名" style="width:170px">
+          </div>
+        </div>
+        <div class="card-body is-flush">
+          <div class="tbl-wrap">
+            <table class="tbl is-comfort" id="taskTbl">
+              <thead>
+                <tr>
+                  <th style="width:210px">任务名</th>
+                  <th style="width:190px">调度周期</th>
+                  <th class="is-sortable" style="width:170px">最近执行 <span class="sort-caret">▼</span></th>
+                  <th class="num" style="width:90px">耗时</th>
+                  <th style="width:96px">状态</th>
+                  <th style="width:160px">下次执行</th>
+                  <th class="num" style="width:100px">写入行数</th>
+                  <th style="width:180px">数据源</th>
+                  <th class="col-actions" style="width:170px">操作</th>
+                </tr>
+              </thead>
+              <tbody id="taskBody"></tbody>
+            </table>
+          </div>
+          <div class="tbl-foot">
+            <span id="taskFoot">共 12 个任务</span>
+            <span class="hint" style="margin-left:auto">所有时间均为服务器本地时间（Asia/Shanghai）</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-2 mt-4">
+        <!-- 失败明细 -->
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">失败明细与重试</span>
+            <span class="card-sub">近 24 小时</span>
+            <div class="card-tools"><button class="btn btn-sm btn-outline" id="btnRetryAll">全部重试</button></div>
+          </div>
+          <div class="card-body is-flush">
+            <div class="tbl-wrap">
+              <table class="tbl is-comfort">
+                <thead><tr><th style="width:130px">时间</th><th style="width:150px">任务</th><th>错误</th><th style="width:150px">重试结果</th><th class="col-actions" style="width:80px">操作</th></tr></thead>
+                <tbody id="failBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 日志 -->
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">采集日志</span>
+            <span class="card-sub">实时滚动 · 最新 10 条</span>
+            <div class="card-tools">
+              <span class="segmented" id="logLevel">
+                <span class="is-active" data-v="all">全部</span>
+                <span data-v="INFO">INFO</span>
+                <span data-v="WARN">WARN</span>
+                <span data-v="ERROR">ERROR</span>
+              </span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="log-box" id="logBox"></div>
+            <div class="row gap-2 mt-3">
+              <button class="btn btn-sm btn-ghost" id="btnAutoScroll">暂停自动滚动</button>
+              <button class="btn btn-sm btn-ghost" id="btnClearLog">清空显示</button>
+              <span class="hint" style="margin-left:auto">日志保留 7 天，完整日志见服务器文件</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-2 mt-4">
+        <div class="card">
+          <div class="card-head"><span class="card-title">任务耗时分布</span><span class="card-sub">今日各任务耗时（秒）</span></div>
+          <div class="card-body"><div id="costChart" class="chart chart-lg"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">数据源成功率</span><span class="card-sub">近 7 日</span></div>
+          <div class="card-body"><div id="uptimeChart" class="chart chart-lg"></div></div>
+        </div>
+      </div>
+
+      <div class="legend-block mt-4">
+        <b>架构说明</b>：采集层是独立的 .NET 后台服务（HostedService + 定时调度），按数据域拆分为多个适配器
+        （行情 / 财务 / 资金流 / 龙虎榜与两融 / 公告 / 宏观），全部直连公开 HTTP 接口，不引入 Python 依赖。
+        采集结果写入 SQLite 元数据 + Parquet/DuckDB 时序文件；失败自动退避重试，连续失败会降级到备用数据源。
+        盘中行情快照与自选股推送走内存缓存 + SignalR，不落盘。
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="_shared/vendor/echarts.min.js"></script>
+<script src="_shared/data.js"></script>
+<script src="_shared/charts.js"></script>
+<script src="_shared/app.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F, ds = D.datasource;
+
+  var stMeta = {
+    ok: { cls: "", label: "正常", tag: "tag-ok" },
+    warn: { cls: "is-warn", label: "延迟", tag: "tag-warn" },
+    err: { cls: "is-err", label: "失败", tag: "tag-danger" },
+    idle: { cls: "is-idle", label: "空闲", tag: "tag" }
+  };
+
+  document.getElementById("srcGrid").innerHTML = ds.sources.map(function (s) {
+    var m = stMeta[s.status];
+    return '<div class="src-card ' + m.cls + '">' +
+      '<div class="row-between">' +
+        '<span class="fs-14 fw-600">' + s.name + "</span>" +
+        '<span class="tag ' + m.tag + ' tag-dot">' + m.label + "</span>" +
+      "</div>" +
+      '<div class="hint mt-1">' + s.type + "</div>" +
+      '<div class="grid grid-2 mt-3">' +
+        '<div><div class="hint">最近成功</div><div class="mono fs-12">' + s.lastOk + "</div></div>" +
+        '<div><div class="hint">平均响应</div><div class="mono fs-12 ' + (s.latency > 400 ? "t-warn" : "t-up") + '">' + s.latency + " ms</div></div>" +
+        '<div><div class="hint">近 7 日失败</div><div class="mono fs-12 ' + (s.fails > 0 ? "t-warn" : "") + '">' + s.fails + " 次</div></div>" +
+        '<div><div class="hint">可用率</div><div class="mono fs-12">' + s.uptime + "%</div></div>" +
+      "</div>" +
+      '<div class="row gap-1 mt-3 wrap">' + s.domains.map(function (d) { return '<span class="tag tag-outline">' + d + "</span>"; }).join("") + "</div>" +
+      '<div class="row gap-2 mt-3">' +
+        '<button class="btn btn-sm btn-outline srcProbe" data-name="' + s.name + '">探测</button>' +
+        '<button class="btn btn-sm btn-ghost srcRun" data-name="' + s.name + '">手动采集</button>' +
+      "</div>" +
+    "</div>";
+  }).join("");
+
+  SA.qsa(".srcProbe").forEach(function (b) {
+    b.addEventListener("click", function () { SA.toast("已探测「" + b.getAttribute("data-name") + "」：连通正常，响应 186ms", "ok"); });
+  });
+  SA.qsa(".srcRun").forEach(function (b) {
+    b.addEventListener("click", function () { SA.toast("已触发「" + b.getAttribute("data-name") + "」的手动采集任务", "ok"); });
+  });
+
+  /* 任务表 */
+  var taskFilter = { status: "all", kw: "" };
+  function renderTasks() {
+    var list = ds.tasks.filter(function (t) {
+      var okKw = !taskFilter.kw || t.name.indexOf(taskFilter.kw) >= 0;
+      return okKw && (taskFilter.status === "all" || t.status === taskFilter.status);
+    });
+    document.getElementById("taskFoot").textContent = "共 " + list.length + " 个任务（筛选后）";
+    document.getElementById("taskBody").innerHTML = list.map(function (t) {
+      var m = stMeta[t.status] || stMeta.ok;
+      var slow = parseFloat(t.cost) > 100;
+      return "<tr>" +
+        '<td class="fw-600">' + t.name + "</td>" +
+        '<td class="fs-11 t-2">' + t.cycle + "</td>" +
+        '<td class="mono fs-11 t-3">' + t.last + "</td>" +
+        '<td class="num ' + (slow ? "t-warn" : "") + '">' + t.cost + "</td>" +
+        '<td><span class="tag ' + m.tag + ' tag-dot">' + m.label + "</span></td>" +
+        '<td class="mono fs-11 t-3">' + t.next + "</td>" +
+        '<td class="num">' + t.rows + "</td>" +
+        '<td class="fs-11 t-2">' + t.source + "</td>" +
+        '<td class="col-actions">' +
+          '<button class="btn btn-sm btn-ghost tRun" data-name="' + t.name + '">执行</button> ' +
+          '<button class="btn btn-sm btn-ghost tPause" data-name="' + t.name + '">暂停</button> ' +
+          '<button class="btn btn-sm btn-ghost tLog" data-name="' + t.name + '">日志</button>' +
+        "</td></tr>";
+    }).join("");
+
+    SA.qsa(".tRun").forEach(function (b) {
+      b.addEventListener("click", function () { SA.toast("已手动触发任务：「" + b.getAttribute("data-name") + "」", "ok"); });
+    });
+    SA.qsa(".tPause").forEach(function (b) {
+      b.addEventListener("click", function () { SA.toast("已暂停任务：「" + b.getAttribute("data-name") + "」", "warn"); });
+    });
+    SA.qsa(".tLog").forEach(function (b) {
+      b.addEventListener("click", function () { SA.toast("筛选日志：任务「" + b.getAttribute("data-name") + "」", "info"); });
+    });
+  }
+  renderTasks();
+  document.getElementById("fTaskStatus").addEventListener("change", function () { taskFilter.status = this.value; renderTasks(); });
+  document.getElementById("fTaskKw").addEventListener("input", function () { taskFilter.kw = this.value.trim(); renderTasks(); });
+
+  /* 失败明细 */
+  document.getElementById("failBody").innerHTML = ds.failures.map(function (f) {
+    var tag = f.level === "err" ? "tag-danger" : "tag-warn";
+    return "<tr>" +
+      '<td class="mono fs-11 t-3">' + f.time + "</td>" +
+      '<td class="fs-12">' + f.task + "</td>" +
+      '<td><div class="fs-12 t-1">' + f.error + '</div><div class="hint">数据源：' + f.source + "</div></td>" +
+      '<td><span class="tag ' + tag + '">' + f.retry + "</span></td>" +
+      '<td class="col-actions"><button class="btn btn-sm btn-ghost failRetry">重试</button></td>' +
+      "</tr>";
+  }).join("");
+  SA.qsa(".failRetry").forEach(function (b) {
+    b.addEventListener("click", function () { SA.toast("已加入重试队列，将按退避策略执行", "ok"); });
+  });
+  document.getElementById("btnRetryAll").addEventListener("click", function () {
+    SA.toast("已把 5 条失败记录全部加入重试队列", "ok");
+  });
+
+  /* 日志 */
+  function renderLog(level) {
+    var list = ds.logs.filter(function (l) { return level === "all" || l.level === level; });
+    document.getElementById("logBox").innerHTML = list.map(function (l) {
+      return '<div class="log-line"><span class="log-time">' + l.time + "</span>" +
+        '<span class="log-lv ' + l.level + '">' + l.level + "</span>" +
+        "<span>" + l.msg + "</span></div>";
+    }).join("");
+  }
+  renderLog("all");
+  SA.qsa("#logLevel > *").forEach(function (el) {
+    el.addEventListener("click", function () {
+      SA.qsa("#logLevel > *").forEach(function (o) { o.classList.toggle("is-active", o === el); });
+      renderLog(el.getAttribute("data-v"));
+    });
+  });
+  document.getElementById("btnClearLog").addEventListener("click", function () {
+    document.getElementById("logBox").innerHTML = '<div class="hint">显示已清空（服务端日志仍保留）</div>';
+  });
+  document.getElementById("btnAutoScroll").addEventListener("click", function () {
+    var paused = this.textContent.indexOf("暂停") >= 0;
+    this.textContent = paused ? "恢复自动滚动" : "暂停自动滚动";
+    SA.toast(paused ? "已暂停自动滚动" : "已恢复自动滚动", "info");
+  });
+
+  document.getElementById("btnProbe").addEventListener("click", function () {
+    SA.toast("已探测 6 个数据源：5 正常，腾讯财经响应偏慢（486ms）", "warn");
+  });
+  document.getElementById("btnRunAll").addEventListener("click", function () {
+    SA.toast("已触发 12 个采集任务，预计 6 分钟内完成", "ok");
+  });
+
+  /* 图表 */
+  F.hbar("#costChart", {
+    data: ds.tasks.map(function (t) { return { name: t.name, pct: parseFloat(t.cost) }; }).sort(function (a, b) { return b.pct - a.pct; }).slice(0, 10)
+  });
+
+  F.combo("#uptimeChart", {
+    labels: ds.sources.map(function (s) { return s.name; }),
+    unit: "%",
+    bars: [{ name: "近 7 日可用率", data: ds.sources.map(function (s) { return s.uptime; }) }],
+    lines: [{ name: "平均响应（10ms）", data: ds.sources.map(function (s) { return s.latency / 10; }), axis: 2, color: C.cv("--chart-4") }],
+    unit2: "×10ms",
+    rotate: 20
+  });
+})();
+</script>
+</body>
+</html>

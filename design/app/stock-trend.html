@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>趋势与价格结构 · 股析 SA（移动端）</title>
+<link rel="stylesheet" href="../web/_shared/tokens.css">
+<link rel="stylesheet" href="../web/_shared/tailwind.css">
+<link rel="stylesheet" href="../web/_shared/components.css">
+<style>
+  .m-topbar { position: sticky; }
+  .orient-tip {
+    border-left: 3px solid var(--brand); background: var(--brand-soft);
+    padding: 10px 12px; border-radius: 0 10px 10px 0; font-size: 12px; line-height: 1.7;
+  }
+</style>
+</head>
+<body data-page="stock-trend" data-title="趋势与价格结构" data-desc="K 线全宽 + 手势提示、指标切换走底部抽屉、横屏提示。手机端优先保证 K 线的可读性与触摸精度。">
+<div id="appScreen">
+  <div class="m-topbar">
+    <a class="icon-btn" href="stock.html">←</a>
+    <span class="m-title">趋势与价格结构</span>
+    <span class="mono fs-11 t-3" style="margin-left:auto">300750 · 268.42 <span class="t-up">+4.86%</span></span>
+  </div>
+
+  <div class="m-page">
+
+    <div class="orient-tip">
+      <b>手势提示</b>：单指左右拖动平移 · 双指捏合缩放 · 长按显示十字光标数据。
+      建议横屏查看以获得更大图表区域。
+    </div>
+
+    <!-- 周期与复权 -->
+    <div class="row-between mt-3">
+      <span class="segmented">
+        <span class="is-active">日 K</span><span>周 K</span><span>月 K</span>
+      </span>
+      <span class="segmented">
+        <span class="is-active">前复权</span><span>后复权</span><span>不复权</span>
+      </span>
+    </div>
+
+    <!-- K 线 -->
+    <div class="m-card mt-3" style="padding:8px 4px">
+      <div id="mKline" class="chart" style="height:300px"></div>
+    </div>
+
+    <!-- 指标开关 -->
+    <div class="row gap-2 mt-3 wrap">
+      <span class="tag tag-lg tag-brand" id="tgMA">MA5/10/20/60</span>
+      <span class="tag tag-lg tag-outline" id="tgVol">成交量</span>
+      <span class="tag tag-lg tag-outline" id="tgMacd">MACD</span>
+      <span class="tag tag-lg tag-outline" id="tgKdj">KDJ</span>
+      <span class="tag tag-lg tag-outline" id="tgMore">更多指标…</span>
+    </div>
+
+    <!-- 趋势判定 -->
+    <div class="m-section-title">趋势判定</div>
+    <div class="m-card">
+      <div class="m-kpi-row" style="grid-template-columns:repeat(2,1fr)">
+        <div class="kpi"><span class="kpi-label">短期（5 日）</span><span class="kpi-value is-sm t-up">多头 +9.86%</span></div>
+        <div class="kpi"><span class="kpi-label">中期（20 日）</span><span class="kpi-value is-sm t-up">多头 +22.40%</span></div>
+        <div class="kpi"><span class="kpi-label">长期（120 日）</span><span class="kpi-value is-sm t-up">多头 +38.62%</span></div>
+        <div class="kpi"><span class="kpi-label">量能</span><span class="kpi-value is-sm t-up">温和放量</span></div>
+        <div class="kpi"><span class="kpi-label">MACD</span><span class="kpi-value is-sm t-up">金叉 09-16</span></div>
+        <div class="kpi"><span class="kpi-label">KDJ</span><span class="kpi-value is-sm t-warn">超买 J=96</span></div>
+      </div>
+      <div class="chart-note">判定逻辑：MA5 / MA20 / MA120 与价格关系 + 量比 + MACD 交叉 + KDJ 位置。</div>
+    </div>
+
+    <!-- 相对强弱 -->
+    <div class="m-section-title">相对沪深300 强弱</div>
+    <div class="m-card">
+      <div id="mRel" class="chart chart-md"></div>
+      <div class="chart-note">近 60 日累计跑赢沪深300 <b class="t-up">+21.2%</b>，行业内部排名 1 / 86。</div>
+    </div>
+
+    <!-- 价格位置 -->
+    <div class="m-section-title">价格结构定位</div>
+    <div class="m-card">
+      <div class="row-between"><span class="fs-12 t-2">近 3 年价格分位</span><span class="mono fs-14 fw-600">72%</span></div>
+      <div class="tempbar mt-3"><span class="marker" style="left:72%"></span></div>
+      <div class="tempbar-legend"><span>168.2</span><span>214.6</span><span>296.4</span></div>
+      <div class="col gap-2 mt-3">
+        <div class="row-between"><span class="fs-12 t-2">距 52 周高点</span><span class="mono fs-12 t-down">-9.44%</span></div>
+        <div class="row-between"><span class="fs-12 t-2">距 52 周低点</span><span class="mono fs-12 t-up">+59.57%</span></div>
+        <div class="row-between"><span class="fs-12 t-2">站上 MA20</span><span class="mono fs-12 t-up">+12.6%</span></div>
+        <div class="row-between"><span class="fs-12 t-2">站上年线 MA250</span><span class="mono fs-12 t-up">+18.4%</span></div>
+      </div>
+      <div class="row gap-2 mt-3 wrap">
+        <span class="tag tag-up">均线多头排列</span>
+        <span class="tag tag-up">放量突破年线</span>
+        <span class="tag tag-warn">RSI 72 偏高</span>
+      </div>
+    </div>
+
+    <!-- 关键价位 -->
+    <div class="m-section-title">关键价位</div>
+    <div class="m-card">
+      <table class="tbl">
+        <tbody>
+          <tr><td class="t-2">前高压力</td><td class="num t-down">296.40</td></tr>
+          <tr><td class="t-2">箱体上沿</td><td class="num t-down">271.24</td></tr>
+          <tr class="is-selected"><td class="fw-600">现价</td><td class="num fw-600 t-up">268.42</td></tr>
+          <tr><td class="t-2">MA20 支撑</td><td class="num t-up">238.40</td></tr>
+          <tr><td class="t-2">年线支撑</td><td class="num t-up">226.70</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="legend-block mt-4">
+      <b>数据口径</b>：前复权日线，东方财富公开接口，交易日 15:30 入库；指标由本地计算；
+      共 240 个交易日，展示最近 120 日。演示数据，不构成投资建议。
+    </div>
+
+  </div>
+</div>
+
+<!-- 指标抽屉 -->
+<div class="sheet" id="sheetInd">
+  <div class="sheet-grip"></div>
+  <div class="row-between" style="margin-bottom:12px">
+    <span class="fs-14 fw-600">选择叠加指标</span>
+    <button class="icon-btn" data-close="sheetInd">✕</button>
+  </div>
+  <div class="col gap-2">
+    <label class="check tap-44"><input type="checkbox" checked> 均线 MA5 / MA10 / MA20 / MA60</label>
+    <label class="check tap-44"><input type="checkbox" checked> 成交量</label>
+    <label class="check tap-44"><input type="checkbox" checked> MACD（12, 26, 9）</label>
+    <label class="check tap-44"><input type="checkbox"> KDJ（9, 3, 3）</label>
+    <label class="check tap-44"><input type="checkbox"> BOLL（20, 2）</label>
+    <label class="check tap-44"><input type="checkbox"> RSI（6, 12, 24）</label>
+    <button class="btn btn-primary btn-block mt-3" data-close="sheetInd">应用</button>
+  </div>
+</div>
+
+<script src="../web/_shared/vendor/echarts.min.js"></script>
+<script src="../web/_shared/data.js"></script>
+<script src="../web/_shared/charts.js"></script>
+<script src="../web/_shared/app.js"></script>
+<script src="../web/_shared/mock-frame.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F;
+  var opts = { ma: [5, 10, 20, 60], volume: true, macd: true, kdj: false, zoomStart: 40 };
+
+  function draw() {
+    document.getElementById("mKline").innerHTML = "";
+    F.kline("#mKline", D.focusKline.slice(-90), opts);
+    C.rebuildAll();
+  }
+  draw();
+
+  document.getElementById("tgMore").addEventListener("click", function () {
+    SA.openDrawer("sheetInd");
+  });
+  document.getElementById("tgVol").addEventListener("click", function () {
+    opts.volume = !opts.volume;
+    this.classList.toggle("tag-outline", !opts.volume);
+    this.classList.toggle("tag-brand", opts.volume);
+    draw();
+  });
+  document.getElementById("tgMacd").addEventListener("click", function () {
+    opts.macd = !opts.macd; opts.kdj = false;
+    this.classList.toggle("tag-outline", !opts.macd);
+    this.classList.toggle("tag-brand", opts.macd);
+    document.getElementById("tgKdj").classList.add("tag-outline");
+    document.getElementById("tgKdj").classList.remove("tag-brand");
+    draw();
+  });
+  document.getElementById("tgKdj").addEventListener("click", function () {
+    opts.kdj = !opts.kdj; opts.macd = false;
+    this.classList.toggle("tag-outline", !opts.kdj);
+    this.classList.toggle("tag-brand", opts.kdj);
+    document.getElementById("tgMacd").classList.add("tag-outline");
+    document.getElementById("tgMacd").classList.remove("tag-brand");
+    draw();
+  });
+  document.getElementById("tgMA").addEventListener("click", function () {
+    opts.ma = opts.ma.length ? [] : [5, 10, 20, 60];
+    this.classList.toggle("tag-outline", !opts.ma.length);
+    this.classList.toggle("tag-brand", !!opts.ma.length);
+    draw();
+  });
+
+  /* 相对强弱 */
+  var rel = D.focusKline.slice(-60).map(function (b, i) { return +((i / 60 * 21.2) + Math.sin(i / 4) * 1.6).toFixed(2); });
+  F.area("#mRel", { labels: D.focusKline.slice(-60).map(function (b) { return b.d.slice(5); }), data: rel, unit: "%" });
+})();
+</script>
+</body>
+</html>

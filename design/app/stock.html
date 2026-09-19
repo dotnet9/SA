@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>个股总览 · 股析 SA（移动端）</title>
+<link rel="stylesheet" href="../web/_shared/tokens.css">
+<link rel="stylesheet" href="../web/_shared/tailwind.css">
+<link rel="stylesheet" href="../web/_shared/components.css">
+<style>
+  .sticky-quote {
+    position: sticky; top: 0; z-index: 15;
+    background: var(--bg-glass);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+  }
+  .mod-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .mod-tile {
+    border: 1px solid var(--border); border-radius: 12px; padding: 10px;
+    background: var(--bg-panel); min-height: 76px;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .mod-tile .mt-name { font-size: 12px; font-weight: 600; line-height: 1.4; }
+  .mod-tile .mt-val { font-family: var(--font-num); font-size: 13px; font-weight: 600; }
+  .mod-ico { font-size: 14px; color: var(--brand); }
+</style>
+</head>
+<body data-page="stock" data-title="个股总览" data-desc="顶部吸顶行情条（滚动后收起为小条）、8 模块入口九宫格 + 卡片流、底部固定「加自选 / 设提醒」双按钮。">
+<div id="appScreen">
+
+  <!-- 吸顶行情条 -->
+  <div class="sticky-quote">
+    <div class="row-between">
+      <div class="row gap-2">
+        <span class="fs-14 fw-700">宁德时代</span>
+        <span class="mono fs-10 t-3">300750</span>
+        <span class="tag tag-outline">创业板</span>
+      </div>
+      <span class="icon-btn">☆</span>
+    </div>
+    <div class="row gap-3 mt-1" style="margin-top:4px">
+      <span class="mono fs-22 fw-700 t-up" data-price="268.42" id="mLive">268.42</span>
+      <span class="col">
+        <span class="mono fs-12 t-up">+12.46</span>
+        <span class="mono fs-12 t-up">+4.86%</span>
+      </span>
+      <span class="hint" style="margin-left:auto;text-align:right;line-height:1.6">
+        高 <span class="t-up">271.24</span> · 低 <span class="t-down">255.62</span><br>
+        额 186.4 亿 · 换手 1.42%
+      </span>
+    </div>
+  </div>
+
+  <div class="m-page">
+
+    <!-- 关键指标 -->
+    <div class="m-kpi-row" style="grid-template-columns:repeat(3,1fr)">
+      <div class="kpi"><span class="kpi-label">量比</span><span class="kpi-value is-sm">1.86</span></div>
+      <div class="kpi"><span class="kpi-label">总市值</span><span class="kpi-value is-sm">11,820 亿</span></div>
+      <div class="kpi"><span class="kpi-label">PE(TTM)</span><span class="kpi-value is-sm">24.8</span></div>
+      <div class="kpi"><span class="kpi-label">PB</span><span class="kpi-value is-sm">4.62</span></div>
+      <div class="kpi"><span class="kpi-label">股息率</span><span class="kpi-value is-sm">1.24%</span></div>
+      <div class="kpi"><span class="kpi-label">主力净流入</span><span class="kpi-value is-sm t-up">+18.62 亿</span></div>
+    </div>
+
+    <!-- 模块九宫格 -->
+    <div class="m-section-title">分析矩阵 · 8 个模块</div>
+    <div class="mod-grid" id="modGrid"></div>
+
+    <!-- 分析结论摘要 -->
+    <div class="m-section-title">分析结论摘要 <span class="tag tag-up" style="margin-left:auto">偏多</span></div>
+    <div class="m-card">
+      <div class="col gap-2">
+        <div class="row-between"><span class="fs-12 t-2">趋势</span><span class="tag tag-up">多头排列 · 放量突破</span></div>
+        <div class="row-between"><span class="fs-12 t-2">盈利</span><span class="tag tag-up">毛利率连续 3 季回升</span></div>
+        <div class="row-between"><span class="fs-12 t-2">资金</span><span class="tag tag-up">主力连续净流入</span></div>
+        <div class="row-between"><span class="fs-12 t-2">估值</span><span class="tag tag-brand">PE 分位 38%</span></div>
+        <div class="row-between"><span class="fs-12 t-2">风险</span><span class="tag tag-warn">价格战 + 原材料</span></div>
+        <div class="row-between"><span class="fs-12 t-2">机构</span><span class="tag tag-up">目标价 +19.2%</span></div>
+      </div>
+      <div class="chart-note">规则引擎按各模块指标自动生成，不构成投资建议。</div>
+    </div>
+
+    <!-- 相关事件 -->
+    <div class="m-section-title">
+      相关事件
+      <a class="fs-11 t-brand" style="margin-left:auto" href="stock-events.html">全部 →</a>
+    </div>
+    <div class="m-card">
+      <div class="timeline">
+        <div class="tl-item is-up"><span class="tl-dot"></span>
+          <div class="tl-head"><span class="tl-time">09-18</span><span class="tag tag-up">利好 88</span></div>
+          <div class="tl-body">三季度业绩预告：净利润同比预增 32%–45%</div>
+        </div>
+        <div class="tl-item is-brand"><span class="tl-dot"></span>
+          <div class="tl-head"><span class="tl-time">09-18</span><span class="tag tag-up">利好 82</span></div>
+          <div class="tl-body">固态电池产业化路线图征求意见稿发布</div>
+        </div>
+        <div class="tl-item is-down"><span class="tl-dot"></span>
+          <div class="tl-head"><span class="tl-time">09-04</span><span class="tag tag-down">利空 52</span></div>
+          <div class="tl-body">二线厂商报价下调 8%，价格竞争加剧</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 走势缩略 -->
+    <div class="m-section-title">近 60 日走势</div>
+    <div class="m-card">
+      <div id="mTrend" class="chart chart-md"></div>
+      <a class="btn btn-outline btn-block mt-3" href="stock-trend.html">进入趋势与价格结构 →</a>
+    </div>
+
+    <div class="legend-block mt-4">
+      演示数据 · 非实时 · 不构成投资建议<br>
+      行情：东方财富 + 新浪，交易日 15:00 快照；本页数字每 3 秒模拟刷新一次。
+    </div>
+
+  </div>
+</div>
+
+<div id="appActions" class="m-actions" style="display:none">
+  <button class="btn btn-outline" id="mAlert">设提醒</button>
+  <button class="btn btn-primary" id="mWatch">+ 加自选</button>
+</div>
+
+<script src="../web/_shared/vendor/echarts.min.js"></script>
+<script src="../web/_shared/data.js"></script>
+<script src="../web/_shared/charts.js"></script>
+<script src="../web/_shared/app.js"></script>
+<script src="../web/_shared/mock-frame.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F;
+
+  /* 八模块九宫格 */
+  var mods = [
+    { name: "趋势与价格", icon: "◪", href: "stock-trend.html", val: "+22.40%", cls: "t-up", sub: "20 日" },
+    { name: "盈利与财务", icon: "▤", href: "stock-finance.html", val: "4,268.6", cls: "", sub: "营收亿" },
+    { name: "投资与股权", icon: "⛓", href: "stock-equity.html", val: "6 子公司", cls: "", sub: "质押 2.4%" },
+    { name: "资金与筹码", icon: "◐", href: "stock-capital.html", val: "+18.62", cls: "t-up", sub: "主力亿" },
+    { name: "行业与同业", icon: "◫", href: "stock-industry.html", val: "36.8%", cls: "t-up", sub: "全球市占" },
+    { name: "事件与影响", icon: "◈", href: "stock-events.html", val: "4 拓扑", cls: "", sub: "21 事件" },
+    { name: "风险与舆情", icon: "⚠", href: "stock-risk.html", val: "4 / 5", cls: "t-danger", sub: "最高等级" },
+    { name: "机构评级", icon: "◎", href: "stock-rating.html", val: "320.0", cls: "t-up", sub: "目标价" }
+  ];
+  document.getElementById("modGrid").innerHTML = mods.map(function (m) {
+    return '<a class="mod-tile" href="' + m.href + '">' +
+      '<div class="row-between"><span class="mod-ico">' + m.icon + "</span>" +
+      '<span class="mono fs-10 t-3">' + m.sub + "</span></div>" +
+      '<div class="mt-name">' + m.name + "</div>" +
+      '<div class="mt-val ' + m.cls + '">' + m.val + "</div>" +
+      "</a>";
+  }).join("");
+
+  /* 趋势缩略 */
+  F.area("#mTrend", {
+    labels: D.focusKline.slice(-60).map(function (b) { return b.d.slice(5); }),
+    data: D.focusKline.slice(-60).map(function (b) { return b.c; }),
+    unit: "元"
+  });
+
+  document.getElementById("mWatch").addEventListener("click", function () {
+    this.textContent = "已加入自选";
+    this.classList.remove("btn-primary");
+    this.classList.add("btn-outline");
+    SA.toast("已加入自选股：宁德时代 300750", "ok");
+  });
+  document.getElementById("mAlert").addEventListener("click", function () {
+    SA.toast("已打开发送提醒设置（见「提醒规则」页）", "info");
+    setTimeout(function () { window.location.href = "alerts.html"; }, 500);
+  });
+
+  SA.startLiveTicker("#mLive", { interval: 3000 });
+})();
+</script>
+</body>
+</html>

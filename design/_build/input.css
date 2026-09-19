@@ -1,0 +1,36 @@
+/* ============================================================
+   SA · 股析 — Tailwind v4 输入文件（仅生成布局工具类）
+   视觉定义全部在 tokens.css / components.css，本文件只映射令牌，
+   产物 tailwind.css 只做栅格与间距微调的补充。
+   生成命令见 design/README.md。
+   ============================================================ */
+@import "tailwindcss";
+
+@source "../web/**/*.html";
+@source "../app/**/*.html";
+
+@theme {
+  --color-bg-root: var(--bg-root);
+  --color-bg-panel: var(--bg-panel);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-sunken: var(--bg-sunken);
+  --color-border-base: var(--border);
+  --color-border-soft: var(--border-soft);
+  --color-text-1: var(--text-1);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-brand: var(--brand);
+  --color-accent: var(--accent);
+  --color-up: var(--up);
+  --color-down: var(--down);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --color-ok: var(--ok);
+
+  --font-ui: var(--font-ui);
+  --font-num: var(--font-num);
+
+  --radius-btn: var(--r-btn);
+  --radius-card: var(--r-card);
+  --radius-dialog: var(--r-dialog);
+}

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>趋势与价格结构 · 宁德时代 300750 · 股析 SA</title>
+<link rel="stylesheet" href="_shared/tokens.css">
+<link rel="stylesheet" href="_shared/tailwind.css">
+<link rel="stylesheet" href="_shared/components.css">
+<style>
+  .trend-toolbar { position: sticky; top: 0; z-index: 20; background: var(--bg-root); padding: 10px 0; }
+  .legend-inline { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--text-2); }
+  .legend-inline .li { display: flex; align-items: center; gap: 5px; }
+  .legend-inline .sw { width: 10px; height: 3px; border-radius: 2px; }
+</style>
+</head>
+<body data-page="stock-trend">
+
+<div class="sa-app">
+  <div class="sa-brand">
+    <div class="sa-logo">SA</div>
+    <div class="sa-brand-text">
+      <div class="sa-brand-name">股析</div>
+      <div class="sa-brand-sub">Stock Analysis</div>
+    </div>
+  </div>
+  <header class="sa-topbar" id="saTop"></header>
+  <nav class="sa-sidenav" id="saNav"></nav>
+  <main class="sa-main">
+    <div class="sa-page">
+
+      <div class="breadcrumb">
+        <a href="market.html">市场概览</a><span class="sep">/</span>
+        <a href="stock.html">宁德时代 300750</a><span class="sep">/</span>
+        <span>趋势与价格结构</span>
+      </div>
+
+      <div id="quoteStrip"></div>
+
+      <div class="trend-toolbar mt-4">
+        <div class="tabbar is-pill" id="modTabs"></div>
+      </div>
+
+      <div class="sa-split">
+        <div class="col gap-4">
+
+          <!-- 工具栏 + 主图 -->
+          <div class="card is-accent">
+            <div class="card-head">
+              <span class="card-title">K 线 · 均线 · 成交量 · MACD</span>
+              <span class="card-sub">十字光标联动 · 滚轮缩放 · 拖动平移</span>
+              <div class="card-tools">
+                <span class="segmented" id="segPeriod">
+                  <span class="is-active" data-v="day">日 K</span>
+                  <span data-v="week">周 K</span>
+                  <span data-v="month">月 K</span>
+                </span>
+                <span class="segmented" id="segAdj">
+                  <span class="is-active" data-v="qfq">前复权</span>
+                  <span data-v="hfq">后复权</span>
+                  <span data-v="none">不复权</span>
+                </span>
+                <button class="btn btn-sm btn-ghost" id="btnExport">导出</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="chart-toolbar">
+                <span class="label" style="width:auto">指标叠加</span>
+                <label class="check"><input type="checkbox" id="ckMA" checked> 均线 MA5/10/20/60</label>
+                <label class="check"><input type="checkbox" id="ckVol" checked> 成交量</label>
+                <label class="check"><input type="checkbox" id="ckMacd" checked> MACD</label>
+                <label class="check"><input type="checkbox" id="ckKdj"> KDJ</label>
+                <span class="hint" style="margin-left:auto">演示数据 · 非实时</span>
+              </div>
+              <div id="mainKline" class="chart chart-2xl"></div>
+              <div class="legend-inline mt-3">
+                <span class="li"><span class="sw" style="background:var(--chart-1)"></span>MA5</span>
+                <span class="li"><span class="sw" style="background:var(--chart-2)"></span>MA10</span>
+                <span class="li"><span class="sw" style="background:var(--chart-3)"></span>MA20</span>
+                <span class="li"><span class="sw" style="background:var(--chart-4)"></span>MA60</span>
+                <span class="li"><span class="sw" style="background:var(--up)"></span>阳线 / 涨</span>
+                <span class="li"><span class="sw" style="background:var(--down)"></span>阴线 / 跌</span>
+                <span class="hint" style="margin-left:auto">前复权 · 共 240 个交易日 · 展示最近 120 日</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 相对强弱 -->
+          <div class="grid grid-2">
+            <div class="card">
+              <div class="card-head">
+                <span class="card-title">相对沪深300 强弱</span>
+                <span class="card-sub">累计超额收益（%）</span>
+                <div class="card-tools">
+                  <span class="segmented"><span>近 20 日</span><span class="is-active">近 60 日</span><span>近 120 日</span></span>
+                </div>
+              </div>
+              <div class="card-body">
+                <div id="relStrength" class="chart chart-md"></div>
+                <div class="legend-block mt-3">
+                  近 60 日累计跑赢沪深300 <b class="t-up">+21.2%</b>；近 20 日跑赢 <b class="t-up">+14.8%</b>，
+                  趋势强于大盘。行业内部排名 <b>1 / 86</b>。
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><span class="card-title">价格结构定位</span><span class="card-sub">当前价所处位置</span></div>
+              <div class="card-body col gap-4">
+                <div>
+                  <div class="row-between"><span class="fs-12 t-2">近 3 年价格分位</span><span class="mono fs-14 fw-600">72%</span></div>
+                  <div class="tempbar mt-3"><span class="marker" style="left:72%"></span></div>
+                  <div class="tempbar-legend"><span>168.2（最低）</span><span>214.6（50%）</span><span>296.4（最高）</span></div>
+                </div>
+                <div class="grid grid-2">
+                  <div class="kpi"><span class="kpi-label">距 52 周高点</span><span class="kpi-value is-sm t-down">-9.44%</span><span class="kpi-delta t-3">296.40</span></div>
+                  <div class="kpi"><span class="kpi-label">距 52 周低点</span><span class="kpi-value is-sm t-up">+59.57%</span><span class="kpi-delta t-3">168.20</span></div>
+                  <div class="kpi"><span class="kpi-label">站上 MA20</span><span class="kpi-value is-sm t-up">+12.6%</span><span class="kpi-delta t-3">MA20 = 238.4</span></div>
+                  <div class="kpi"><span class="kpi-label">站上年线 MA250</span><span class="kpi-value is-sm t-up">+18.4%</span><span class="kpi-delta t-3">MA250 = 226.7</span></div>
+                </div>
+                <div class="row gap-2 wrap">
+                  <span class="tag tag-up tag-lg">均线多头排列</span>
+                  <span class="tag tag-up tag-lg">放量突破年线</span>
+                  <span class="tag tag-outline tag-lg">箱体上沿 271.2</span>
+                  <span class="tag tag-outline tag-lg">箱体下沿 238.4</span>
+                  <span class="tag tag-warn tag-lg">RSI 72 偏高</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 趋势判定 -->
+          <div class="card">
+            <div class="card-head"><span class="card-title">趋势判定摘要</span><span class="card-sub">规则引擎按均线 / 量能 / 指标自动生成</span></div>
+            <div class="card-body">
+              <div class="grid grid-4">
+                <div class="kpi"><span class="kpi-label">短期（5 日）</span><span class="kpi-value is-sm t-up">多头</span><span class="kpi-delta t-3">+9.86%</span></div>
+                <div class="kpi"><span class="kpi-label">中期（20 日）</span><span class="kpi-value is-sm t-up">多头</span><span class="kpi-delta t-3">+22.40%</span></div>
+                <div class="kpi"><span class="kpi-label">长期（120 日）</span><span class="kpi-value is-sm t-up">多头</span><span class="kpi-delta t-3">+38.62%</span></div>
+                <div class="kpi"><span class="kpi-label">量能状态</span><span class="kpi-value is-sm t-up">温和放量</span><span class="kpi-delta t-3">量比 1.86</span></div>
+                <div class="kpi"><span class="kpi-label">MACD</span><span class="kpi-value is-sm t-up">金叉</span><span class="kpi-delta t-3">09-16 · 柱线转正</span></div>
+                <div class="kpi"><span class="kpi-label">KDJ</span><span class="kpi-value is-sm t-warn">超买</span><span class="kpi-delta t-3">J 值 96.4</span></div>
+                <div class="kpi"><span class="kpi-label">波动率（20 日）</span><span class="kpi-value is-sm">38.6%</span><span class="kpi-delta t-3">高于行业中位</span></div>
+                <div class="kpi"><span class="kpi-label">支撑 / 压力</span><span class="kpi-value is-sm">238 / 271</span><span class="kpi-delta t-3">MA20 / 前高</span></div>
+              </div>
+              <div class="legend-block mt-4">
+                <b>判定逻辑</b>：短期/中期/长期分别取 MA5、MA20、MA120 与价格的关系；量能按当日量比与 5 日均量比较；
+                MACD 取日线 DIF/DEA 交叉；KDJ 取 9,3,3 参数。<br>
+                <b>数据口径</b>：前复权日线，东方财富公开接口，交易日 15:30 入库；指标由本地计算。
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <aside class="col gap-4">
+          <div class="card">
+            <div class="card-head"><span class="card-title">关键价位</span></div>
+            <div class="card-body col gap-2">
+              <div class="row-between"><span class="fs-12 t-2">前高压力</span><span class="mono fs-12 t-down">296.40</span></div>
+              <div class="row-between"><span class="fs-12 t-2">箱体上沿</span><span class="mono fs-12 t-down">271.24</span></div>
+              <div class="row-between"><span class="fs-12 t-2">现价</span><span class="mono fs-13 fw-600 t-up">268.42</span></div>
+              <div class="row-between"><span class="fs-12 t-2">MA20 支撑</span><span class="mono fs-12 t-up">238.40</span></div>
+              <div class="row-between"><span class="fs-12 t-2">年线支撑</span><span class="mono fs-12 t-up">226.70</span></div>
+              <div class="row-between"><span class="fs-12 t-2">前低支撑</span><span class="mono fs-12 t-up">168.20</span></div>
+              <div class="meter is-ok mt-2"><i style="width:64%"></i></div>
+              <div class="hint">价格位于箱体 64% 位置，接近上沿</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">量价关系</span></div>
+            <div class="card-body">
+              <div id="volPrice" class="chart chart-sm"></div>
+              <div class="col gap-2 mt-3">
+                <div class="row-between"><span class="fs-12 t-2">5 日均量</span><span class="mono fs-12">48.2 万手</span></div>
+                <div class="row-between"><span class="fs-12 t-2">20 日均量</span><span class="mono fs-12">42.6 万手</span></div>
+                <div class="row-between"><span class="fs-12 t-2">今日 / 5 日均量</span><span class="mono fs-12 t-up">1.30 倍</span></div>
+                <div class="row-between"><span class="fs-12 t-2">换手率分位</span><span class="mono fs-12">58%</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">历史分位对照</span></div>
+            <div class="card-body is-flush">
+              <table class="tbl">
+                <thead><tr><th>区间</th><th class="num">涨幅</th><th class="num">分位</th></tr></thead>
+                <tbody>
+                  <tr><td>近 5 日</td><td class="num t-up">+9.86%</td><td class="num">86%</td></tr>
+                  <tr><td>近 20 日</td><td class="num t-up">+22.40%</td><td class="num">92%</td></tr>
+                  <tr><td>近 60 日</td><td class="num t-up">+32.64%</td><td class="num">88%</td></tr>
+                  <tr><td>近 120 日</td><td class="num t-up">+38.62%</td><td class="num">84%</td></tr>
+                  <tr><td>近 250 日</td><td class="num t-up">+42.86%</td><td class="num">78%</td></tr>
+                </tbody>
+              </table>
+              <div class="tbl-foot"><span>分位 = 在全市场同期涨幅中的百分位</span></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">相关模块</span></div>
+            <div class="card-body col gap-2">
+              <a class="btn btn-outline btn-block" href="stock-capital.html">看资金是否配合 →</a>
+              <a class="btn btn-outline btn-block" href="stock-events.html">看驱动事件 →</a>
+              <a class="btn btn-outline btn-block" href="stock-rating.html">看机构目标价 →</a>
+              <a class="btn btn-outline btn-block" href="alerts.html">按均线设提醒 →</a>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="_shared/vendor/echarts.min.js"></script>
+<script src="_shared/data.js"></script>
+<script src="_shared/charts.js"></script>
+<script src="_shared/app.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F;
+  var opts = { ma: [5, 10, 20, 60], volume: true, macd: true, kdj: false, zoomStart: 45 };
+  var bars = D.focusKline.slice(-120);
+
+  function draw() {
+    F.kline("#mainKline", bars, opts);
+  }
+  draw();
+
+  /* 周期切换 */
+  SA.qsa("#segPeriod > *").forEach(function (el) {
+    el.addEventListener("click", function () {
+      var v = el.getAttribute("data-v");
+      bars = v === "day" ? D.focusKline.slice(-120) : v === "week" ? D.focusWeekly.slice(-100) : D.focusMonthly.slice(-60);
+      SA.qsa("#mainKline").forEach(function (n) { n.innerHTML = ""; });
+      C.rebuildAll();
+      SA.toast("已切换到" + el.textContent.trim() + "（演示数据）", "info");
+    });
+  });
+
+  /* 指标开关 */
+  function refresh() {
+    var dom = document.getElementById("mainKline");
+    dom.innerHTML = "";
+    F.kline("#mainKline", bars, opts);
+    C.rebuildAll();
+  }
+  document.getElementById("ckMA").addEventListener("change", function () {
+    opts.ma = this.checked ? [5, 10, 20, 60] : [];
+    refresh();
+  });
+  document.getElementById("ckVol").addEventListener("change", function () { opts.volume = this.checked; refresh(); });
+  document.getElementById("ckMacd").addEventListener("change", function () {
+    opts.macd = this.checked;
+    if (this.checked) opts.kdj = false, document.getElementById("ckKdj").checked = false;
+    refresh();
+  });
+  document.getElementById("ckKdj").addEventListener("change", function () {
+    opts.kdj = this.checked;
+    if (this.checked) opts.macd = false, document.getElementById("ckMacd").checked = false;
+    refresh();
+  });
+
+  document.getElementById("btnExport").addEventListener("click", function () {
+    SA.toast("已导出 120 个交易日的 K 线与指标为 CSV（原型不产生文件）", "ok");
+  });
+
+  /* 相对强弱 */
+  var rel = D.focusKline.slice(-60).map(function (b, i) { return +((i / 60 * 21.2) + (Math.sin(i / 4) * 1.6)).toFixed(2); });
+  F.area("#relStrength", { labels: D.focusKline.slice(-60).map(function (b) { return b.d.slice(5); }), data: rel, unit: "%" });
+
+  /* 量价关系 */
+  F.combo("#volPrice", {
+    labels: D.focusKline.slice(-20).map(function (b) { return b.d.slice(5); }),
+    unit: "万手",
+    bars: [{ name: "成交量", data: D.focusKline.slice(-20).map(function (b) { return +(b.v / 10000).toFixed(2); }) }],
+    lines: [{ name: "收盘价", data: D.focusKline.slice(-20).map(function (b) { return b.c; }), axis: 2, color: C.cv("--chart-4") }],
+    unit2: "元",
+    rotate: 30
+  });
+
+  SA.startLiveTicker("#qLive", { interval: 3000 });
+})();
+</script>
+</body>
+</html>

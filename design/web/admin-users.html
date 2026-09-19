@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>用户管理 · 股析 SA</title>
+<link rel="stylesheet" href="_shared/tokens.css">
+<link rel="stylesheet" href="_shared/tailwind.css">
+<link rel="stylesheet" href="_shared/components.css">
+</head>
+<body data-page="admin-users">
+
+<div class="sa-app">
+  <div class="sa-brand">
+    <div class="sa-logo">SA</div>
+    <div class="sa-brand-text">
+      <div class="sa-brand-name">股析</div>
+      <div class="sa-brand-sub">Stock Analysis</div>
+    </div>
+  </div>
+  <header class="sa-topbar" id="saTop"></header>
+  <nav class="sa-sidenav" id="saNav"></nav>
+  <main class="sa-main">
+    <div class="sa-page">
+
+      <div class="sa-pagehead">
+        <div>
+          <div class="breadcrumb"><a href="market.html">市场概览</a><span class="sep">/</span><span>系统管理</span><span class="sep">/</span><span>用户管理</span></div>
+          <h1>用户管理</h1>
+          <div class="sub">6 个账号 · 4 个启用 · 角色决定可见功能点</div>
+        </div>
+        <div class="sa-pagehead-actions">
+          <button class="btn btn-outline btn-sm" id="btnExport">导出用户列表</button>
+          <button class="btn btn-primary btn-sm" data-open="dlgAddUser">+ 新增用户</button>
+        </div>
+      </div>
+
+      <div class="grid grid-4">
+        <div class="kpi"><span class="kpi-label">账号总数</span><span class="kpi-value is-xl">6</span><span class="kpi-delta t-3">含 1 个禁用</span></div>
+        <div class="kpi"><span class="kpi-label">启用中</span><span class="kpi-value is-xl t-up">5</span><span class="kpi-delta t-3">可正常登录</span></div>
+        <div class="kpi"><span class="kpi-label">在线设备</span><span class="kpi-value is-xl">9</span><span class="kpi-delta t-3">跨 3 个账号</span></div>
+        <div class="kpi"><span class="kpi-label">今日登录</span><span class="kpi-value is-xl">6</span><span class="kpi-delta t-3">含 2 次失败</span></div>
+      </div>
+
+      <div class="grid grid-4 mt-4">
+        <div class="card">
+          <div class="card-head"><span class="card-title">管理员</span><span class="card-sub">全部功能点</span></div>
+          <div class="card-body is-tight">
+            <div class="row-between"><span class="mono fs-22 fw-700">1</span><span class="tag tag-brand">全部 24 项</span></div>
+            <a class="btn btn-sm btn-ghost btn-block mt-3" href="admin-permissions.html">配置权限 →</a>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">普通用户</span><span class="card-sub">只读分析 + 自选 + 提醒</span></div>
+          <div class="card-body is-tight">
+            <div class="row-between"><span class="mono fs-22 fw-700">3</span><span class="tag tag-outline">20 项</span></div>
+            <a class="btn btn-sm btn-ghost btn-block mt-3" href="admin-permissions.html">配置权限 →</a>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">访客</span><span class="card-sub">仅 3 个模块</span></div>
+          <div class="card-body is-tight">
+            <div class="row-between"><span class="mono fs-22 fw-700">2</span><span class="tag tag-outline">4 项</span></div>
+            <a class="btn btn-sm btn-ghost btn-block mt-3" href="admin-permissions.html">配置权限 →</a>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">禁用</span><span class="card-sub">无法登录</span></div>
+          <div class="card-body is-tight">
+            <div class="row-between"><span class="mono fs-22 fw-700 t-warn">1</span><span class="tag tag-warn">w 账号</span></div>
+            <a class="btn btn-sm btn-ghost btn-block mt-3" href="admin-security.html">查看登录日志 →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 用户列表 -->
+      <div class="card mt-4">
+        <div class="card-head">
+          <span class="card-title">账号列表</span>
+          <span class="card-sub">点击行查看详情 · 批量操作前需勾选</span>
+          <div class="card-tools">
+            <input class="input input-sm" id="fKw" placeholder="搜索用户名 / 昵称" style="width:180px">
+            <select class="select input-sm" id="fRole" style="width:120px">
+              <option value="all">全部角色</option>
+              <option value="admin">管理员</option>
+              <option value="user">普通用户</option>
+              <option value="guest">访客</option>
+            </select>
+            <select class="select input-sm" id="fStatus" style="width:110px">
+              <option value="all">全部状态</option>
+              <option value="启用">仅启用</option>
+              <option value="禁用">仅禁用</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-body is-flush">
+          <div class="tbl-wrap">
+            <table class="tbl is-comfort" id="userTbl">
+              <thead>
+                <tr>
+                  <th style="width:36px"><input type="checkbox" id="chkAll"></th>
+                  <th class="is-sortable">用户名 <span class="sort-caret">▼</span></th>
+                  <th>昵称</th>
+                  <th>角色</th>
+                  <th>状态</th>
+                  <th class="is-sortable">最近登录 <span class="sort-caret">▼</span></th>
+                  <th>登录 IP</th>
+                  <th class="num">在线设备</th>
+                  <th class="is-sortable">创建时间 <span class="sort-caret">▼</span></th>
+                  <th class="col-actions" style="width:230px">操作</th>
+                </tr>
+              </thead>
+              <tbody id="userBody"></tbody>
+            </table>
+          </div>
+          <div class="tbl-foot">
+            <span id="userFoot">共 6 个账号 · 已选 0 个</span>
+            <div class="row gap-2" style="margin-left:auto">
+              <button class="btn btn-sm btn-ghost" id="btnBatchEnable">批量启用</button>
+              <button class="btn btn-sm btn-ghost" id="btnBatchDisable">批量禁用</button>
+              <button class="btn btn-sm btn-danger" id="btnBatchOffline">强制下线</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-2 mt-4">
+        <div class="card">
+          <div class="card-head"><span class="card-title">角色分布</span><span class="card-sub">账号数</span></div>
+          <div class="card-body"><div id="roleDonut" class="chart chart-md"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">最近登录记录</span><span class="card-sub">近 8 条</span>
+            <div class="card-tools"><a class="btn btn-sm btn-ghost" href="admin-security.html">查看全部 →</a></div>
+          </div>
+          <div class="card-body is-flush">
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead><tr><th style="width:130px">时间</th><th>用户</th><th>设备</th><th style="width:80px">结果</th></tr></thead>
+                <tbody id="loginBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="legend-block mt-4">
+        <b>说明</b>：本系统为个人自用 / 小团队共用场景，用户由管理员手工创建，不开放注册；
+        角色与功能点的对应关系在「角色与权限」页配置，配置结果会实时影响左侧导航菜单的可见性。
+        密码策略与登录锁定在「登录与安全」页设置。
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- 新增用户 -->
+<div class="overlay" id="dlgAddUser">
+  <div class="dialog">
+    <div class="dialog-head">
+      <h3>新增用户</h3>
+      <button class="icon-btn" data-close="dlgAddUser" style="margin-left:auto">✕</button>
+    </div>
+    <div class="dialog-body col gap-4">
+      <div class="grid grid-2">
+        <div class="field"><label class="label">用户名 <span class="req">*</span></label>
+          <input class="input is-mono" placeholder="字母数字，登录用"></div>
+        <div class="field"><label class="label">昵称</label>
+          <input class="input" placeholder="显示名称"></div>
+      </div>
+      <div class="field"><label class="label">初始密码 <span class="req">*</span></label>
+        <input class="input is-mono" type="password" value="Init@2026">
+        <span class="hint">首次登录后强制修改；需包含大小写字母、数字与符号，长度 ≥ 10</span></div>
+      <div class="field"><label class="label">角色</label>
+        <select class="select">
+          <option>普通用户（20 个功能点）</option>
+          <option>管理员（24 个功能点）</option>
+          <option>访客（4 个功能点）</option>
+        </select></div>
+      <div class="field"><label class="label">数据范围</label>
+        <div class="segmented" style="width:100%">
+          <span class="is-active">全市场</span><span>仅自选股</span>
+        </div></div>
+      <div class="field">
+        <label class="label">选项</label>
+        <div class="col gap-2">
+          <label class="check"><input type="checkbox" checked> 首次登录强制修改密码</label>
+          <label class="check"><input type="checkbox" checked> 启用二次验证</label>
+          <label class="check"><input type="checkbox"> 允许导出数据</label>
+        </div>
+      </div>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-ghost" data-close="dlgAddUser">取消</button>
+      <button class="btn btn-primary" data-close="dlgAddUser" onclick="SA.toast('用户已创建，初始密码已生成','ok')">创建用户</button>
+    </div>
+  </div>
+</div>
+
+<!-- 重置密码 -->
+<div class="overlay" id="dlgReset">
+  <div class="dialog">
+    <div class="dialog-head">
+      <h3>重置密码</h3>
+      <button class="icon-btn" data-close="dlgReset" style="margin-left:auto">✕</button>
+    </div>
+    <div class="dialog-body col gap-4">
+      <div class="notice" style="border-left:3px solid var(--warn);background:var(--warn-soft);padding:12px;border-radius:0 8px 8px 0">
+        <div class="fs-13 fw-600 t-warn">该操作会立即失效该用户的所有在线会话</div>
+        <div class="hint mt-1">用户需用新密码重新登录，且首次登录后需再次修改。</div>
+      </div>
+      <div class="field"><label class="label">目标用户</label>
+        <input class="input is-mono" id="resetUser" value="user" readonly></div>
+      <div class="field"><label class="label">新密码</label>
+        <input class="input is-mono" type="password" value="Reset@2026"></div>
+      <div class="field">
+        <label class="label">选项</label>
+        <label class="check"><input type="checkbox" checked> 强制用户下次登录时修改密码</label>
+      </div>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-ghost" data-close="dlgReset">取消</button>
+      <button class="btn btn-danger" data-close="dlgReset" onclick="SA.toast('密码已重置，该用户全部会话已失效','warn')">确认重置</button>
+    </div>
+  </div>
+</div>
+
+<script src="_shared/vendor/echarts.min.js"></script>
+<script src="_shared/data.js"></script>
+<script src="_shared/charts.js"></script>
+<script src="_shared/app.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F;
+  var filter = { kw: "", role: "all", status: "all" };
+  var selected = {};
+  var roleName = { admin: "管理员", user: "普通用户", guest: "访客" };
+
+  function rows() {
+    return D.users.filter(function (u) {
+      var okKw = !filter.kw || u.username.indexOf(filter.kw) >= 0 || u.nickname.indexOf(filter.kw) >= 0;
+      return okKw && (filter.role === "all" || u.role === filter.role) && (filter.status === "all" || u.status === filter.status);
+    });
+  }
+
+  function render() {
+    var list = rows();
+    document.getElementById("userFoot").textContent = "共 " + list.length + " 个账号 · 已选 " + Object.keys(selected).length + " 个";
+    document.getElementById("userBody").innerHTML = list.map(function (u) {
+      var roleTag = u.role === "admin" ? "tag-brand" : u.role === "user" ? "tag-outline" : "tag";
+      var stTag = u.status === "启用" ? "tag-ok" : "tag-warn";
+      return "<tr>" +
+        '<td><input type="checkbox" class="uChk" data-id="' + u.id + '"' + (selected[u.id] ? " checked" : "") + "></td>" +
+        '<td class="fw-600 mono">' + u.username + "</td>" +
+        "<td>" + u.nickname + "</td>" +
+        '<td><span class="tag ' + roleTag + '">' + roleName[u.role] + "</span></td>" +
+        '<td><span class="tag ' + stTag + ' tag-dot">' + u.status + "</span></td>" +
+        '<td class="mono fs-11 t-3">' + u.lastLogin + "</td>" +
+        '<td class="mono fs-11 t-3">' + u.ip + "</td>" +
+        '<td class="num">' + (u.devices || '<span class="t-3">—</span>') + "</td>" +
+        '<td class="mono fs-11 t-3">' + u.created + "</td>" +
+        '<td class="col-actions">' +
+          '<button class="btn btn-sm btn-ghost uToggle" data-id="' + u.id + '">' + (u.status === "启用" ? "禁用" : "启用") + "</button> " +
+          '<button class="btn btn-sm btn-ghost uReset" data-id="' + u.id + '">重置密码</button> ' +
+          '<button class="btn btn-sm btn-ghost uRole" data-id="' + u.id + '">角色</button>' +
+        "</td></tr>";
+    }).join("");
+
+    SA.qsa(".uChk").forEach(function (c) {
+      c.addEventListener("change", function () {
+        var id = c.getAttribute("data-id");
+        if (c.checked) selected[id] = true; else delete selected[id];
+        document.getElementById("userFoot").textContent = "共 " + list.length + " 个账号 · 已选 " + Object.keys(selected).length + " 个";
+      });
+    });
+    SA.qsa(".uToggle").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var u = D.users.filter(function (x) { return x.id === b.getAttribute("data-id"); })[0];
+        SA.toast((u.status === "启用" ? "已禁用账号：" : "已启用账号：") + u.username, u.status === "启用" ? "warn" : "ok");
+      });
+    });
+    SA.qsa(".uReset").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var u = D.users.filter(function (x) { return x.id === b.getAttribute("data-id"); })[0];
+        document.getElementById("resetUser").value = u.username;
+        SA.openDialog("dlgReset");
+      });
+    });
+    SA.qsa(".uRole").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var u = D.users.filter(function (x) { return x.id === b.getAttribute("data-id"); })[0];
+        SA.toast("打开角色分配：当前为「" + roleName[u.role] + "」，请在「角色与权限」页查看该角色的功能点", "info");
+      });
+    });
+  }
+  render();
+
+  document.getElementById("fKw").addEventListener("input", function () { filter.kw = this.value.trim(); render(); });
+  document.getElementById("fRole").addEventListener("change", function () { filter.role = this.value; render(); });
+  document.getElementById("fStatus").addEventListener("change", function () { filter.status = this.value; render(); });
+  document.getElementById("chkAll").addEventListener("change", function () {
+    var on = this.checked;
+    SA.qsa(".uChk").forEach(function (c) {
+      c.checked = on;
+      var id = c.getAttribute("data-id");
+      if (on) selected[id] = true; else delete selected[id];
+    });
+    render();
+  });
+
+  document.getElementById("btnBatchEnable").addEventListener("click", function () {
+    var n = Object.keys(selected).length;
+    if (!n) { SA.toast("请先勾选账号", "warn"); return; }
+    SA.toast("已启用 " + n + " 个账号", "ok");
+    selected = {}; render();
+  });
+  document.getElementById("btnBatchDisable").addEventListener("click", function () {
+    var n = Object.keys(selected).length;
+    if (!n) { SA.toast("请先勾选账号", "warn"); return; }
+    SA.toast("已禁用 " + n + " 个账号，其在线会话已失效", "warn");
+    selected = {}; render();
+  });
+  document.getElementById("btnBatchOffline").addEventListener("click", function () {
+    var n = Object.keys(selected).length;
+    if (!n) { SA.toast("请先勾选账号", "warn"); return; }
+    SA.toast("已强制 " + n + " 个账号的全部设备下线", "warn");
+  });
+  document.getElementById("btnExport").addEventListener("click", function () {
+    SA.toast("已导出用户列表为 CSV（原型不产生文件）", "ok");
+  });
+
+  /* 图表 */
+  var roleCount = { admin: 0, user: 0, guest: 0 };
+  D.users.forEach(function (u) { roleCount[u.role]++; });
+  F.donut("#roleDonut", {
+    legendOrient: "vertical", center: ["36%", "50%"], radius: ["48%", "70%"],
+    data: [
+      { name: "管理员", value: roleCount.admin, color: C.cv("--chart-1") },
+      { name: "普通用户", value: roleCount.user, color: C.cv("--chart-2") },
+      { name: "访客", value: roleCount.guest, color: C.cv("--chart-4") }
+    ]
+  });
+
+  document.getElementById("loginBody").innerHTML = D.security.loginLogs.slice(0, 8).map(function (l) {
+    var tag = l.result === "成功" ? "tag-ok" : l.result === "失败" ? "tag-warn" : "tag-danger";
+    return "<tr>" +
+      '<td class="mono fs-11 t-3">' + l.time + "</td>" +
+      '<td class="mono fs-12">' + l.user + "</td>" +
+      '<td class="fs-11 t-2">' + l.device + "</td>" +
+      '<td><span class="tag ' + tag + '">' + l.result + "</span></td>" +
+      "</tr>";
+  }).join("");
+})();
+</script>
+</body>
+</html>

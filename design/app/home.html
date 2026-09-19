@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>市场概览 · 股析 SA（移动端）</title>
+<link rel="stylesheet" href="../web/_shared/tokens.css">
+<link rel="stylesheet" href="../web/_shared/tailwind.css">
+<link rel="stylesheet" href="../web/_shared/components.css">
+<style>
+  .idx-card {
+    flex: 0 0 150px; border: 1px solid var(--border); border-radius: 12px;
+    padding: 10px 12px; background: var(--bg-panel);
+  }
+  .ev-card {
+    border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
+    background: var(--bg-sunken); border-left-width: 3px;
+  }
+  .ev-card.is-up { border-left-color: var(--up); }
+  .ev-card.is-down { border-left-color: var(--down); }
+</style>
+</head>
+<body data-page="home" data-title="市场概览" data-desc="指数横向滑动卡片、涨跌家数环形、行业排行列表、事件热点纵向卡流。手机端把桌面三栏压成单列流。">
+<div id="appScreen">
+  <div class="m-page">
+
+    <div class="row-between">
+      <div>
+        <div style="font-size:18px;font-weight:700">市场概览</div>
+        <div class="hint">2026-09-18 周五 · 收盘 · 演示数据</div>
+      </div>
+      <div class="row gap-2">
+        <span class="dot dot-live"></span>
+        <span class="hint">15:00</span>
+      </div>
+    </div>
+
+    <!-- 指数横滑 -->
+    <div class="m-section-title">主要指数</div>
+    <div class="m-scroll-x" id="idxRow"></div>
+
+    <!-- 涨跌家数 -->
+    <div class="m-section-title">涨跌家数</div>
+    <div class="m-card">
+      <div class="row gap-3">
+        <div style="width:132px;flex:0 0 auto"><div id="mBreadth" class="chart chart-sm"></div></div>
+        <div class="grow col gap-2">
+          <div class="row-between"><span class="fs-12 t-2">上涨</span><span class="mono fs-13 t-up">3,124</span></div>
+          <div class="row-between"><span class="fs-12 t-2">下跌</span><span class="mono fs-13 t-down">1,786</span></div>
+          <div class="row-between"><span class="fs-12 t-2">平盘</span><span class="mono fs-13 t-flat">213</span></div>
+          <div class="row-between"><span class="fs-12 t-2">涨停 / 跌停</span><span class="mono fs-13"><span class="t-up">68</span> / <span class="t-down">12</span></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 资金 -->
+    <div class="m-section-title">资金面</div>
+    <div class="m-card">
+      <div class="m-kpi-row">
+        <div class="kpi"><span class="kpi-label">成交额</span><span class="kpi-value is-sm">10,982 亿</span><span class="kpi-delta t-up">+8.6%</span></div>
+        <div class="kpi"><span class="kpi-label">北向资金</span><span class="kpi-value is-sm t-up">+42.6 亿</span><span class="kpi-delta t-3">连 3 日流入</span></div>
+        <div class="kpi"><span class="kpi-label">融资余额</span><span class="kpi-value is-sm">18,426 亿</span><span class="kpi-delta t-up">+0.62%</span></div>
+      </div>
+      <div class="chart-note">口径：沪深两市 A 股成交额合计；北向为按持股变动估算值。</div>
+    </div>
+
+    <!-- 行业排行 -->
+    <div class="m-section-title">行业涨跌排行</div>
+    <div class="m-card is-flush" style="padding:0">
+      <div id="mIndustry" class="chart" style="height:280px"></div>
+    </div>
+
+    <!-- 事件热点 -->
+    <div class="m-section-title">
+      今日事件热点
+      <span class="tag tag-up" style="margin-left:auto">利好 6</span>
+      <span class="tag tag-down">利空 2</span>
+    </div>
+    <div class="col gap-2" id="evList"></div>
+
+    <!-- 榜单 -->
+    <div class="m-section-title">涨幅榜</div>
+    <div class="m-card" style="padding:0">
+      <table class="tbl" id="mGainers"></table>
+    </div>
+
+    <div class="m-section-title">成交额榜</div>
+    <div class="m-card" style="padding:0">
+      <table class="tbl" id="mAmount"></table>
+    </div>
+
+    <div class="legend-block mt-4">
+      <b>数据来源与口径</b><br>
+      指数与行情：东方财富 + 新浪财经，交易时段每 3 秒快照；<br>
+      行业：申万一级；事件与影响强度：规则引擎 + 人工标注；<br>
+      本页为演示数据，非实时行情，不构成投资建议。
+    </div>
+
+  </div>
+</div>
+
+<script src="../web/_shared/vendor/echarts.min.js"></script>
+<script src="../web/_shared/data.js"></script>
+<script src="../web/_shared/charts.js"></script>
+<script src="../web/_shared/app.js"></script>
+<script src="../web/_shared/mock-frame.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F;
+
+  /* 指数横滑卡片 */
+  document.getElementById("idxRow").innerHTML = D.indices.map(function (ix, i) {
+    var cls = ix.pct >= 0 ? "t-up" : "t-down";
+    return '<div class="idx-card">' +
+      '<div class="row-between"><span class="fs-12 fw-600">' + ix.name + "</span>" +
+      '<span class="mono fs-10 t-3">' + ix.code + "</span></div>" +
+      '<div class="mono fs-16 fw-700 ' + cls + '" style="margin-top:4px">' + ix.price.toFixed(2) + "</div>" +
+      '<div class="mono fs-11 ' + cls + '">' + (ix.pct >= 0 ? "+" : "") + ix.pct.toFixed(2) + "%</div>" +
+      '<div class="chart chart-xs" id="mSpark' + i + '" style="margin-top:4px"></div>' +
+      "</div>";
+  }).join("");
+  D.indices.forEach(function (ix, i) { F.spark("#mSpark" + i, ix.spark, { up: ix.pct >= 0 }); });
+
+  /* 涨跌家数 */
+  F.donut("#mBreadth", {
+    label: false, legendOrient: "vertical", center: ["50%", "50%"], radius: ["52%", "78%"],
+    data: [
+      { name: "上涨", value: D.breadth.up, color: C.cv("--up") },
+      { name: "下跌", value: D.breadth.down, color: C.cv("--down") },
+      { name: "平盘", value: D.breadth.flat, color: C.cv("--flat") }
+    ]
+  });
+
+  /* 行业排行 */
+  F.hbar("#mIndustry", { data: D.industries.slice(0, 9) });
+
+  /* 事件卡片 */
+  document.getElementById("evList").innerHTML = D.hotEvents.slice(0, 6).map(function (e) {
+    var isUp = e.level === "up";
+    var rel = e.related.length ? e.related.map(function (c) {
+      var s = D.stockByCode[c];
+      return s ? '<a class="tag tag-outline" href="stock.html?code=' + c + '">' + s.name + "</a>" : "";
+    }).join(" ") : '<span class="tag tag-outline">全市场</span>';
+    return '<div class="ev-card ' + (isUp ? "is-up" : "is-down") + '">' +
+      '<div class="row gap-2">' +
+        '<span class="tag ' + (isUp ? "tag-up" : "tag-down") + '">' + (isUp ? "利好" : "利空") + "</span>" +
+        '<span class="tag tag-outline">' + e.tag + "</span>" +
+        '<span class="mono fs-10 t-3" style="margin-left:auto">' + e.date + "</span>" +
+      "</div>" +
+      '<div class="fs-12 mt-2" style="margin-top:6px;line-height:1.7">' + e.title + "</div>" +
+      '<div class="row gap-1 mt-2 wrap">' + rel + "</div>" +
+      "</div>";
+  }).join("");
+
+  /* 榜单 */
+  function rankTable(sel, rows, key, label) {
+    document.querySelector(sel).innerHTML =
+      '<thead><tr><th>名称</th><th class="num">' + label + "</th></tr></thead><tbody>" +
+      rows.map(function (r) {
+        var v = key === "amount" ? r.amount.toFixed(1) + " 亿" : (r.pct >= 0 ? "+" : "") + r.pct.toFixed(2) + "%";
+        return '<tr data-chg="' + (r.pct >= 0 ? "up" : "down") + '" class="is-clickable" data-href="stock.html?code=' + r.code + '">' +
+          '<td><span class="stock-cell"><span class="sc-name">' + r.name + '</span><span class="sc-code">' + r.code + "</span></span></td>" +
+          '<td class="num ' + (key === "amount" ? "" : r.pct >= 0 ? "t-up" : "t-down") + '">' + v + "</td></tr>";
+      }).join("") + "</tbody>";
+  }
+  rankTable("#mGainers", D.rankings.gainers, "pct", "涨跌幅");
+  rankTable("#mAmount", D.rankings.amount, "amount", "成交额");
+})();
+</script>
+</body>
+</html>

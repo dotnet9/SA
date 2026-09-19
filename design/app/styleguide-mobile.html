@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>移动端设计规范 · 股析 SA（移动端）</title>
+<link rel="stylesheet" href="../web/_shared/tokens.css">
+<link rel="stylesheet" href="../web/_shared/tailwind.css">
+<link rel="stylesheet" href="../web/_shared/components.css">
+<style>
+  .hotzone { outline: 1px dashed var(--accent); outline-offset: 0; }
+  .hotzone.is-bad { outline-color: var(--danger); }
+  .spec-line { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-soft); }
+  .spec-line:last-child { border-bottom: none; }
+  .spec-line .k { width: 116px; flex: 0 0 auto; font-size: 12px; color: var(--text-3); }
+  .spec-line .v { font-size: 12px; }
+</style>
+</head>
+<body data-page="styleguide-mobile" data-title="移动端设计规范" data-desc="移动端尺寸下的组件全态与间距、触摸热区（≥44px）检查。Web 端设计规范见 design/web/styleguide.html。">
+<div id="appScreen">
+  <div class="m-topbar">
+    <span class="m-title">移动端设计规范</span>
+    <a class="fs-11 t-brand" style="margin-left:auto" href="../web/styleguide.html">Web 规范</a>
+  </div>
+
+  <div class="m-page">
+
+    <div class="legend-block">
+      移动端与 Web 端共用同一套设计令牌与组件样式（<code>tokens.css</code> / <code>components.css</code>），
+      差异只在布局：Web 用左侧导航 + 三栏，移动端用底部 Tab + 单列流。
+      本页只列移动端特有的规则与检查项。
+    </div>
+
+    <!-- 画布与安全区 -->
+    <div class="m-section-title">1. 画布与安全区</div>
+    <div class="m-card">
+      <div class="spec-line"><span class="k">设计尺寸</span><span class="v">390 × 844（iPhone 14/15 逻辑分辨率）</span></div>
+      <div class="spec-line"><span class="k">最小支持宽度</span><span class="v">320px（iPhone SE 一代）</span></div>
+      <div class="spec-line"><span class="k">左右安全边距</span><span class="v">16px（<code>.m-page</code>）</span></div>
+      <div class="spec-line"><span class="k">顶部状态栏</span><span class="v">44px（原型外框模拟）</span></div>
+      <div class="spec-line"><span class="k">底部 Tab 栏</span><span class="v">56px + 安全区（<code>env(safe-area-inset-bottom)</code>）</span></div>
+      <div class="spec-line"><span class="k">吸顶元素</span><span class="v">行情条 / 顶栏 / Tab 使用 <code>position: sticky</code></span></div>
+    </div>
+
+    <!-- 触摸热区 -->
+    <div class="m-section-title">2. 触摸热区（≥ 44px）</div>
+    <div class="m-card">
+      <div class="hint" style="margin-bottom:10px">虚线框为热区边界；红色表示不达标，需修正。</div>
+      <div class="row gap-3 wrap">
+        <div class="col gap-1 center">
+          <div class="hotzone tap-44 center" style="width:44px;border-radius:8px">✓</div>
+          <span class="hint">44×44</span>
+        </div>
+        <div class="col gap-1 center">
+          <div class="hotzone tap-44 center" style="width:88px;border-radius:8px">✓</div>
+          <span class="hint">按钮 88×44</span>
+        </div>
+        <div class="col gap-1 center">
+          <div class="hotzone center" style="width:32px;height:32px;border-radius:8px">✕</div>
+          <span class="hint t-down">32×32 不达标</span>
+        </div>
+        <div class="col gap-1 center">
+          <div class="hotzone center" style="width:24px;height:24px;border-radius:6px;font-size:10px">✕</div>
+          <span class="hint t-down">24×24 不达标</span>
+        </div>
+      </div>
+      <div class="legend-block mt-3">
+        <b>规则</b>：所有可点击元素热区 ≥ 44×44；图标按钮视觉尺寸可小，但用透明内边距把热区撑到 44px。
+        列表行最小高度 56px，左右可整行点击。
+      </div>
+    </div>
+
+    <!-- 间距与字号 -->
+    <div class="m-section-title">3. 移动端字号与间距</div>
+    <div class="m-card">
+      <div class="spec-line"><span class="k">页面标题</span><span class="v" style="font-size:18px;font-weight:700">18px / 700</span></div>
+      <div class="spec-line"><span class="k">区块标题</span><span class="v" style="font-size:13px;font-weight:600">13px / 600</span></div>
+      <div class="spec-line"><span class="k">正文</span><span class="v" style="font-size:13px">13px</span></div>
+      <div class="spec-line"><span class="k">次要信息</span><span class="v" style="font-size:12px;color:var(--text-2)">12px</span></div>
+      <div class="spec-line"><span class="k">辅助 / 单位</span><span class="v" style="font-size:11px;color:var(--text-3)">11px</span></div>
+      <div class="spec-line"><span class="k">大数字（行情）</span><span class="v" class="mono" style="font-size:22px;font-weight:700">22–34px / 700</span></div>
+      <div class="spec-line"><span class="k">数字字体</span><span class="v">等宽 + <code>tabular-nums</code>，保证小数点对齐</span></div>
+      <div class="spec-line"><span class="k">卡片间距</span><span class="v">12px（<code>.m-card + .m-card</code>）</span></div>
+      <div class="spec-line"><span class="k">区块上间距</span><span class="v">16px（<code>.m-section-title</code>）</span></div>
+      <div class="spec-line"><span class="k">卡片圆角</span><span class="v">14px（<code>--r-card</code>）</span></div>
+    </div>
+
+    <!-- 移动端特有交互 -->
+    <div class="m-section-title">4. 移动端特有交互</div>
+    <div class="m-card" style="padding:0 12px">
+      <div class="spec-line"><span class="k">左滑</span><span class="v">列表行左滑露出「提醒 / 移除」，阈值 60px，最大位移 136px</span></div>
+      <div class="spec-line"><span class="k">长按</span><span class="v">长按列表行进入拖拽排序（自选股）</span></div>
+      <div class="spec-line"><span class="k">下拉刷新</span><span class="v">通知中心、自选股列表顶部下拉</span></div>
+      <div class="spec-line"><span class="k">双指捏合</span><span class="v">K 线、拓扑图、风险矩阵缩放</span></div>
+      <div class="spec-line"><span class="k">底部抽屉</span><span class="v">条件编辑、指标切换（<code>.sheet</code>），最大高度 78vh</span></div>
+      <div class="spec-line"><span class="k">全屏页</span><span class="v">新建提醒规则走全屏步骤式，比对话框更好点按</span></div>
+      <div class="spec-line"><span class="k">横向滚动</span><span class="v">宽表格首列冻结（<code>.freeze-tbl</code>），指标卡横滑</span></div>
+      <div class="spec-line"><span class="k">Toast</span><span class="v">底部居中，2.6 秒自动消失，避免遮挡底部 Tab</span></div>
+    </div>
+
+    <!-- 组件全态 -->
+    <div class="m-section-title">5. 组件全态（移动端尺寸）</div>
+
+    <div class="m-card">
+      <div class="label" style="margin-bottom:10px">按钮（高度 ≥ 44）</div>
+      <div class="col gap-2">
+        <button class="btn btn-primary" style="height:44px">主操作</button>
+        <button class="btn btn-outline" style="height:44px">次要操作</button>
+        <button class="btn btn-danger" style="height:44px">危险操作</button>
+        <div class="row gap-2">
+          <button class="btn btn-outline grow" style="height:44px">取消</button>
+          <button class="btn btn-primary grow" style="height:44px">确认</button>
+        </div>
+        <button class="btn btn-primary" style="height:44px" disabled>禁用态</button>
+      </div>
+    </div>
+
+    <div class="m-card">
+      <div class="label" style="margin-bottom:10px">输入（高度 ≥ 44）</div>
+      <div class="field"><input class="input tap-44" placeholder="普通输入"></div>
+      <div class="field mt-3"><input class="input input-num tap-44" value="280.00"></div>
+      <div class="field mt-3">
+        <select class="select tap-44"><option>下拉选择</option></select>
+      </div>
+      <div class="field mt-3">
+        <div class="input-group"><input class="input tap-44 is-mono" value="300750"><button class="btn btn-primary" style="height:44px">查询</button></div>
+      </div>
+      <label class="check tap-44 mt-3"><input type="checkbox" checked> 复选框</label>
+      <label class="switch tap-44 mt-2"><input type="checkbox" checked><span class="track"></span>开关</label>
+    </div>
+
+    <div class="m-card">
+      <div class="label" style="margin-bottom:10px">标签与徽标</div>
+      <div class="row gap-2 wrap">
+        <span class="tag tag-brand">买入</span>
+        <span class="tag tag-up">利好</span>
+        <span class="tag tag-down">利空</span>
+        <span class="tag tag-warn">待确认</span>
+        <span class="tag tag-danger">高风险</span>
+        <span class="tag tag-ok">已完成</span>
+        <span class="tag">中性</span>
+        <span class="tag tag-outline">沪市主板</span>
+      </div>
+      <div class="row gap-2 wrap mt-3">
+        <span class="tag tag-ok tag-dot tag-lg">数据源正常</span>
+        <span class="tag tag-warn tag-dot tag-lg">降级重试</span>
+        <span class="row gap-2"><span class="dot dot-live"></span><span class="fs-12 t-2">实时推送中</span></span>
+      </div>
+      <div class="row gap-3 wrap mt-3">
+        <span class="risk-lv risk-lv-1"><i></i>1</span>
+        <span class="risk-lv risk-lv-2"><i></i>2</span>
+        <span class="risk-lv risk-lv-3"><i></i>3</span>
+        <span class="risk-lv risk-lv-4"><i></i>4</span>
+        <span class="risk-lv risk-lv-5"><i></i>5</span>
+      </div>
+    </div>
+
+    <div class="m-card">
+      <div class="label" style="margin-bottom:10px">指标卡（双列 / 三列）</div>
+      <div class="m-kpi-row" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi"><span class="kpi-label">量比</span><span class="kpi-value is-sm">1.86</span></div>
+        <div class="kpi"><span class="kpi-label">换手</span><span class="kpi-value is-sm">1.42%</span></div>
+        <div class="kpi"><span class="kpi-label">市值</span><span class="kpi-value is-sm">11,820</span></div>
+      </div>
+      <div class="m-kpi-row mt-2" style="grid-template-columns:repeat(2,1fr)">
+        <div class="kpi"><span class="kpi-label">主力净流入</span><span class="kpi-value is-sm t-up">+18.62 亿</span><span class="kpi-delta t-up">近 60 日最大</span></div>
+        <div class="kpi"><span class="kpi-label">获利盘</span><span class="kpi-value is-sm">72.4%</span><span class="kpi-delta t-3">成本 246.8</span></div>
+      </div>
+    </div>
+
+    <div class="m-card">
+      <div class="label" style="margin-bottom:10px">状态</div>
+      <div class="skeleton sk-line" style="width:60%"></div>
+      <div class="skeleton sk-line"></div>
+      <div class="skeleton sk-block mt-3"></div>
+      <div class="empty mt-3">
+        <div class="em-icon">◌</div>
+        <div class="fs-13">暂无数据</div>
+        <div class="hint">该股票暂无龙虎榜记录</div>
+      </div>
+    </div>
+
+    <div class="m-card">
+      <div class="label" style="margin-bottom:10px">浮层</div>
+      <div class="row gap-2 wrap">
+        <button class="btn btn-outline btn-sm" data-open="sgSheet">底部抽屉</button>
+        <button class="btn btn-outline btn-sm" id="sgToast">Toast</button>
+        <button class="btn btn-outline btn-sm" data-open="sgFull">全屏页</button>
+      </div>
+    </div>
+
+    <!-- 图表规范 -->
+    <div class="m-section-title">6. 移动端图表规范</div>
+    <div class="m-card" style="padding:8px 4px">
+      <div id="sgChart" class="chart" style="height:200px"></div>
+    </div>
+    <div class="m-card mt-3" style="padding:0 12px">
+      <div class="spec-line"><span class="k">坐标轴字号</span><span class="v">10–11px（比 Web 端小 1px）</span></div>
+      <div class="spec-line"><span class="k">默认图表高度</span><span class="v">200–340px（单屏内不滚动即可看完）</span></div>
+      <div class="spec-line"><span class="k">K 线高度</span><span class="v">300px（含成交量副图）</span></div>
+      <div class="spec-line"><span class="k">拓扑图高度</span><span class="v">300–340px，节点标签超 5 字截断</span></div>
+      <div class="spec-line"><span class="k">图例</span><span class="v">能省则省；必须保留时置于图表下方一行</span></div>
+      <div class="spec-line"><span class="k">tooltip</span><span class="v">改为「点击/长按显示」并贴近手指上方，避免遮挡</span></div>
+      <div class="spec-line"><span class="k">手势</span><span class="v">单指平移 · 双指缩放 · 长按十字光标</span></div>
+      <div class="spec-line"><span class="k">数据口径</span><span class="v">每个图表下方必配 <code>.chart-note</code> 或 <code>.legend-block</code></span></div>
+    </div>
+
+    <!-- 与 Web 端差异 -->
+    <div class="m-section-title">7. 与 Web 端的差异清单</div>
+    <div class="m-card" style="padding:0 12px">
+      <div class="spec-line"><span class="k">导航</span><span class="v">Web 左侧 240px 导航 → 移动端底部 5 个 Tab</span></div>
+      <div class="spec-line"><span class="k">布局</span><span class="v">Web 三栏 / 多列网格 → 移动端单列卡片流</span></div>
+      <div class="spec-line"><span class="k">表格</span><span class="v">Web 完整列 → 移动端精简列 + 横向滚动 + 首列冻结</span></div>
+      <div class="spec-line"><span class="k">批量操作</span><span class="v">Web 勾选 + 批量按钮 → 移动端左滑 / 长按</span></div>
+      <div class="spec-line"><span class="k">对话框</span><span class="v">Web 居中对话框 → 移动端底部抽屉或全屏页</span></div>
+      <div class="spec-line"><span class="k">列设置</span><span class="v">Web 列配置菜单 → 移动端固定精简列，不做配置</span></div>
+      <div class="spec-line"><span class="k">后台管理</span><span class="v">仅 Web 端提供，移动端不做管理功能</span></div>
+      <div class="spec-line"><span class="k">演示数据角标</span><span class="v">Web 右下角固定 → 移动端置于屏幕内右下、Tab 栏上方</span></div>
+    </div>
+
+    <div class="legend-block mt-4">
+      <b>自检清单</b><br>
+      ① 所有可点击元素热区 ≥ 44×44；<br>
+      ② 390×844 内无横向滚动条（刻意设计的宽表格除外）；<br>
+      ③ 每个图表下方有数据口径说明；<br>
+      ④ 底部 Tab 栏常驻且当前页高亮；<br>
+      ⑤ 数字列等宽右对齐；<br>
+      ⑥ 深浅主题与涨跌色切换在全部页面生效。
+    </div>
+
+  </div>
+</div>
+
+<!-- 底部抽屉 -->
+<div class="sheet" id="sgSheet">
+  <div class="sheet-grip"></div>
+  <div class="row-between" style="margin-bottom:12px">
+    <span class="fs-14 fw-600">底部抽屉</span>
+    <button class="icon-btn" data-close="sgSheet">✕</button>
+  </div>
+  <div class="col gap-2">
+    <button class="btn btn-block tap-44">近 5 日</button>
+    <button class="btn btn-outline btn-block tap-44">近 20 日</button>
+    <button class="btn btn-outline btn-block tap-44">近 60 日</button>
+    <button class="btn btn-ghost btn-block tap-44" data-close="sgSheet">取消</button>
+  </div>
+</div>
+
+<!-- 全屏页 -->
+<div class="overlay" id="sgFull" style="padding:0;align-items:stretch">
+  <div style="width:100%;height:100%;background:var(--bg-root);display:flex;flex-direction:column;border-radius:0">
+    <div class="m-topbar">
+      <button class="icon-btn" data-close="sgFull">✕</button>
+      <span class="m-title">全屏页示例</span>
+      <button class="btn btn-sm btn-primary" style="margin-left:auto" data-close="sgFull">保存</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:16px">
+      <div class="legend-block">
+        复杂表单（如新建提醒规则）用全屏页而非对话框：步骤可分段、字段可堆叠、底部按钮可固定在安全区内，
+        在窄屏上点按准确率明显更高。
+      </div>
+      <div class="field mt-4"><label class="label">示例字段</label><input class="input tap-44" value="宁德时代 300750"></div>
+      <div class="field mt-3"><label class="label">示例选择</label><select class="select tap-44"><option>仅这一只股票</option></select></div>
+      <button class="btn btn-primary btn-block mt-4" style="height:44px" data-close="sgFull">确认</button>
+    </div>
+  </div>
+</div>
+
+<script src="../web/_shared/vendor/echarts.min.js"></script>
+<script src="../web/_shared/data.js"></script>
+<script src="../web/_shared/charts.js"></script>
+<script src="../web/_shared/app.js"></script>
+<script src="../web/_shared/mock-frame.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F;
+  F.combo("#sgChart", {
+    labels: D.finance.years.slice(0, 5), unit: "亿元",
+    bars: [{ name: "营业收入", data: D.finance.revenue.slice(0, 5) }],
+    lines: [{ name: "净利润", data: D.finance.netProfit.slice(0, 5), axis: 2, color: C.cv("--chart-4") }],
+    unit2: "亿元",
+    rotate: 30
+  });
+  document.getElementById("sgToast").addEventListener("click", function () {
+    SA.toast("这是一条 Toast，底部居中，2.6 秒后自动消失", "ok");
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>事件时间线与影响 · 股析 SA（移动端）</title>
+<link rel="stylesheet" href="../web/_shared/tokens.css">
+<link rel="stylesheet" href="../web/_shared/tailwind.css">
+<link rel="stylesheet" href="../web/_shared/components.css">
+<style>
+  .ev-card {
+    border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
+    background: var(--bg-sunken); border-left-width: 3px; min-height: 44px;
+  }
+  .ev-card.is-up { border-left-color: var(--up); }
+  .ev-card.is-down { border-left-color: var(--down); }
+  .graph-box { border-radius: 12px; overflow: hidden; background: var(--bg-sunken); border: 1px solid var(--border-soft); }
+</style>
+</head>
+<body data-page="stock-events" data-title="事件时间线与影响" data-desc="四种拓扑切换走分段控件、时间轴泳道纵向滚动、事件卡片带影响色标。手机端一次只看一种图，避免信息过载。">
+<div id="appScreen">
+  <div class="m-topbar">
+    <a class="icon-btn" href="stock.html">←</a>
+    <span class="m-title">事件时间线与影响</span>
+    <a class="fs-11 t-brand" href="../web/topology.html" style="margin-left:auto">对照页</a>
+  </div>
+
+  <div class="m-page">
+
+    <!-- 概览 -->
+    <div class="m-kpi-row" style="grid-template-columns:repeat(3,1fr)">
+      <div class="kpi"><span class="kpi-label">近 90 日事件</span><span class="kpi-value is-sm">21</span></div>
+      <div class="kpi"><span class="kpi-label">利好 / 利空</span><span class="kpi-value is-sm"><span class="t-up">14</span> / <span class="t-down">7</span></span></div>
+      <div class="kpi"><span class="kpi-label">情绪温度</span><span class="kpi-value is-sm t-up">74</span><span class="kpi-delta t-3">加权</span></div>
+    </div>
+
+    <!-- 四种拓扑切换 -->
+    <div class="m-section-title">拓扑图</div>
+    <div class="segmented" style="width:100%;overflow-x:auto" data-tabs=".graph-panel">
+      <span class="is-active" data-tab="causal">因果网络</span>
+      <span data-tab="equity">股权关系</span>
+      <span data-tab="chain">产业链</span>
+      <span data-tab="topdown">自上而下</span>
+    </div>
+
+    <div class="graph-box mt-3">
+      <div class="graph-panel is-active" data-panel="causal">
+        <div id="mG1" class="chart" style="height:320px"></div>
+      </div>
+      <div class="graph-panel" data-panel="equity">
+        <div id="mG2" class="chart" style="height:320px"></div>
+      </div>
+      <div class="graph-panel" data-panel="chain">
+        <div id="mG3" class="chart" style="height:320px"></div>
+      </div>
+      <div class="graph-panel" data-panel="topdown">
+        <div id="mG4" class="chart" style="height:320px"></div>
+      </div>
+    </div>
+    <div class="legend-block mt-2" id="mNote"></div>
+
+    <!-- 泳道 -->
+    <div class="m-section-title">
+      事件时间轴泳道
+      <span class="tag tag-up" style="margin-left:auto">利好</span>
+      <span class="tag tag-down">利空</span>
+    </div>
+    <div class="m-card" style="padding:8px 4px">
+      <div id="mLanes" class="chart" style="height:320px"></div>
+    </div>
+    <div class="chart-note">泳道看时序，拓扑看传导，两者配合使用。</div>
+
+    <!-- 类型统计 -->
+    <div class="m-section-title">事件类型与影响方向</div>
+    <div class="m-card" style="padding:8px 4px">
+      <div id="mType" class="chart" style="height:220px"></div>
+    </div>
+
+    <!-- 事件列表 -->
+    <div class="m-section-title">
+      事件明细
+      <span class="tag tag-outline" style="margin-left:auto" id="mEvCount"></span>
+    </div>
+    <div class="row gap-2 wrap" style="margin-bottom:8px">
+      <span class="tag tag-lg tag-brand" id="fAll">全部</span>
+      <span class="tag tag-lg tag-outline" id="fUp">仅利好</span>
+      <span class="tag tag-lg tag-outline" id="fDown">仅利空</span>
+    </div>
+    <div class="col gap-2" id="mEvList"></div>
+
+    <div class="legend-block mt-4">
+      <b>数据口径</b>：事件由规则引擎从公告与新闻抽取，每日 07:30 / 12:30 / 19:30 三次；
+      影响方向与强度为人工标注（0–100，负值表示压制）；传导关系由人工连线；
+      本页不含编辑入口，仅查询与浏览。演示数据，不构成投资建议。
+    </div>
+
+  </div>
+</div>
+
+<script src="../web/_shared/vendor/echarts.min.js"></script>
+<script src="../web/_shared/data.js"></script>
+<script src="../web/_shared/charts.js"></script>
+<script src="../web/_shared/app.js"></script>
+<script src="../web/_shared/mock-frame.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F, ev = D.events;
+  var filter = "all";
+
+  var catColor = {
+    policy: C.cv("--chart-1"), finance: C.cv("--chart-6"), order: C.cv("--chart-2"),
+    operate: C.cv("--chart-8"), supply: C.cv("--chart-4"), fund: C.cv("--chart-3"),
+    price: C.cv("--chart-7"), capacity: C.cv("--chart-2"), rating: C.cv("--chart-1"), compete: C.cv("--chart-5")
+  };
+
+  /* ① 因果网络 */
+  F.graph("#mG1", {
+    nodes: ev.causal.nodes.map(function (n) {
+      return {
+        id: n.id, name: n.name.length > 6 ? n.name.slice(0, 6) + "…" : n.name, cat: n.cat,
+        size: 22 + n.strength / 8,
+        desc: n.type + " · " + n.date + " · " + (n.impact === "up" ? "利好" : "利空") + " · 强度 " + n.strength
+      };
+    }),
+    links: ev.causal.links,
+    categories: Object.keys(catColor).map(function (k) { return { name: k, color: catColor[k] }; }),
+    repulsion: 170, edgeLength: [38, 90], showLegend: false, showLinkLabel: false, curveness: 0.2
+  });
+
+  /* ② 股权关系 */
+  F.graph("#mG2", {
+    nodes: D.equity.graph.nodes.map(function (n) {
+      return Object.assign({}, n, { size: n.id === "self" ? 42 : 26, short: n.name.length > 5 ? n.name.slice(0, 5) + "…" : n.name });
+    }),
+    links: D.equity.graph.links,
+    categories: [
+      { name: "control", color: C.cv("--chart-4") }, { name: "self", color: C.cv("--chart-1") },
+      { name: "sub", color: C.cv("--chart-2") }, { name: "assoc", color: C.cv("--chart-3") },
+      { name: "partner", color: C.cv("--chart-7") }
+    ],
+    repulsion: 170, edgeLength: [36, 84], showLegend: false, showLinkLabel: false
+  });
+
+  /* ③ 产业链 */
+  F.sankey("#mG3", {
+    nodes: D.industry.chain.nodes.map(function (n) {
+      return {
+        name: n.name, level: n.stage === "上游" ? 0 : n.stage === "中游" ? 1 : 2,
+        color: n.stage === "上游" ? C.cv("--chart-4") : n.stage === "中游" ? C.cv("--chart-1") : C.cv("--chart-2"),
+        note: n.note
+      };
+    }),
+    links: D.industry.chain.links
+  });
+
+  /* ④ 自上而下 */
+  F.sankey("#mG4", {
+    nodes: ev.topdown.nodes.map(function (n) {
+      return {
+        name: n.name, level: n.level,
+        color: n.impact === "up" ? C.cv("--chart-1") : C.cv("--chart-5"),
+        note: (n.impact === "up" ? "利好" : "利空") + " · 强度 " + n.strength
+      };
+    }),
+    links: ev.topdown.links
+  });
+
+  var NOTES = {
+    causal: "<b>事件因果网络</b>：节点 = 事件，连线 = 因果传导（实线正向 / 虚线负向）。从固态电池路线图与储能大单出发的链路汇聚到业绩预告超预期，再传导至机构上调目标价。",
+    equity: "<b>公司股权关系</b>：以本公司为中心辐射控股方、子公司、参股与合资伙伴。欧洲合资对应「工厂提前投产」事件，邦普循环对应「回收管理办法」。",
+    chain: "<b>产业链传导</b>：上游碳酸锂价格回升（利空成本端）→ 正极涨价 → 电池成本上升；储能订单放量（利好）→ 高毛利业务占比提升，对冲成本压力。",
+    topdown: "<b>自上而下影响传导</b>：宏观 / 政策 → 行业 → 个股。最强正向传导为固态电池路线图（82）→ 电池行业（74）→ 宁德时代。"
+  };
+  document.getElementById("mNote").innerHTML = NOTES.causal;
+  document.addEventListener("sa:tabchange", function (e) {
+    if (NOTES[e.detail.key]) document.getElementById("mNote").innerHTML = NOTES[e.detail.key];
+  });
+
+  /* 泳道 */
+  F.lanes("#mLanes", { lanes: ev.lanes });
+
+  /* 类型统计 */
+  F.stacked("#mType", {
+    labels: ev.typeStats.map(function (t) { return t.type; }),
+    unit: "条",
+    series: [
+      { name: "利好", data: ev.typeStats.map(function (t) { return t.up; }), color: C.cv("--up") },
+      { name: "利空", data: ev.typeStats.map(function (t) { return t.down; }), color: C.cv("--down") },
+      { name: "中性", data: ev.typeStats.map(function (t) { return t.neutral; }), color: C.cv("--flat") }
+    ]
+  });
+
+  /* 事件列表 */
+  function renderEv() {
+    var list = ev.table.filter(function (t) { return filter === "all" || t.impact === filter; });
+    document.getElementById("mEvCount").textContent = list.length + " 条";
+    document.getElementById("mEvList").innerHTML = list.map(function (t) {
+      var isUp = t.impact === "up";
+      return '<div class="ev-card ' + (isUp ? "is-up" : "is-down") + '">' +
+        '<div class="row gap-2">' +
+          '<span class="tag ' + (isUp ? "tag-up" : "tag-down") + '">' + (isUp ? "利好" : "利空") + "</span>" +
+          '<span class="tag tag-outline">' + t.type + "</span>" +
+          '<span class="mono fs-10 t-3" style="margin-left:auto">' + t.date + "</span>" +
+        "</div>" +
+        '<div class="fs-12 mt-2" style="margin-top:6px;line-height:1.7">' + t.title + "</div>" +
+        '<div class="row gap-3 mt-2">' +
+          '<span class="fs-11 t-3">强度 <b class="mono">' + t.strength + "</b></span>" +
+          '<span class="fs-11 t-3">来源 ' + t.source + "</span>" +
+        "</div>" +
+        "</div>";
+    }).join("");
+  }
+  renderEv();
+  [["fAll", "all"], ["fUp", "up"], ["fDown", "down"]].forEach(function (pair) {
+    document.getElementById(pair[0]).addEventListener("click", function () {
+      filter = pair[1];
+      ["fAll", "fUp", "fDown"].forEach(function (id) {
+        var el = document.getElementById(id);
+        el.classList.toggle("tag-brand", id === pair[0]);
+        el.classList.toggle("tag-outline", id !== pair[0]);
+      });
+      renderEv();
+    });
+  });
+})();
+</script>
+</body>
+</html>

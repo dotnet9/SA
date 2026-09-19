@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>风险与舆情监控 · 宁德时代 300750 · 股析 SA</title>
+<link rel="stylesheet" href="_shared/tokens.css">
+<link rel="stylesheet" href="_shared/tailwind.css">
+<link rel="stylesheet" href="_shared/components.css">
+<style>
+  .trend-toolbar { position: sticky; top: 0; z-index: 20; background: var(--bg-root); padding: 10px 0; }
+  .alert-row { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border-soft); }
+  .alert-row:last-child { border-bottom: none; }
+  .alert-lv {
+    width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto;
+    display: grid; place-items: center; font-family: var(--font-num); font-size: 13px; font-weight: 700; color: #fff;
+  }
+  .wordcloud { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .wc {
+    padding: 4px 10px; border-radius: 999px; font-size: 12px;
+    border: 1px solid var(--border); background: var(--bg-sunken);
+  }
+  .wc.is-up { color: var(--up); border-color: var(--up-soft); background: var(--up-soft); }
+  .wc.is-down { color: var(--down); border-color: var(--down-soft); background: var(--down-soft); }
+</style>
+</head>
+<body data-page="stock-risk">
+
+<div class="sa-app">
+  <div class="sa-brand">
+    <div class="sa-logo">SA</div>
+    <div class="sa-brand-text">
+      <div class="sa-brand-name">股析</div>
+      <div class="sa-brand-sub">Stock Analysis</div>
+    </div>
+  </div>
+  <header class="sa-topbar" id="saTop"></header>
+  <nav class="sa-sidenav" id="saNav"></nav>
+  <main class="sa-main">
+    <div class="sa-page">
+
+      <div class="breadcrumb">
+        <a href="market.html">市场概览</a><span class="sep">/</span>
+        <a href="stock.html">宁德时代 300750</a><span class="sep">/</span>
+        <span>风险与舆情监控</span>
+      </div>
+
+      <div id="quoteStrip"></div>
+
+      <div class="trend-toolbar mt-4">
+        <div class="tabbar is-pill" id="modTabs"></div>
+      </div>
+
+      <div class="sa-split">
+        <div class="col gap-4">
+
+          <!-- 概览 -->
+          <div class="card is-accent">
+            <div class="card-head">
+              <span class="card-title">风险概览</span>
+              <span class="card-sub">风险矩阵 · 告警 · 舆情情绪</span>
+              <div class="card-tools">
+                <span class="segmented" id="segRange">
+                  <span class="is-active" data-v="90">近 90 天</span>
+                  <span data-v="180">近 180 天</span>
+                  <span data-v="365">近 1 年</span>
+                </span>
+                <button class="btn btn-sm btn-ghost" id="btnExport">导出</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="grid grid-6">
+                <div class="kpi"><span class="kpi-label">最高风险等级</span><span class="kpi-value is-sm t-danger">4 / 5</span><span class="kpi-delta t-3">价格战 / 原材料</span></div>
+                <div class="kpi"><span class="kpi-label">高风险项</span><span class="kpi-value is-sm t-danger">4</span><span class="kpi-delta t-3">等级 ≥ 4</span></div>
+                <div class="kpi"><span class="kpi-label">中等风险项</span><span class="kpi-value is-sm t-warn">5</span><span class="kpi-delta t-3">等级 3</span></div>
+                <div class="kpi"><span class="kpi-label">待关注告警</span><span class="kpi-value is-sm t-warn">8</span><span class="kpi-delta t-3">近 6 个月</span></div>
+                <div class="kpi"><span class="kpi-label">舆情情绪得分</span><span class="kpi-value is-sm t-up">74</span><span class="kpi-delta t-up">↑ +6 环比</span></div>
+                <div class="kpi"><span class="kpi-label">负面占比</span><span class="kpi-value is-sm t-up">9%</span><span class="kpi-delta t-up">↓ -3pct</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 风险矩阵 -->
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">风险矩阵</span>
+              <span class="card-sub">横轴 = 严重度 · 纵轴 = 发生概率 · 格内数字 = 风险等级 · 悬浮查看具体风险项</span>
+              <div class="card-tools">
+                <span class="risk-lv risk-lv-1"><i></i>1</span>
+                <span class="risk-lv risk-lv-2"><i></i>2</span>
+                <span class="risk-lv risk-lv-3"><i></i>3</span>
+                <span class="risk-lv risk-lv-4"><i></i>4</span>
+                <span class="risk-lv risk-lv-5"><i></i>5</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="riskMatrix" class="chart chart-xl"></div>
+              <div class="legend-block mt-3">
+                <b>读图</b>：右上角（高严重度 + 高概率）为需重点监控区域。
+                本公司风险集中在「价格战」与「原材料涨价」两项（等级 4），
+                但均属行业共性因素；公司特有风险（商誉、质押、诉讼）普遍处于 1–2 级。
+              </div>
+            </div>
+          </div>
+
+          <!-- 风险雷达 + 舆情 -->
+          <div class="grid grid-2">
+            <div class="card">
+              <div class="card-head"><span class="card-title">六维风险雷达</span><span class="card-sub">数值越高风险越大（0–100）</span></div>
+              <div class="card-body">
+                <div id="riskRadar" class="chart chart-lg"></div>
+                <div class="legend-block mt-2">
+                  本公司（蓝色）在市场风险（58）上高于行业均值（52），源于估值波动与价格战；
+                  其余五个维度均低于或接近行业均值，其中财务风险（18）显著优于行业（34）。
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head">
+                <span class="card-title">舆情情绪趋势</span>
+                <span class="card-sub">正负面新闻条数占比与情绪得分</span>
+                <div class="card-tools"><span class="tag tag-up">情绪转好</span></div>
+              </div>
+              <div class="card-body">
+                <div id="sentiment" class="chart chart-lg"></div>
+                <div class="grid grid-3 mt-3">
+                  <div class="kpi"><span class="kpi-label">正面</span><span class="kpi-value is-sm t-up">66%</span><span class="kpi-delta t-up">↑ +8pct</span></div>
+                  <div class="kpi"><span class="kpi-label">负面</span><span class="kpi-value is-sm t-down">9%</span><span class="kpi-delta t-up">↓ -3pct</span></div>
+                  <div class="kpi"><span class="kpi-label">中性</span><span class="kpi-value is-sm t-flat">25%</span><span class="kpi-delta t-3">—</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 舆情热词 -->
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">舆情热词</span>
+              <span class="card-sub">词大小 = 出现权重 · 颜色 = 情绪倾向</span>
+              <div class="card-tools"><span class="hint">数据源：公开新闻与资讯，每交易日 20:30 计算</span></div>
+            </div>
+            <div class="card-body">
+              <div class="wordcloud" id="hotWords"></div>
+              <div class="grid grid-2 mt-4">
+                <div>
+                  <div class="fs-12 fw-600 t-up" style="margin-bottom:8px">利好热词</div>
+                  <div id="posBar" class="chart chart-sm"></div>
+                </div>
+                <div>
+                  <div class="fs-12 fw-600 t-down" style="margin-bottom:8px">利空热词</div>
+                  <div id="negBar" class="chart chart-sm"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 告警清单 -->
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">告警清单</span>
+              <span class="card-sub">诉讼 / 监管函 / 商誉减值 / 质押 / 减持 / 退市风险</span>
+              <div class="card-tools">
+                <select class="select input-sm" id="fLevel" style="width:120px">
+                  <option value="all">全部等级</option>
+                  <option value="4">仅高风险（≥4）</option>
+                  <option value="3">仅中风险（=3）</option>
+                  <option value="2">仅低风险（≤2）</option>
+                </select>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="alertList"></div>
+            </div>
+          </div>
+
+          <!-- 关联方风险传导 -->
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">关联方风险传导</span>
+              <span class="card-sub">子公司 / 参股公司 / 合资伙伴的风险敞口</span>
+            </div>
+            <div class="card-body">
+              <div id="relatedRisk" class="chart chart-lg"></div>
+              <div class="legend-block mt-3">
+                主要敞口集中在「Stellantis 欧洲合资」（政策与关税风险，敞口 82）与
+                「邦普循环」（原材料价格风险，敞口 64）；国内子公司风险敞口均较低。
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <aside class="col gap-4">
+          <div class="card">
+            <div class="card-head"><span class="card-title">风险综合评分</span><span class="tag tag-warn">中等</span></div>
+            <div class="card-body">
+              <div id="riskGauge" class="chart chart-sm"></div>
+              <div class="hint">综合评分越低越安全；本公司 34 / 100，行业均值 42 / 100</div>
+              <div class="col gap-2 mt-3">
+                <div class="row-between"><span class="fs-12 t-2">财务风险</span><span class="mono fs-12 t-up">18</span></div>
+                <div class="row-between"><span class="fs-12 t-2">经营风险</span><span class="mono fs-12 t-warn">32</span></div>
+                <div class="row-between"><span class="fs-12 t-2">治理风险</span><span class="mono fs-12 t-up">16</span></div>
+                <div class="row-between"><span class="fs-12 t-2">市场风险</span><span class="mono fs-12 t-down">58</span></div>
+                <div class="row-between"><span class="fs-12 t-2">合规风险</span><span class="mono fs-12 t-up">22</span></div>
+                <div class="row-between"><span class="fs-12 t-2">舆情风险</span><span class="mono fs-12 t-up">26</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">最需关注的三件事</span></div>
+            <div class="card-body col gap-3">
+              <div class="fold">
+                <div class="fold-head"><span class="risk-lv risk-lv-4"><i></i></span>行业价格战<span class="caret">▼</span></div>
+                <div class="fold-body hint">二线厂商报价下调 8%，若持续将压制 2027 年毛利率。应对：储能与海外高毛利业务占比提升。</div>
+              </div>
+              <div class="fold is-collapsed">
+                <div class="fold-head"><span class="risk-lv risk-lv-4"><i></i></span>原材料价格波动<span class="caret">▼</span></div>
+                <div class="fold-body hint">碳酸锂自低点回升 6.4%，直接抬升正极成本。应对：参股洛阳钼业锁定资源，长协比例 62%。</div>
+              </div>
+              <div class="fold is-collapsed">
+                <div class="fold-head"><span class="risk-lv risk-lv-4"><i></i></span>海外贸易壁垒<span class="caret">▼</span></div>
+                <div class="fold-body hint">欧盟终裁加征关税，美国 IRA 本地化要求。应对：西班牙与匈牙利本地化建厂，技术授权模式（福特 LRS）。</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">告警订阅</span></div>
+            <div class="card-body col gap-2">
+              <label class="check"><input type="checkbox" checked> 新增监管函 / 问询函</label>
+              <label class="check"><input type="checkbox" checked> 股东减持计划披露</label>
+              <label class="check"><input type="checkbox" checked> 股权质押比例变动超 1pct</label>
+              <label class="check"><input type="checkbox" checked> 负面舆情占比超 20%</label>
+              <label class="check"><input type="checkbox"> 商誉减值计提</label>
+              <label class="check"><input type="checkbox"> 涉及重大诉讼</label>
+              <a class="btn btn-outline btn-block mt-3" href="alerts.html">管理提醒规则 →</a>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">数据口径</span></div>
+            <div class="card-body">
+              <div class="legend-block">
+                风险项：从公告、监管文件与公开信息按模板抽取，每交易日 19:30；<br>
+                严重度与概率：人工标注 1–5，风险等级 = 严重度 × 概率 / 5 取整；<br>
+                舆情：公开新闻与资讯，情绪由词典 + 规则打分，每交易日 20:30；<br>
+                关联方敞口：按业务关联度与信息披露完整度评估；<br>
+                更新时间 2026-09-18 · 演示数据，不构成投资建议。
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="_shared/vendor/echarts.min.js"></script>
+<script src="_shared/data.js"></script>
+<script src="_shared/charts.js"></script>
+<script src="_shared/app.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F, rk = D.risk;
+
+  /* 矩阵：x = 严重度(1-5)，y = 概率(5→1 自上而下) */
+  var grid = [];
+  for (var y = 0; y < 5; y++) {
+    for (var x = 0; x < 5; x++) {
+      var sev = x + 1, prob = 5 - y;
+      var items = rk.matrix.filter(function (m) { return m.severity === sev && m.probability === prob; });
+      grid.push({
+        x: x, y: y,
+        level: items.length ? Math.max.apply(null, items.map(function (m) { return m.level; })) : Math.max(1, Math.round(sev * prob / 5)),
+        risks: items.map(function (m) { return m.type + "：" + m.note; })
+      });
+    }
+  }
+  F.heatmap("#riskMatrix", {
+    xLabels: ["1 极低", "2 低", "3 中", "4 高", "5 极高"],
+    yLabels: ["概率 5 极高", "4 高", "3 中", "2 低", "1 极低"],
+    data: grid
+  });
+
+  /* 雷达 */
+  F.radar("#riskRadar", { indicators: rk.radar.indicators, series: rk.radar.series, radius: "64%" });
+
+  /* 舆情 */
+  F.combo("#sentiment", {
+    labels: rk.sentiment.labels, unit: "条",
+    bars: [
+      { name: "正面", data: rk.sentiment.positive, color: C.cv("--up") },
+      { name: "负面", data: rk.sentiment.negative, color: C.cv("--down") },
+      { name: "中性", data: rk.sentiment.neutral, color: C.cv("--flat") }
+    ],
+    lines: [{ name: "情绪得分", data: rk.sentiment.score, axis: 2, color: C.cv("--chart-2") }],
+    unit2: "分"
+  });
+
+  /* 热词 */
+  document.getElementById("hotWords").innerHTML = rk.hotWords.map(function (w) {
+    var size = 11 + Math.round(w.weight / 12);
+    var cls = w.tone === "up" ? "is-up" : w.tone === "down" ? "is-down" : "";
+    return '<span class="wc ' + cls + '" style="font-size:' + size + 'px">' + w.word +
+      ' <span class="mono" style="opacity:.6;font-size:10px">' + w.weight + "</span></span>";
+  }).join("");
+
+  var pos = rk.hotWords.filter(function (w) { return w.tone === "up"; });
+  var neg = rk.hotWords.filter(function (w) { return w.tone === "down"; });
+  F.hbar("#posBar", { data: pos.map(function (w) { return { name: w.word, pct: w.weight / 12 }; }) });
+  F.hbar("#negBar", { data: neg.map(function (w) { return { name: w.word, pct: -w.weight / 12 }; }) });
+
+  /* 告警清单 */
+  function lvColor(l) {
+    return l >= 5 ? "#ef4444" : l === 4 ? "#f97316" : l === 3 ? "#eab308" : l === 2 ? "#84cc16" : "#22c55e";
+  }
+  function renderAlerts() {
+    var f = document.getElementById("fLevel").value;
+    var rows = rk.alerts.filter(function (a) {
+      if (f === "all") return true;
+      var l = parseInt(f, 10);
+      return f === "4" ? a.level >= 4 : f === "3" ? a.level === 3 : a.level <= 2;
+    });
+    document.getElementById("alertList").innerHTML = rows.length ? rows.map(function (a) {
+      return '<div class="alert-row">' +
+        '<div class="alert-lv" style="background:' + lvColor(a.level) + '">' + a.level + "</div>" +
+        '<div class="grow">' +
+          '<div class="row gap-2 wrap">' +
+            '<span class="tag tag-outline">' + a.type + "</span>" +
+            '<span class="fs-13 fw-600">' + a.title + "</span>" +
+            '<span class="mono fs-11 t-3" style="margin-left:auto">' + a.date + "</span>" +
+          "</div>" +
+          '<div class="fs-12 t-2 mt-1" style="margin-top:4px;line-height:1.7">' + a.detail + "</div>" +
+          '<div class="hint mt-1" style="margin-top:4px">来源：' + a.source + "</div>" +
+        "</div>" +
+        '<div class="col gap-1" style="flex:0 0 auto">' +
+          '<span class="risk-lv risk-lv-' + a.level + '"><i></i>' + (a.level >= 4 ? "高" : a.level === 3 ? "中" : "低") + "</span>" +
+        "</div>" +
+      "</div>";
+    }).join("") : '<div class="empty"><div class="em-icon">◌</div><div class="fs-13">该筛选条件下暂无告警</div></div>';
+  }
+  renderAlerts();
+  document.getElementById("fLevel").addEventListener("change", renderAlerts);
+
+  /* 关联方风险 */
+  F.hbar("#relatedRisk", {
+    data: [
+      { name: "Stellantis 欧洲合资", pct: 82 },
+      { name: "邦普循环（回收）", pct: 64 },
+      { name: "时代储能（海外）", pct: 58 },
+      { name: "时代广汽", pct: 42 },
+      { name: "时代上汽", pct: 38 },
+      { name: "四川时代", pct: 28 },
+      { name: "宁德新能源", pct: 22 },
+      { name: "时代智能", pct: 18 }
+    ]
+  });
+
+  F.gauge("#riskGauge", { value: 34, max: 100, name: "综合风险评分", warnAt: 30, dangerAt: 60 });
+
+  SA.qsa(".fold-head").forEach(function (h) {
+    h.addEventListener("click", function () { h.parentNode.classList.toggle("is-collapsed"); });
+  });
+  document.getElementById("btnExport").addEventListener("click", function () {
+    SA.toast("已导出风险与告警清单为 CSV（原型不产生文件）", "ok");
+  });
+
+  SA.startLiveTicker("#qLive", { interval: 3000 });
+})();
+</script>
+</body>
+</html>

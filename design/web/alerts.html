@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>提醒规则 · 股析 SA</title>
+<link rel="stylesheet" href="_shared/tokens.css">
+<link rel="stylesheet" href="_shared/tailwind.css">
+<link rel="stylesheet" href="_shared/components.css">
+<style>
+  .rule-card {
+    border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;
+    background: var(--bg-sunken); position: relative;
+  }
+  .rule-card.is-off { opacity: .55; }
+  .rule-type-icon {
+    width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center;
+    background: var(--brand-soft); color: var(--brand); font-size: 14px; flex: 0 0 auto;
+  }
+  .type-card {
+    border: 1px solid var(--border); border-radius: 10px; padding: 12px;
+    background: var(--bg-sunken); cursor: pointer; transition: all var(--t-fast);
+  }
+  .type-card:hover { border-color: var(--brand); }
+  .type-card.is-active { border-color: var(--brand); background: var(--brand-soft); }
+</style>
+</head>
+<body data-page="alerts">
+
+<div class="sa-app">
+  <div class="sa-brand">
+    <div class="sa-logo">SA</div>
+    <div class="sa-brand-text">
+      <div class="sa-brand-name">股析</div>
+      <div class="sa-brand-sub">Stock Analysis</div>
+    </div>
+  </div>
+  <header class="sa-topbar" id="saTop"></header>
+  <nav class="sa-sidenav" id="saNav"></nav>
+  <main class="sa-main">
+    <div class="sa-page">
+
+      <div class="sa-pagehead">
+        <div>
+          <h1>提醒规则</h1>
+          <div class="sub">10 条规则 · 8 条启用 · 4 类触发条件 · 站内 / 通知栏 / 震动三种渠道</div>
+        </div>
+        <div class="sa-pagehead-actions">
+          <span class="row gap-2"><span class="dot dot-live"></span><span class="fs-12 t-2">巡检中（交易时段每 30 秒）</span></span>
+          <button class="btn btn-outline btn-sm" id="btnTest">发送测试通知</button>
+          <button class="btn btn-primary btn-sm" data-open="dlgNew">+ 新建规则</button>
+        </div>
+      </div>
+
+      <div class="grid grid-4">
+        <div class="kpi"><span class="kpi-label">启用中</span><span class="kpi-value is-xl t-up" id="kOn">8</span><span class="kpi-delta t-3">共 10 条</span></div>
+        <div class="kpi"><span class="kpi-label">今日触发</span><span class="kpi-value is-xl">3</span><span class="kpi-delta t-3">09-18</span></div>
+        <div class="kpi"><span class="kpi-label">近 30 日触发</span><span class="kpi-value is-xl">19</span><span class="kpi-delta t-3">平均 0.63 次/日</span></div>
+        <div class="kpi"><span class="kpi-label">覆盖股票</span><span class="kpi-value is-xl">9</span><span class="kpi-delta t-3">含 4 只核心持仓</span></div>
+      </div>
+
+      <!-- 四类规则说明 -->
+      <div class="card mt-4">
+        <div class="card-head">
+          <span class="card-title">四类触发条件</span>
+          <span class="card-sub">点击卡片可直接新建该类型的规则</span>
+          <div class="card-tools">
+            <span class="tag tag-outline">巡检频率：交易时段每 30 秒</span>
+            <span class="tag tag-outline">数据延迟：≤ 3 秒</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="grid grid-4" id="typeCards"></div>
+        </div>
+      </div>
+
+      <div class="sa-split mt-4">
+        <div class="col gap-4">
+
+          <!-- 规则列表 -->
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">规则列表</span>
+              <span class="card-sub">开关即时生效 · 阈值可编辑</span>
+              <div class="card-tools">
+                <select class="select input-sm" id="fType" style="width:130px"></select>
+                <select class="select input-sm" id="fStatus" style="width:110px">
+                  <option value="all">全部状态</option>
+                  <option value="on">仅启用</option>
+                  <option value="off">仅停用</option>
+                </select>
+                <button class="btn btn-sm btn-ghost" id="btnBatchApply">批量应用</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="grid grid-2" id="ruleList"></div>
+            </div>
+            <div class="card-foot">
+              <span id="ruleFoot">共 10 条</span>
+              <span style="margin-left:auto" class="hint">批量应用：把一条规则复制到某个分组下的全部股票</span>
+            </div>
+          </div>
+
+          <!-- 触发历史 -->
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">触发历史</span>
+              <span class="card-sub">近 30 日 · 按时间倒序</span>
+              <div class="card-tools">
+                <select class="select input-sm" style="width:140px">
+                  <option>全部渠道</option>
+                  <option>站内通知</option>
+                  <option>浏览器通知栏</option>
+                  <option>震动</option>
+                </select>
+                <button class="btn btn-sm btn-ghost" id="btnExport">导出</button>
+              </div>
+            </div>
+            <div class="card-body is-flush">
+              <div class="tbl-wrap">
+                <table class="tbl is-comfort">
+                  <thead>
+                    <tr><th style="width:150px">触发时间</th><th style="width:130px">股票</th><th>触发规则</th><th class="num" style="width:130px">触发值</th><th style="width:210px">通知渠道</th><th style="width:80px" class="col-actions">操作</th></tr>
+                  </thead>
+                  <tbody id="histBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- 渠道与免打扰 -->
+          <div class="grid grid-2">
+            <div class="card">
+              <div class="card-head"><span class="card-title">通知渠道</span><span class="card-sub">全局默认，单条规则可覆盖</span></div>
+              <div class="card-body col gap-3">
+                <label class="switch"><input type="checkbox" checked><span class="track"></span>站内通知中心（始终可用）</label>
+                <label class="switch"><input type="checkbox" checked><span class="track"></span>浏览器通知栏（需 PWA 已安装 + 授权）</label>
+                <label class="switch"><input type="checkbox" checked><span class="track"></span>震动（仅移动端，iOS 不支持）</label>
+                <label class="switch"><input type="checkbox"><span class="track"></span>邮件（未接入）</label>
+                <div class="legend-block">
+                  <b>iOS 限制</b>：必须先在 Safari 中「添加到主屏幕」并从主屏图标启动，才可申请通知权限；
+                  iOS 不支持 Web 震动 API，也不支持桌面小组件。
+                  <a class="t-brand" href="../app/notify-preview.html">查看提醒形态预览 →</a>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="card-title">免打扰与合并</span></div>
+              <div class="card-body col gap-3">
+                <div class="field">
+                  <label class="label">免打扰时段</label>
+                  <div class="row gap-2">
+                    <input class="input input-sm" value="23:00" style="width:90px">
+                    <span class="hint">至</span>
+                    <input class="input input-sm" value="08:30" style="width:90px">
+                  </div>
+                  <span class="hint">免打扰期间仅写站内通知，不触发通知栏与震动</span>
+                </div>
+                <label class="switch"><input type="checkbox" checked><span class="track"></span>同一规则 5 分钟内只提醒一次</label>
+                <label class="switch"><input type="checkbox" checked><span class="track"></span>收盘后 15:30 汇总当日触发为一条日报</label>
+                <label class="switch"><input type="checkbox"><span class="track"></span>只对自选股触发（忽略非自选）</label>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <aside class="col gap-4">
+          <div class="card">
+            <div class="card-head"><span class="card-title">触发频次排行</span><span class="card-sub">近 30 日</span></div>
+            <div class="card-body"><div id="triggerRank" class="chart chart-md"></div></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">规则健康度</span></div>
+            <div class="card-body col gap-3">
+              <div class="row-between"><span class="fs-12 t-2">近 30 日零触发规则</span><span class="mono fs-12 t-warn">2 条</span></div>
+              <div class="row-between"><span class="fs-12 t-2">触发过于频繁</span><span class="mono fs-12 t-down">1 条</span></div>
+              <div class="row-between"><span class="fs-12 t-2">阈值过宽松</span><span class="mono fs-12 t-warn">3 条</span></div>
+              <div class="legend-block">
+                「天齐锂业 跌破 MA20」近 30 日触发 4 次，建议收紧阈值或改为「连续两日跌破」以减少噪音。
+              </div>
+              <button class="btn btn-outline btn-block" id="btnOptimize">一键优化建议</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">规则模板</span><span class="card-sub">常用组合，一键添加</span></div>
+            <div class="card-body col gap-2">
+              <button class="btn btn-outline btn-block tplBtn" data-t="趋势转弱三连">趋势转弱三连（跌破 MA20 + MACD 死叉 + 放量下跌）</button>
+              <button class="btn btn-outline btn-block tplBtn" data-t="突破确认">突破确认（创 60 日新高 + 量比 &gt; 1.8）</button>
+              <button class="btn btn-outline btn-block tplBtn" data-t="资金异动">资金异动（主力净流入 &gt; 5 亿 或 净流出 &gt; 5 亿）</button>
+              <button class="btn btn-outline btn-block tplBtn" data-t="事件驱动">事件驱动（业绩预告 / 重大合同 / 股东增减持）</button>
+              <button class="btn btn-outline btn-block tplBtn" data-t="风控预警">风控预警（质押变动 + 监管函 + 商誉减值）</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">数据口径</span></div>
+            <div class="card-body">
+              <div class="legend-block">
+                价格类规则：交易时段每 30 秒巡检，触发延迟 ≤ 3 秒；<br>
+                技术指标类：每交易日 16:00 计算后巡检（收盘后触发）；<br>
+                资金流类：交易日 15:20 数据就绪后巡检；<br>
+                公告事件类：公告抓取后立即巡检（07:30 / 12:30 / 19:30）；<br>
+                更新时间 2026-09-18 · 演示数据。
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- 新建规则 -->
+<div class="overlay" id="dlgNew">
+  <div class="dialog is-wide">
+    <div class="dialog-head">
+      <h3>新建提醒规则</h3>
+      <span class="tag tag-outline" id="newTypeTag">价格与涨跌幅</span>
+      <button class="icon-btn" data-close="dlgNew" style="margin-left:auto">✕</button>
+    </div>
+    <div class="dialog-body col gap-4">
+      <div class="field">
+        <label class="label">规则类型</label>
+        <div class="grid grid-4" id="newTypes"></div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="field">
+          <label class="label">股票 <span class="req">*</span></label>
+          <input class="input" id="newStock" value="宁德时代 300750">
+          <span class="hint">支持输入代码 / 名称 / 拼音首字母；也可选择「整个分组」</span>
+        </div>
+        <div class="field">
+          <label class="label">应用范围</label>
+          <select class="select">
+            <option>仅这一只股票</option>
+            <option>应用到「核心持仓」分组（4 只）</option>
+            <option>应用到「重点观察」分组（6 只）</option>
+            <option>应用到全部自选股（14 只）</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="condBlock">
+        <div class="label" style="margin-bottom:10px">触发条件</div>
+        <div class="grid grid-3">
+          <div class="field">
+            <label class="label">条件</label>
+            <select class="select" id="condOp">
+              <option>上穿</option><option>下穿</option><option>涨跌幅超过</option><option>创 N 日新高</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="label">阈值</label>
+            <input class="input input-num" id="condVal" value="280.00">
+          </div>
+          <div class="field">
+            <label class="label">单位 / 周期</label>
+            <select class="select"><option>元</option><option>%</option><option>日</option></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label">通知方式</label>
+        <div class="row gap-5 wrap">
+          <label class="check"><input type="checkbox" checked> 站内通知</label>
+          <label class="check"><input type="checkbox" checked> 浏览器通知栏</label>
+          <label class="check"><input type="checkbox" checked> 震动</label>
+          <label class="check"><input type="checkbox"> 邮件（未接入）</label>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="field">
+          <label class="label">生效时间</label>
+          <div class="segmented" style="width:100%">
+            <span class="is-active">交易日 9:30–15:00</span><span>全天</span><span>仅收盘后</span>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">触发频率限制</label>
+          <div class="segmented" style="width:100%">
+            <span class="is-active">5 分钟内一次</span><span>每日一次</span><span>不限制</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="legend-block">
+        <b>预览</b>：当「宁德时代 300750」在交易日 9:30–15:00 期间<b>上穿 280.00 元</b>时，
+        通过<b>站内 + 通知栏 + 震动</b>提醒，同一规则 5 分钟内不重复提醒。
+      </div>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-ghost" data-close="dlgNew">取消</button>
+      <button class="btn btn-outline" data-close="dlgNew" onclick="SA.toast('已保存并启用，交易时段将每 30 秒巡检','ok')">保存并启用</button>
+      <button class="btn btn-primary" data-close="dlgNew" onclick="SA.toast('已保存为草稿（不启用）','info')">仅保存</button>
+    </div>
+  </div>
+</div>
+
+<script src="_shared/vendor/echarts.min.js"></script>
+<script src="_shared/data.js"></script>
+<script src="_shared/charts.js"></script>
+<script src="_shared/app.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F, al = D.alerts;
+  var filter = { type: "all", status: "all" };
+
+  /* 四类卡片 */
+  document.getElementById("typeCards").innerHTML = al.types.map(function (t) {
+    return '<div class="type-card" data-id="' + t.id + '">' +
+      '<div class="row gap-2"><span class="rule-type-icon">' + t.icon + "</span>" +
+      '<span class="fs-13 fw-600">' + t.name + "</span></div>" +
+      '<div class="hint mt-2" style="line-height:1.7">' + t.desc + "</div>" +
+      "</div>";
+  }).join("");
+  SA.qsa("#typeCards .type-card").forEach(function (c) {
+    c.addEventListener("click", function () {
+      SA.openDialog("dlgNew");
+      var t = al.types.filter(function (x) { return x.id === c.getAttribute("data-id"); })[0];
+      SA.qsa("#newTypes .type-card").forEach(function (x) {
+        x.classList.toggle("is-active", x.getAttribute("data-id") === t.id);
+      });
+      document.getElementById("newTypeTag").textContent = t.name;
+      document.getElementById("condOp").innerHTML = t.id === "price"
+        ? "<option>上穿</option><option>下穿</option><option>涨跌幅超过</option><option>创 N 日新高</option>"
+        : t.id === "tech"
+        ? "<option>上穿 MA20</option><option>下穿 MA20</option><option>MACD 金叉</option><option>MACD 死叉</option><option>放量突破</option>"
+        : t.id === "flow"
+        ? "<option>主力净流入超过</option><option>主力净流出超过</option><option>北向持股比例上升</option><option>龙虎榜上榜</option>"
+        : "<option>发布定期报告</option><option>发布业绩预告</option><option>重大合同</option><option>股东增减持</option><option>监管函 / 问询函</option>";
+    });
+  });
+
+  /* 对话框内类型切换 */
+  document.getElementById("newTypes").innerHTML = al.types.map(function (t, i) {
+    return '<div class="type-card' + (i === 0 ? " is-active" : "") + '" data-id="' + t.id + '">' +
+      '<div class="row gap-2"><span class="rule-type-icon">' + t.icon + "</span>" +
+      '<span class="fs-12 fw-600">' + t.name + "</span></div></div>";
+  }).join("");
+  SA.qsa("#newTypes .type-card").forEach(function (c) {
+    c.addEventListener("click", function () {
+      SA.qsa("#newTypes .type-card").forEach(function (o) { o.classList.toggle("is-active", o === c); });
+      var t = al.types.filter(function (x) { return x.id === c.getAttribute("data-id"); })[0];
+      document.getElementById("newTypeTag").textContent = t.name;
+    });
+  });
+
+  /* 筛选下拉 */
+  document.getElementById("fType").innerHTML = '<option value="all">全部类型</option>' +
+    al.types.map(function (t) { return '<option value="' + t.name + '">' + t.name + "</option>"; }).join("");
+
+  /* 规则列表 */
+  function renderRules() {
+    var list = al.rules.filter(function (r) {
+      return (filter.type === "all" || r.type === filter.type) &&
+        (filter.status === "all" || r.status === filter.status);
+    });
+    document.getElementById("ruleFoot").textContent = "共 " + list.length + " 条（筛选后）";
+    var onCount = al.rules.filter(function (r) { return r.status === "on"; }).length;
+    document.getElementById("kOn").textContent = onCount;
+
+    if (!list.length) {
+      document.getElementById("ruleList").innerHTML = '<div class="empty" style="grid-column:1/-1">' +
+        '<div class="em-icon">◌</div><div class="fs-13">该筛选条件下没有规则</div></div>';
+      return;
+    }
+
+    document.getElementById("ruleList").innerHTML = list.map(function (r) {
+      var icon = r.type === "价格" ? "◈" : r.type === "技术指标" ? "◉" : r.type === "资金流" ? "◐" : "◍";
+      return '<div class="rule-card' + (r.status === "off" ? " is-off" : "") + '">' +
+        '<div class="row gap-3">' +
+          '<span class="rule-type-icon">' + icon + "</span>" +
+          '<div class="grow">' +
+            '<div class="row gap-2 wrap">' +
+              '<span class="fs-13 fw-600">' + r.name + '</span>' +
+              '<span class="mono fs-11 t-3">' + r.code + "</span>" +
+              '<span class="tag tag-outline">' + r.type + "</span>" +
+            "</div>" +
+            '<div class="fs-12 t-2 mt-1" style="margin-top:4px">' + r.desc + "</div>" +
+            '<div class="row gap-3 mt-2 wrap hint">' +
+              "<span>阈值 " + r.threshold + "</span>" +
+              "<span>已触发 " + r.triggers + " 次</span>" +
+              "<span>最近 " + r.lastTrigger + "</span>" +
+            "</div>" +
+            '<div class="row gap-1 mt-2 wrap">' +
+              r.channels.map(function (c) { return '<span class="tag tag-outline">' + c + "</span>"; }).join("") +
+            "</div>" +
+          "</div>" +
+          '<div class="col gap-2" style="flex:0 0 auto;align-items:flex-end">' +
+            '<label class="switch"><input type="checkbox"' + (r.status === "on" ? " checked" : "") + ' data-toggle="' + r.id + '"><span class="track"></span></label>' +
+            '<div class="row gap-1">' +
+              '<button class="btn btn-sm btn-ghost ruleEdit" data-id="' + r.id + '">编辑</button>' +
+              '<button class="btn btn-sm btn-ghost ruleDel" data-id="' + r.id + '">删除</button>' +
+            "</div>" +
+          "</div>" +
+        "</div></div>";
+    }).join("");
+
+    SA.qsa("[data-toggle]").forEach(function (sw) {
+      sw.addEventListener("change", function () {
+        var r = al.rules.filter(function (x) { return x.id === sw.getAttribute("data-toggle"); })[0];
+        r.status = sw.checked ? "on" : "off";
+        SA.toast((sw.checked ? "已启用" : "已停用") + "规则：" + r.name, sw.checked ? "ok" : "warn");
+        /* 重新渲染：停用态变灰，启用计数同步 */
+        renderRules();
+      });
+    });
+    SA.qsa(".ruleEdit").forEach(function (b) {
+      b.addEventListener("click", function () { SA.openDialog("dlgNew"); });
+    });
+    SA.qsa(".ruleDel").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var r = al.rules.filter(function (x) { return x.id === b.getAttribute("data-id"); })[0];
+        SA.toast("已删除规则：" + r.name, "info");
+        b.closest(".rule-card").remove();
+      });
+    });
+  }
+  renderRules();
+  document.getElementById("fType").addEventListener("change", function () { filter.type = this.value; renderRules(); });
+  document.getElementById("fStatus").addEventListener("change", function () { filter.status = this.value; renderRules(); });
+
+  /* 触发历史 */
+  document.getElementById("histBody").innerHTML = al.history.map(function (h) {
+    return "<tr>" +
+      '<td class="mono fs-11 t-3">' + h.time + "</td>" +
+      '<td><span class="stock-cell"><span class="sc-name">' + h.name + '</span><span class="sc-code">' + h.code + "</span></span></td>" +
+      "<td>" + h.rule + "</td>" +
+      '<td class="num t-brand">' + h.value + "</td>" +
+      '<td class="fs-11 t-2">' + h.channel + "</td>" +
+      '<td class="col-actions"><a class="btn btn-sm btn-ghost" href="notifications.html">查看</a></td>' +
+      "</tr>";
+  }).join("");
+
+  /* 触发排行 */
+  F.hbar("#triggerRank", {
+    data: al.rules.slice().sort(function (a, b) { return b.triggers - a.triggers; }).slice(0, 7)
+      .map(function (r) { return { name: r.name.slice(0, 6) + " · " + r.type, pct: r.triggers }; })
+  });
+
+  /* 测试通知 */
+  document.getElementById("btnTest").addEventListener("click", function () {
+    SA.toast("已发送测试通知（浏览器通知栏 + 站内通知）", "ok");
+    if (window.Notification && Notification.permission === "granted") {
+      try { new Notification("股析 SA · 测试通知", { body: "这是一条演示通知，用于验证通知渠道是否可用。" }); } catch (e) { }
+    }
+  });
+  document.getElementById("btnBatchApply").addEventListener("click", function () {
+    SA.toast("请选择要批量应用的规则与目标分组", "info");
+  });
+  document.getElementById("btnOptimize").addEventListener("click", function () {
+    SA.toast("已给出 3 条优化建议：收紧 1 条阈值、删除 2 条零触发规则", "ok");
+  });
+  SA.qsa(".tplBtn").forEach(function (b) {
+    b.addEventListener("click", function () {
+      SA.toast("已添加规则模板：" + b.getAttribute("data-t"), "ok");
+    });
+  });
+  document.getElementById("btnExport").addEventListener("click", function () {
+    SA.toast("已导出触发历史为 CSV（原型不产生文件）", "ok");
+  });
+})();
+</script>
+</body>
+</html>

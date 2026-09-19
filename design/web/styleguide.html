@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>设计规范 · 股析 SA</title>
+<link rel="stylesheet" href="_shared/tokens.css">
+<link rel="stylesheet" href="_shared/tailwind.css">
+<link rel="stylesheet" href="_shared/components.css">
+<style>
+  .swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .swatch { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--bg-panel); }
+  .swatch .chip { height: 56px; }
+  .swatch .meta { padding: 8px 10px; font-size: 11px; line-height: 1.6; }
+  .swatch .meta b { display: block; font-size: 12px; color: var(--text-1); }
+  .swatch .meta code { font-family: var(--font-num); color: var(--text-3); font-size: 10px; }
+  .spec-row { display: flex; align-items: center; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--border-soft); }
+  .spec-row:last-child { border-bottom: none; }
+  .spec-row .sk { width: 130px; flex: 0 0 auto; font-size: 12px; color: var(--text-3); }
+  .spec-row .sv { flex: 1; min-width: 0; }
+  .space-demo { background: var(--brand-soft); border: 1px dashed var(--brand); height: 18px; }
+  .radius-demo { width: 64px; height: 44px; background: var(--bg-elevated); border: 1px solid var(--border-strong); }
+  .shadow-demo { width: 84px; height: 52px; background: var(--bg-elevated); border-radius: 10px; display: grid; place-items: center; font-size: 11px; color: var(--text-3); }
+  .anchor-nav { position: sticky; top: 0; z-index: 30; background: var(--bg-root); padding-bottom: 8px; }
+</style>
+</head>
+<body data-page="styleguide">
+
+<div class="sa-app">
+  <div class="sa-brand">
+    <div class="sa-logo">SA</div>
+    <div class="sa-brand-text">
+      <div class="sa-brand-name">股析</div>
+      <div class="sa-brand-sub">Stock Analysis</div>
+    </div>
+  </div>
+  <header class="sa-topbar" id="saTop"></header>
+  <nav class="sa-sidenav" id="saNav"></nav>
+  <main class="sa-main">
+    <div class="sa-page">
+
+      <div class="breadcrumb"><a href="market.html">首页</a><span class="sep">/</span><span>设计规范</span></div>
+      <div class="sa-pagehead">
+        <div>
+          <h1>设计规范与组件库</h1>
+          <div class="sub">全站视觉语言基准 · 后续 React 工程直接照此实现 · 深浅主题与涨跌色可实时切换</div>
+        </div>
+        <div class="sa-pagehead-actions">
+          <button class="btn btn-outline" id="sgTheme">切换深浅主题</button>
+          <button class="btn btn-outline" id="sgUpdown">切换涨跌色</button>
+        </div>
+      </div>
+
+      <div class="anchor-nav row gap-2 wrap">
+        <a class="tag tag-outline" href="#c-color">色彩</a>
+        <a class="tag tag-outline" href="#c-type">排版</a>
+        <a class="tag tag-outline" href="#c-space">间距圆角阴影</a>
+        <a class="tag tag-outline" href="#c-btn">按钮</a>
+        <a class="tag tag-outline" href="#c-form">表单</a>
+        <a class="tag tag-outline" href="#c-tag">标签徽标</a>
+        <a class="tag tag-outline" href="#c-tbl">表格</a>
+        <a class="tag tag-outline" href="#c-kpi">指标与行情</a>
+        <a class="tag tag-outline" href="#c-chart">图表主题</a>
+        <a class="tag tag-outline" href="#c-overlay">浮层</a>
+        <a class="tag tag-outline" href="#c-state">状态</a>
+        <a class="tag tag-outline" href="#c-biz">业务组件</a>
+        <a class="tag tag-outline" href="#c-craft">酷感手法</a>
+      </div>
+
+      <!-- ============ 色彩 ============ -->
+      <h2 class="mt-6" id="c-color" style="font-size:18px;font-weight:700">1. 色彩</h2>
+      <p class="hint mt-2">令牌定义于 <code>tokens.css</code>。深色为默认主题；<code>[data-theme="light"]</code> 覆盖；涨跌色由 <code>[data-updown]</code> 控制，<code>--up</code> / <code>--down</code> 整组交换。</p>
+
+      <div class="grid grid-2 mt-4">
+        <div class="card">
+          <div class="card-head"><span class="card-title">背景层次（深色）</span><span class="card-sub">自下而上 4 层</span></div>
+          <div class="card-body">
+            <div class="swatch-grid">
+              <div class="swatch"><div class="chip" style="background:var(--bg-sunken)"></div><div class="meta"><b>--bg-sunken</b><code>#080c13</code>输入框 / 内嵌区</div></div>
+              <div class="swatch"><div class="chip" style="background:var(--bg-root)"></div><div class="meta"><b>--bg-root</b><code>#0b0f17</code>页面底</div></div>
+              <div class="swatch"><div class="chip" style="background:var(--bg-panel)"></div><div class="meta"><b>--bg-panel</b><code>#111827</code>卡片 / 表格</div></div>
+              <div class="swatch"><div class="chip" style="background:var(--bg-elevated)"></div><div class="meta"><b>--bg-elevated</b><code>#182131</code>悬浮 / 对话框</div></div>
+              <div class="swatch"><div class="chip" style="background:var(--bg-hover)"></div><div class="meta"><b>--bg-hover</b><code>#1b2536</code>行悬停</div></div>
+              <div class="swatch"><div class="chip" style="background:var(--bg-active)"></div><div class="meta"><b>--bg-active</b><code>#22304a</code>选中态</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">品牌与语义色</span><span class="card-sub">语义色只用于表达含义，不做装饰</span></div>
+          <div class="card-body">
+            <div class="swatch-grid">
+              <div class="swatch"><div class="chip" style="background:var(--brand)"></div><div class="meta"><b>--brand</b><code>#4f8cff</code>主操作 / 选中 / 链接</div></div>
+              <div class="swatch"><div class="chip" style="background:var(--accent)"></div><div class="meta"><b>--accent</b><code>#22d3ee</code>强调 / 基准线</div></div>
+              <div class="swatch"><div class="chip" style="background:var(--warn)"></div><div class="meta"><b>--warn</b><code>#f59e0b</code>警示 / 待确认</div></div>
+              <div class="swatch"><div class="chip" style="background:var(--danger)"></div><div class="meta"><b>--danger</b><code>#ef4444</code>错误 / 危险操作</div></div>
+              <div class="swatch"><div class="chip" style="background:var(--ok)"></div><div class="meta"><b>--ok</b><code>#22c55e</code>成功 / 连通</div></div>
+              <div class="swatch"><div class="chip" style="background:var(--neutral)"></div><div class="meta"><b>--neutral</b><code>#64748b</code>中性 / 无数据</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card span-full">
+          <div class="card-head"><span class="card-title">涨跌色（当前设置实时预览）</span><span class="card-sub">默认红涨绿跌，可一键切换为国际习惯</span></div>
+          <div class="card-body">
+            <div class="grid grid-4">
+              <div class="kpi"><span class="kpi-label">上涨 --up</span><span class="kpi-value t-up">+4.86%</span><span class="kpi-delta t-up">↑ +12.46</span></div>
+              <div class="kpi"><span class="kpi-label">下跌 --down</span><span class="kpi-value t-down">-3.28%</span><span class="kpi-delta t-down">↓ -1.16</span></div>
+              <div class="kpi"><span class="kpi-label">平盘 --flat</span><span class="kpi-value t-flat">0.00%</span><span class="kpi-delta t-flat">— 0.00</span></div>
+              <div class="kpi"><span class="kpi-label">涨跌软底 --up-soft / --down-soft</span>
+                <span class="row gap-2 mt-2"><span class="tag tag-up">利好</span><span class="tag tag-down">利空</span><span class="tag">中性</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card span-full">
+          <div class="card-head"><span class="card-title">图表色板 --chart-1..8</span><span class="card-sub">按顺序取用；同一图表内不超过 5 色</span></div>
+          <div class="card-body">
+            <div class="swatch-grid" id="chartSwatches"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 排版 ============ -->
+      <h2 class="mt-6" id="c-type" style="font-size:18px;font-weight:700">2. 排版</h2>
+      <div class="grid grid-2 mt-4">
+        <div class="card">
+          <div class="card-head"><span class="card-title">字号阶梯</span></div>
+          <div class="card-body">
+            <div class="spec-row"><span class="sk">--fs-28 / 28</span><span class="sv" style="font-size:28px;font-weight:700">现价 268.42</span></div>
+            <div class="spec-row"><span class="sk">--fs-22 / 22</span><span class="sv" style="font-size:22px;font-weight:700">页面标题</span></div>
+            <div class="spec-row"><span class="sk">--fs-18 / 18</span><span class="sv" style="font-size:18px;font-weight:600">卡片大指标</span></div>
+            <div class="spec-row"><span class="sk">--fs-16 / 16</span><span class="sv" style="font-size:16px;font-weight:600">区块标题</span></div>
+            <div class="spec-row"><span class="sk">--fs-14 / 14</span><span class="sv" style="font-size:14px;font-weight:600">卡片标题</span></div>
+            <div class="spec-row"><span class="sk">--fs-13 / 13</span><span class="sv" style="font-size:13px">正文（默认）</span></div>
+            <div class="spec-row"><span class="sk">--fs-12 / 12</span><span class="sv" style="font-size:12px">表格 / 次要信息</span></div>
+            <div class="spec-row"><span class="sk">--fs-11 / 11</span><span class="sv" style="font-size:11px;color:var(--text-3)">标签 / 注释 / 单位</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">字体与数字对齐</span></div>
+          <div class="card-body col gap-4">
+            <div>
+              <div class="label">UI 字体</div>
+              <div class="hint" style="font-size:12px;font-family:var(--font-ui)">Inter → HarmonyOS Sans SC → PingFang SC → Microsoft YaHei → system-ui</div>
+              <div class="mt-2" style="font-family:var(--font-ui)">中文字形测试：贵州茅台 · 宁德时代 · 寒武纪 · 贝特瑞 ABCdef 0123</div>
+            </div>
+            <div>
+              <div class="label">数字字体（必须等宽）</div>
+              <div class="hint" style="font-family:var(--font-num)">JetBrains Mono → SF Mono → Cascadia Mono → Consolas</div>
+              <table class="tbl mt-2">
+                <tbody>
+                  <tr><td class="col-name">宁德时代</td><td class="num" style="color:var(--up)">268.42</td><td class="num" style="color:var(--up)">+4.86%</td><td class="num">11820</td></tr>
+                  <tr><td class="col-name">贵州茅台</td><td class="num" style="color:var(--up)">1568.20</td><td class="num" style="color:var(--up)">+1.24%</td><td class="num">19680</td></tr>
+                  <tr><td class="col-name">天齐锂业</td><td class="num" style="color:var(--down)">34.28</td><td class="num" style="color:var(--down)">-3.28%</td><td class="num">562</td></tr>
+                </tbody>
+              </table>
+              <div class="hint mt-2">表格数字列右对齐 + <code>tabular-nums</code>，保证小数点竖直对齐，便于扫读。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 间距圆角阴影 ============ -->
+      <h2 class="mt-6" id="c-space" style="font-size:18px;font-weight:700">3. 间距 · 圆角 · 阴影</h2>
+      <div class="grid grid-3 mt-4">
+        <div class="card">
+          <div class="card-head"><span class="card-title">间距阶梯</span></div>
+          <div class="card-body col gap-2">
+            <div class="spec-row"><span class="sk">--sp-1 4px</span><span class="sv"><div class="space-demo" style="width:4px"></div></span></div>
+            <div class="spec-row"><span class="sk">--sp-2 8px</span><span class="sv"><div class="space-demo" style="width:8px"></div></span></div>
+            <div class="spec-row"><span class="sk">--sp-3 12px</span><span class="sv"><div class="space-demo" style="width:12px"></div></span></div>
+            <div class="spec-row"><span class="sk">--sp-4 16px</span><span class="sv"><div class="space-demo" style="width:16px"></div></span></div>
+            <div class="spec-row"><span class="sk">--sp-5 20px</span><span class="sv"><div class="space-demo" style="width:20px"></div></span></div>
+            <div class="spec-row"><span class="sk">--sp-6 24px</span><span class="sv"><div class="space-demo" style="width:24px"></div></span></div>
+            <div class="spec-row"><span class="sk">--sp-8 32px</span><span class="sv"><div class="space-demo" style="width:32px"></div></span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">圆角</span></div>
+          <div class="card-body row gap-4 wrap">
+            <div class="col gap-2 center"><div class="radius-demo" style="border-radius:8px"></div><span class="hint">--r-btn 8</span></div>
+            <div class="col gap-2 center"><div class="radius-demo" style="border-radius:14px"></div><span class="hint">--r-card 14</span></div>
+            <div class="col gap-2 center"><div class="radius-demo" style="border-radius:20px"></div><span class="hint">--r-dialog 20</span></div>
+            <div class="col gap-2 center"><div class="radius-demo" style="border-radius:999px"></div><span class="hint">--r-pill</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">阴影</span></div>
+          <div class="card-body row gap-4 wrap">
+            <div class="col gap-2 center"><div class="shadow-demo" style="box-shadow:var(--shadow-1)">1</div><span class="hint">--shadow-1</span></div>
+            <div class="col gap-2 center"><div class="shadow-demo" style="box-shadow:var(--shadow-2)">2</div><span class="hint">--shadow-2</span></div>
+            <div class="col gap-2 center"><div class="shadow-demo" style="box-shadow:var(--shadow-3)">3</div><span class="hint">--shadow-3</span></div>
+            <div class="col gap-2 center"><div class="shadow-demo" style="box-shadow:var(--glow-brand);border-color:var(--brand)">focus</div><span class="hint">--glow-brand</span></div>
+          </div>
+        </div>
+        <div class="card span-full">
+          <div class="card-head"><span class="card-title">密度与布局尺寸</span></div>
+          <div class="card-body grid grid-4">
+            <div class="kpi"><span class="kpi-label">表格行高（紧凑）</span><span class="kpi-value is-sm">32px</span><span class="kpi-delta t-3">默认</span></div>
+            <div class="kpi"><span class="kpi-label">表格行高（舒适）</span><span class="kpi-value is-sm">40px</span><span class="kpi-delta t-3">设置可切</span></div>
+            <div class="kpi"><span class="kpi-label">顶栏高度</span><span class="kpi-value is-sm">52px</span><span class="kpi-delta t-3">--topbar-h</span></div>
+            <div class="kpi"><span class="kpi-label">侧导航宽度</span><span class="kpi-value is-sm">240 / 64px</span><span class="kpi-delta t-3">展开 / 图标条</span></div>
+            <div class="kpi"><span class="kpi-label">右侧信息栏</span><span class="kpi-value is-sm">320px</span><span class="kpi-delta t-3">--rail-w</span></div>
+            <div class="kpi"><span class="kpi-label">按钮高度</span><span class="kpi-value is-sm">32 / 26 / 40</span><span class="kpi-delta t-3">默认 / sm / lg</span></div>
+            <div class="kpi"><span class="kpi-label">触摸热区（移动端）</span><span class="kpi-value is-sm">≥ 44px</span><span class="kpi-delta t-3">.tap-44</span></div>
+            <div class="kpi"><span class="kpi-label">断点</span><span class="kpi-value is-sm">1440 / 1024 / 767</span><span class="kpi-delta t-3">桌面 / 平板 / 手机</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 按钮 ============ -->
+      <h2 class="mt-6" id="c-btn" style="font-size:18px;font-weight:700">4. 按钮</h2>
+      <div class="card mt-4">
+        <div class="card-body col gap-4">
+          <div class="spec-row"><span class="sk">主操作</span><span class="sv row gap-3 wrap">
+            <button class="btn btn-primary">加入自选</button>
+            <button class="btn btn-primary" disabled>已加入</button>
+            <button class="btn btn-primary btn-lg">开始分析</button>
+          </span></div>
+          <div class="spec-row"><span class="sk">次要</span><span class="sv row gap-3 wrap">
+            <button class="btn">导出 CSV</button>
+            <button class="btn btn-outline">设为提醒</button>
+            <button class="btn btn-ghost">取消</button>
+            <button class="btn btn-sm">小号</button>
+          </span></div>
+          <div class="spec-row"><span class="sk">危险 / 警示</span><span class="sv row gap-3 wrap">
+            <button class="btn btn-danger">删除规则</button>
+            <button class="btn btn-warn">暂停采集</button>
+          </span></div>
+          <div class="spec-row"><span class="sk">按钮组 / 分段</span><span class="sv row gap-4 wrap">
+            <span class="btn-group">
+              <button class="btn is-active">日 K</button><button class="btn">周 K</button><button class="btn">月 K</button>
+            </span>
+            <span class="segmented">
+              <span class="is-active">近 5 日</span><span>近 20 日</span><span>近 60 日</span>
+            </span>
+            <span class="segmented is-brand">
+              <span class="is-active">前复权</span><span>后复权</span><span>不复权</span>
+            </span>
+          </span></div>
+          <div class="spec-row"><span class="sk">图标按钮</span><span class="sv row gap-2">
+            <button class="icon-btn">⌕</button>
+            <button class="icon-btn is-on">★</button>
+            <button class="icon-btn">⇅</button>
+            <button class="icon-btn">◍<span class="dot-badge">4</span></button>
+          </span></div>
+        </div>
+      </div>
+
+      <!-- ============ 表单 ============ -->
+      <h2 class="mt-6" id="c-form" style="font-size:18px;font-weight:700">5. 表单</h2>
+      <div class="grid grid-3 mt-4">
+        <div class="card">
+          <div class="card-head"><span class="card-title">输入</span></div>
+          <div class="card-body col gap-4">
+            <div class="field"><label class="label">股票代码 <span class="req">*</span></label>
+              <input class="input is-mono" value="300750" placeholder="输入 6 位代码"></div>
+            <div class="field"><label class="label">现价（元）</label>
+              <input class="input input-num" value="268.42"></div>
+            <div class="field"><label class="label">聚焦态</label>
+              <input class="input" value="聚焦时品牌色描边 + 外发光" style="border-color:var(--brand);box-shadow:var(--glow-brand)"></div>
+            <div class="field"><label class="label">禁用态</label>
+              <input class="input" value="只读字段" disabled style="opacity:.5"></div>
+            <div class="field"><label class="label">带按钮</label>
+              <div class="input-group"><input class="input is-mono" value="300750"><button class="btn btn-primary">查询</button></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">选择与开关</span></div>
+          <div class="card-body col gap-4">
+            <div class="field"><label class="label">时间范围</label>
+              <select class="select"><option>近 1 个月</option><option>近 3 个月</option><option selected>近 1 年</option><option>全部历史</option></select></div>
+            <div class="field"><label class="label">复权方式</label>
+              <select class="select"><option selected>前复权</option><option>后复权</option><option>不复权</option></select></div>
+            <div class="col gap-2">
+              <label class="check"><input type="checkbox" checked> 主力资金净流入</label>
+              <label class="check"><input type="checkbox" checked> 北向持股</label>
+              <label class="check"><input type="checkbox"> 融资余额</label>
+              <label class="check"><input type="checkbox" disabled> 龙虎榜（无数据）</label>
+            </div>
+            <div class="col gap-2">
+              <label class="radio"><input type="radio" name="sg1" checked> 仅看利好事件</label>
+              <label class="radio"><input type="radio" name="sg1"> 仅看利空事件</label>
+              <label class="radio"><input type="radio" name="sg1"> 全部事件</label>
+            </div>
+            <label class="switch"><input type="checkbox" checked><span class="track"></span>启用实时推送（3 秒）</label>
+            <label class="switch"><input type="checkbox"><span class="track"></span>浏览器通知栏提醒</label>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">滑杆与阈值</span></div>
+          <div class="card-body col gap-5">
+            <div class="field">
+              <label class="label row-between" style="display:flex"><span>涨跌幅阈值</span><span class="mono t-brand">5.00%</span></label>
+              <input class="slider" type="range" min="1" max="20" value="5">
+            </div>
+            <div class="field">
+              <label class="label row-between" style="display:flex"><span>主力净流入阈值</span><span class="mono t-brand">3.00 亿元</span></label>
+              <input class="slider" type="range" min="0" max="20" value="3">
+            </div>
+            <div class="field">
+              <label class="label">多行文本</label>
+              <textarea class="textarea" placeholder="粘贴公告原文或链接，系统解析后入库（原型不实现）"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 标签徽标 ============ -->
+      <h2 class="mt-6" id="c-tag" style="font-size:18px;font-weight:700">6. 标签 · 徽标 · 状态点</h2>
+      <div class="card mt-4">
+        <div class="card-body col gap-4">
+          <div class="spec-row"><span class="sk">语义标签</span><span class="sv row gap-2 wrap">
+            <span class="tag tag-brand">买入</span><span class="tag tag-up">利好</span><span class="tag tag-down">利空</span>
+            <span class="tag tag-warn">待确认</span><span class="tag tag-danger">高风险</span><span class="tag tag-ok">已完成</span>
+            <span class="tag tag-accent">进行中</span><span class="tag">中性</span><span class="tag tag-outline">沪市主板</span>
+          </span></div>
+          <div class="spec-row"><span class="sk">带圆点 / 大号</span><span class="sv row gap-2 wrap">
+            <span class="tag tag-ok tag-dot tag-lg">数据源正常</span>
+            <span class="tag tag-warn tag-dot tag-lg">降级重试</span>
+            <span class="tag tag-danger tag-dot tag-lg">采集失败</span>
+            <span class="tag tag-outline tag-lg">最后更新 15:00</span>
+          </span></div>
+          <div class="spec-row"><span class="sk">状态点</span><span class="sv row gap-5 wrap">
+            <span class="row gap-2"><span class="dot dot-ok"></span>连通</span>
+            <span class="row gap-2"><span class="dot dot-warn"></span>延迟</span>
+            <span class="row gap-2"><span class="dot dot-err"></span>失败</span>
+            <span class="row gap-2"><span class="dot dot-live"></span>实时推送中</span>
+            <span class="row gap-2"><span class="dot"></span>空闲</span>
+          </span></div>
+          <div class="spec-row"><span class="sk">风险等级</span><span class="sv row gap-4 wrap">
+            <span class="risk-lv risk-lv-1"><i></i>1 极低</span><span class="risk-lv risk-lv-2"><i></i>2 低</span>
+            <span class="risk-lv risk-lv-3"><i></i>3 中</span><span class="risk-lv risk-lv-4"><i></i>4 高</span>
+            <span class="risk-lv risk-lv-5"><i></i>5 极高</span>
+          </span></div>
+          <div class="spec-row"><span class="sk">数据口径问号</span><span class="sv row gap-2">
+            <span class="row gap-2">毛利率 <span class="infoq" data-tip="口径：营业收入扣除营业成本后除以营业收入，取合并报表数，按报告期披露值。更新时间：每交易日 18:00。">?</span></span>
+            <span class="row gap-2">主力净流入 <span class="infoq" data-tip="口径：超大单 + 大单净额，按成交金额与单笔金额分层统计，含竞价与盘后固定价格交易。更新时间：每交易日 15:20。">?</span></span>
+          </span></div>
+          <div class="spec-row"><span class="sk">头像与用户</span><span class="sv row gap-3">
+            <span class="avatar">管</span>
+            <span class="user-chip"><span class="avatar">管</span><span class="fs-12">管理员</span></span>
+          </span></div>
+        </div>
+      </div>
+
+      <!-- ============ 表格 ============ -->
+      <h2 class="mt-6" id="c-tbl" style="font-size:18px;font-weight:700">7. 表格</h2>
+      <div class="card mt-4">
+        <div class="card-head">
+          <span class="card-title">自选股（示例）</span>
+          <span class="card-sub">左侧 3px 涨跌色竖条 · 数字等宽右对齐 · 表头可排序</span>
+          <div class="card-tools"><span class="tag tag-outline">紧凑 32px</span><span class="tag tag-outline">舒适 40px</span></div>
+        </div>
+        <div class="card-body is-flush">
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th class="is-sortable">名称 <span class="sort-caret">▼</span></th>
+                  <th>板块</th>
+                  <th class="num is-sortable">现价 <span class="sort-caret">▲</span></th>
+                  <th class="num is-sortable">涨跌幅 <span class="sort-caret">▼</span></th>
+                  <th class="num">换手率</th>
+                  <th class="num">量比</th>
+                  <th class="num">主力净流入</th>
+                  <th>走势</th>
+                  <th class="col-actions">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr data-chg="up" class="is-clickable">
+                  <td><span class="stock-cell"><span class="sc-name">宁德时代 <span class="tag tag-brand">自选</span></span><span class="sc-code">300750</span></span></td>
+                  <td><span class="tag tag-outline">创业板</span></td>
+                  <td class="num" style="color:var(--up)">268.42</td>
+                  <td class="num"><span class="chg is-up">+12.46 +4.86%</span></td>
+                  <td class="num">1.42%</td>
+                  <td class="num">1.86</td>
+                  <td class="num" style="color:var(--up)">+18.62 亿</td>
+                  <td><span class="tbl minibar" style="width:56px"><i style="width:78%;background:var(--up)"></i></span></td>
+                  <td class="col-actions"><button class="btn btn-sm btn-ghost">详情</button></td>
+                </tr>
+                <tr data-chg="up" class="is-clickable">
+                  <td><span class="stock-cell"><span class="sc-name">贵州茅台</span><span class="sc-code">600519</span></span></td>
+                  <td><span class="tag tag-outline">沪市主板</span></td>
+                  <td class="num" style="color:var(--up)">1568.20</td>
+                  <td class="num"><span class="chg is-up">+19.24 +1.24%</span></td>
+                  <td class="num">0.28%</td>
+                  <td class="num">1.12</td>
+                  <td class="num" style="color:var(--up)">+2.86 亿</td>
+                  <td><span class="tbl minibar" style="width:56px"><i style="width:42%;background:var(--up)"></i></span></td>
+                  <td class="col-actions"><button class="btn btn-sm btn-ghost">详情</button></td>
+                </tr>
+                <tr data-chg="down" class="is-clickable is-selected">
+                  <td><span class="stock-cell"><span class="sc-name">天齐锂业</span><span class="sc-code">002466</span></span></td>
+                  <td><span class="tag tag-outline">深市主板</span></td>
+                  <td class="num" style="color:var(--down)">34.28</td>
+                  <td class="num"><span class="chg is-down">-1.16 -3.28%</span></td>
+                  <td class="num">3.42%</td>
+                  <td class="num">2.16</td>
+                  <td class="num" style="color:var(--down)">-5.62 亿</td>
+                  <td><span class="tbl minibar" style="width:56px"><i style="width:22%;background:var(--down)"></i></span></td>
+                  <td class="col-actions"><button class="btn btn-sm btn-ghost">详情</button></td>
+                </tr>
+                <tr data-chg="flat">
+                  <td><span class="stock-cell"><span class="sc-name">长江电力</span><span class="sc-code">600900</span></span></td>
+                  <td><span class="tag tag-outline">沪市主板</span></td>
+                  <td class="num">28.42</td>
+                  <td class="num"><span class="chg is-flat">+0.06 +0.21%</span></td>
+                  <td class="num">0.18%</td>
+                  <td class="num">0.76</td>
+                  <td class="num" style="color:var(--up)">+0.62 亿</td>
+                  <td><span class="tbl minibar" style="width:56px"><i style="width:52%"></i></span></td>
+                  <td class="col-actions"><button class="btn btn-sm btn-ghost">详情</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="tbl-foot">
+            <span>共 14 只 · 已选 1 只</span>
+            <div class="pager"><span>‹</span><span class="is-active">1</span><span>2</span><span>›</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 指标与行情 ============ -->
+      <h2 class="mt-6" id="c-kpi" style="font-size:18px;font-weight:700">8. 指标卡与行情条</h2>
+      <div class="grid grid-2 mt-4">
+        <div class="card">
+          <div class="card-head"><span class="card-title">KPI 指标卡</span></div>
+          <div class="card-body grid grid-3">
+            <div class="kpi"><span class="kpi-label">营收（2025）<span class="infoq" data-tip="合并报表营业收入，单位亿元">?</span></span><span class="kpi-value">4268.6</span><span class="kpi-delta t-up">↑ +17.9% 同比</span></div>
+            <div class="kpi"><span class="kpi-label">ROE</span><span class="kpi-value">22.8<span class="fs-12 t-3">%</span></span><span class="kpi-delta t-up">↑ +1.4pct</span></div>
+            <div class="kpi"><span class="kpi-label">PE（TTM）</span><span class="kpi-value">24.8</span><span class="kpi-delta t-3">行业 26.8</span></div>
+            <div class="kpi"><span class="kpi-label">大号指标</span><span class="kpi-value is-xl t-up">+18.62<span class="fs-14"> 亿</span></span><span class="kpi-delta t-3">主力净流入（今日）</span></div>
+            <div class="kpi"><span class="kpi-label">小号指标</span><span class="kpi-value is-sm">246.8 元</span><span class="kpi-delta t-3">平均成本</span></div>
+            <div class="kpi"><span class="kpi-label">平盘</span><span class="kpi-value t-flat">0.00</span><span class="kpi-delta t-flat">— 持平</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">行情条</span><span class="card-sub">个股页顶部</span></div>
+          <div class="card-body">
+            <div class="quote-bar">
+              <div>
+                <div class="row gap-2">
+                  <span class="fs-18 fw-700">宁德时代</span>
+                  <span class="mono fs-12 t-3">300750</span>
+                  <span class="tag tag-outline">创业板</span>
+                  <span class="tag tag-brand">电池</span>
+                </div>
+                <div class="row gap-3 mt-2">
+                  <span class="quote-price t-up" data-price="268.42">268.42</span>
+                  <span class="col">
+                    <span class="quote-chg t-up">+12.46</span>
+                    <span class="quote-chg t-up">+4.86%</span>
+                  </span>
+                </div>
+                <div class="hint mt-2">最后更新 2026-09-18 15:00 · 演示数据</div>
+              </div>
+              <div class="quote-grid">
+                <div class="quote-cell"><span class="k">今开</span><span class="v">256.80</span></div>
+                <div class="quote-cell"><span class="k">最高</span><span class="v t-up">271.24</span></div>
+                <div class="quote-cell"><span class="k">最低</span><span class="v t-down">255.62</span></div>
+                <div class="quote-cell"><span class="k">昨收</span><span class="v">255.96</span></div>
+                <div class="quote-cell"><span class="k">成交量</span><span class="v">62.86 万手</span></div>
+                <div class="quote-cell"><span class="k">成交额</span><span class="v">186.4 亿</span></div>
+                <div class="quote-cell"><span class="k">换手率</span><span class="v">1.42%</span></div>
+                <div class="quote-cell"><span class="k">量比</span><span class="v">1.86</span></div>
+                <div class="quote-cell"><span class="k">总市值</span><span class="v">11820 亿</span></div>
+                <div class="quote-cell"><span class="k">PE(TTM)</span><span class="v">24.8</span></div>
+                <div class="quote-cell"><span class="k">PB</span><span class="v">4.62</span></div>
+                <div class="quote-cell"><span class="k">52 周区间</span><span class="v">168.2 – 296.4</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">大盘窄条 / 进度 / 温度条</span></div>
+          <div class="card-body col gap-4">
+            <div class="statbar">
+              <span class="statbar-item"><span class="k">上证</span><span class="v t-up">3286.42 +0.45%</span></span>
+              <span class="statbar-item"><span class="k">深证</span><span class="v t-up">10412.35 +0.76%</span></span>
+              <span class="statbar-item"><span class="k">创业板</span><span class="v t-up">2148.66 +1.24%</span></span>
+              <span class="statbar-item"><span class="k">成交额</span><span class="v">10982 亿</span></span>
+              <span class="statbar-item"><span class="k">北向</span><span class="v t-up">+42.6 亿</span></span>
+              <span class="statbar-item"><span class="row gap-2"><span class="dot dot-live"></span><span class="k">实时</span></span></span>
+            </div>
+            <div>
+              <div class="label row-between" style="display:flex"><span>股权质押比例</span><span class="mono t-up">2.4%</span></div>
+              <div class="meter mt-2"><i style="width:24%"></i></div>
+            </div>
+            <div>
+              <div class="label row-between" style="display:flex"><span>资产负债率</span><span class="mono t-warn">60.2%</span></div>
+              <div class="meter is-warn mt-2"><i style="width:60%"></i></div>
+            </div>
+            <div>
+              <div class="label row-between" style="display:flex"><span>PE 历史分位</span><span class="mono">38%</span></div>
+              <div class="tempbar mt-3"><span class="marker" style="left:38%"></span></div>
+              <div class="tempbar-legend"><span>低估</span><span>25%</span><span>50%</span><span>75%</span><span>高估</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">时间轴</span></div>
+          <div class="card-body">
+            <div class="timeline">
+              <div class="tl-item is-up"><span class="tl-dot"></span>
+                <div class="tl-head"><span class="tl-time">2026-09-18</span><span class="tag tag-up">利好</span><span class="tag tag-outline">业绩</span></div>
+                <div class="tl-title">三季度业绩预告：净利润同比预增 32%–45%</div>
+                <div class="tl-body">来源：公司公告 · 影响强度 88</div>
+              </div>
+              <div class="tl-item is-brand"><span class="tl-dot"></span>
+                <div class="tl-head"><span class="tl-time">2026-09-18</span><span class="tag tag-up">利好</span><span class="tag tag-outline">政策</span></div>
+                <div class="tl-title">固态电池产业化路线图征求意见稿发布</div>
+                <div class="tl-body">来源：工信部 · 影响强度 82</div>
+              </div>
+              <div class="tl-item is-down"><span class="tl-dot"></span>
+                <div class="tl-head"><span class="tl-time">2026-09-16</span><span class="tag tag-down">利空</span><span class="tag tag-outline">监管</span></div>
+                <div class="tl-title">证监会就程序化交易新规公开征求意见</div>
+                <div class="tl-body">来源：证监会 · 影响强度 44</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 图表 ============ -->
+      <h2 class="mt-6" id="c-chart" style="font-size:18px;font-weight:700">9. 图表主题</h2>
+      <p class="hint mt-2">全部由本地 ECharts 6.1.0 渲染，主题色读取 CSS 令牌；切换深浅主题或涨跌色后自动重建。图表工厂位于 <code>charts.js</code>（<code>SA_CHARTS.F.*</code>）。</p>
+      <div class="grid grid-2 mt-4">
+        <div class="card span-full">
+          <div class="card-head"><span class="card-title">K 线 + 均线 + 成交量 + MACD</span><span class="card-sub">F.kline · 十字光标 + 顶部悬浮数据条</span></div>
+          <div class="card-body"><div id="sgKline" class="chart chart-xl"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">柱线组合</span><span class="card-sub">F.combo</span></div>
+          <div class="card-body"><div id="sgCombo" class="chart chart-md"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">正负双色柱</span><span class="card-sub">F.posneg · 资金净流入</span></div>
+          <div class="card-body"><div id="sgPosneg" class="chart chart-md"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">环形</span><span class="card-sub">F.donut · 评级分布</span></div>
+          <div class="card-body"><div id="sgDonut" class="chart chart-md"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">雷达</span><span class="card-sub">F.radar · 同业对比</span></div>
+          <div class="card-body"><div id="sgRadar" class="chart chart-md"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">桑基图</span><span class="card-sub">F.sankey · 产业链传导</span></div>
+          <div class="card-body"><div id="sgSankey" class="chart chart-lg"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">关系图</span><span class="card-sub">F.graph · 股权拓扑 / 事件因果</span></div>
+          <div class="card-body"><div id="sgGraph" class="chart chart-lg"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">热力图</span><span class="card-sub">F.heatmap · 风险矩阵</span></div>
+          <div class="card-body"><div id="sgHeat" class="chart chart-lg"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">气泡散点</span><span class="card-sub">F.bubble · 估值 × 盈利</span></div>
+          <div class="card-body"><div id="sgBubble" class="chart chart-lg"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">面积图</span><span class="card-sub">F.area</span></div>
+          <div class="card-body"><div id="sgArea" class="chart chart-md"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">横向排行</span><span class="card-sub">F.hbar · 行业涨跌</span></div>
+          <div class="card-body"><div id="sgHbar" class="chart chart-lg"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">仪表盘</span><span class="card-sub">F.gauge · 质押比例</span></div>
+          <div class="card-body"><div id="sgGauge" class="chart chart-md"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">估值分位带</span><span class="card-sub">F.band</span></div>
+          <div class="card-body"><div id="sgBand" class="chart chart-sm"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">筹码分布</span><span class="card-sub">F.chips</span></div>
+          <div class="card-body"><div id="sgChips" class="chart chart-lg"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">时间轴泳道</span><span class="card-sub">F.lanes</span></div>
+          <div class="card-body"><div id="sgLanes" class="chart chart-lg"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">树图热力</span><span class="card-sub">F.treemap · 行业热力</span></div>
+          <div class="card-body"><div id="sgTree" class="chart chart-lg"></div></div>
+        </div>
+      </div>
+
+      <!-- ============ 浮层 ============ -->
+      <h2 class="mt-6" id="c-overlay" style="font-size:18px;font-weight:700">10. 浮层</h2>
+      <div class="card mt-4">
+        <div class="card-body row gap-3 wrap">
+          <button class="btn" data-open="sgDialog">打开对话框</button>
+          <button class="btn" data-open="sgDrawer">打开右侧抽屉</button>
+          <button class="btn" data-open="sgSheet">打开底部抽屉（移动端）</button>
+          <button class="btn" id="sgToastOk">成功 Toast</button>
+          <button class="btn" id="sgToastErr">错误 Toast</button>
+          <button class="btn" data-menu="sgMenu">下拉菜单 ▾</button>
+          <span class="hint">浮层统一使用玻璃拟态：<code>backdrop-filter: blur(12px)</code> + 半透明底 + 3 级阴影</span>
+        </div>
+      </div>
+
+      <!-- ============ 状态 ============ -->
+      <h2 class="mt-6" id="c-state" style="font-size:18px;font-weight:700">11. 加载与空态</h2>
+      <div class="grid grid-3 mt-4">
+        <div class="card">
+          <div class="card-head"><span class="card-title">骨架屏</span></div>
+          <div class="card-body">
+            <div class="skeleton sk-line" style="width:60%"></div>
+            <div class="skeleton sk-line"></div>
+            <div class="skeleton sk-line is-short"></div>
+            <div class="skeleton sk-block mt-3"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">空态</span></div>
+          <div class="card-body is-flush">
+            <div class="empty">
+              <div class="em-icon">◌</div>
+              <div class="fs-13">暂无数据</div>
+              <div class="hint">该股票暂无龙虎榜记录，或数据源未覆盖</div>
+              <button class="btn btn-outline btn-sm">去设置数据源</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">折叠面板</span></div>
+          <div class="card-body">
+            <div class="fold">
+              <div class="fold-head">上游材料 <span class="tag tag-outline">6 项</span><span class="caret">▼</span></div>
+              <div class="fold-body hint">锂矿 / 正极 / 负极 / 隔膜 / 电解液 / 结构件</div>
+            </div>
+            <div class="fold is-collapsed">
+              <div class="fold-head">中游电池 <span class="tag tag-outline">4 项</span><span class="caret">▼</span></div>
+              <div class="fold-body hint">宁德时代 / 比亚迪弗迪 / 中创新航 / 亿纬锂能</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 业务组件 ============ -->
+      <h2 class="mt-6" id="c-biz" style="font-size:18px;font-weight:700">12. 业务专用组件</h2>
+      <div class="grid grid-2 mt-4">
+        <div class="card">
+          <div class="card-head"><span class="card-title">选股条件气泡</span><span class="card-sub">F 组件的可删除条件</span></div>
+          <div class="card-body row gap-2 wrap">
+            <span class="cond-chip">PE ≤ 25 <span class="x">✕</span></span>
+            <span class="cond-chip">净利增速 ≥ 20% <span class="x">✕</span></span>
+            <span class="cond-chip">ROE ≥ 15% <span class="x">✕</span></span>
+            <span class="cond-chip">主力净流入 ≥ 1 亿 <span class="x">✕</span></span>
+            <span class="cond-chip">板块 = 全部 <span class="x">✕</span></span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">数据口径说明块</span><span class="card-sub">每个图表/表格下方必配</span></div>
+          <div class="card-body">
+            <div class="legend-block">
+              <b>数据来源与口径</b><br>
+              行情与资金流：东方财富公开接口，交易日 15:20 采集；<br>
+              财务数据：合并报表披露值，每交易日 18:00 同步；<br>
+              事件与因果链：规则引擎自动抽取 + 人工标注，影响强度 0–100；<br>
+              更新时间：2026-09-18 15:00 · 本页数据均为演示数据。
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">涨跌数字闪烁（实时推送）</span><span class="card-sub">点击按钮模拟一次推送</span></div>
+          <div class="card-body row gap-5 wrap">
+            <div class="col gap-1">
+              <span class="hint">宁德时代</span>
+              <span class="row gap-2"><span class="mono fs-18 fw-600" id="sgLive" data-price="268.42">268.42</span>
+              <span class="live-pct chg is-up" data-pct="4.86">+4.86%</span></span>
+            </div>
+            <div class="col gap-1">
+              <span class="hint">贵州茅台</span>
+              <span class="row gap-2"><span class="mono fs-18 fw-600" data-price="1568.20">1568.20</span>
+              <span class="live-pct chg is-up" data-pct="1.24">+1.24%</span></span>
+            </div>
+            <button class="btn btn-outline" id="sgPulse">模拟推送一次</button>
+            <span class="hint">涨用 <code>--up-soft</code> 背景 600ms 衰减，跌用 <code>--down-soft</code></span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">权限矩阵（后台用）</span></div>
+          <div class="card-body is-flush">
+            <div class="tbl-wrap">
+              <table class="matrix">
+                <thead><tr><th>功能点</th><th class="is-role">管理员</th><th class="is-role">普通用户</th><th class="is-role">访客</th></tr></thead>
+                <tbody>
+                  <tr class="matrix-group"><td colspan="4">模块访问</td></tr>
+                  <tr><td class="fp-name">市场概览 <span class="fp-code">market.view</span></td>
+                    <td class="is-check"><input type="checkbox" checked></td>
+                    <td class="is-check"><input type="checkbox" checked></td>
+                    <td class="is-check"><input type="checkbox" checked></td></tr>
+                  <tr><td class="fp-name">资金面与筹码 <span class="fp-code">stock.capital</span></td>
+                    <td class="is-check"><input type="checkbox" checked></td>
+                    <td class="is-check"><input type="checkbox" checked></td>
+                    <td class="is-check"><input type="checkbox"></td></tr>
+                  <tr><td class="fp-name">导出数据 <span class="fp-code">export.data</span></td>
+                    <td class="is-check"><input type="checkbox" checked></td>
+                    <td class="is-check"><input type="checkbox"></td>
+                    <td class="is-check"><input type="checkbox"></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 酷感手法 ============ -->
+      <h2 class="mt-6" id="c-craft" style="font-size:18px;font-weight:700">13.「酷、专业」的 9 个落地手法</h2>
+      <div class="card mt-4">
+        <div class="card-body">
+          <table class="tbl is-comfort">
+            <thead><tr><th style="width:34px">#</th><th style="width:190px">手法</th><th>实现要点</th><th style="width:130px">示例</th></tr></thead>
+            <tbody>
+              <tr><td class="num">1</td><td class="fw-600">顶栏常驻全局搜索</td><td>支持代码 / 名称 / 拼音首字母；<kbd>⌘</kbd><kbd>K</kbd> 或 <kbd>/</kbd> 唤起；结果带行业与实时涨跌</td><td class="t-3">顶栏</td></tr>
+              <tr><td class="num">2</td><td class="fw-600">表格左侧涨跌色竖条</td><td>3px，与整行涨跌一致；数字列等宽右对齐 + <code>tabular-nums</code></td><td><a class="t-brand" href="#c-tbl">见第 7 节</a></td></tr>
+              <tr><td class="num">3</td><td class="fw-600">数字变动闪烁</td><td>推送到达时用涨/跌软底色高亮 600ms 后衰减，不做位移避免跳动</td><td><a class="t-brand" href="#c-biz">见第 12 节</a></td></tr>
+              <tr><td class="num">4</td><td class="fw-600">K 线十字光标 + 悬浮数据条</td><td>十字光标联动成交量与 MACD；tooltip 显示开高低收、涨跌幅、成交量与各均线值</td><td><a class="t-brand" href="#c-chart">见第 9 节</a></td></tr>
+              <tr><td class="num">5</td><td class="fw-600">卡片顶部品牌渐变描边</td><td><code>.card.is-accent</code>：顶部 1px <code>linear-gradient(90deg, brand, accent, transparent)</code></td><td class="t-3">本页卡片</td></tr>
+              <tr><td class="num">6</td><td class="fw-600">玻璃拟态浮层</td><td>下拉 / tooltip / 抽屉 / Toast 统一 <code>backdrop-filter: blur(12px)</code> + 半透明底</td><td><a class="t-brand" href="#c-overlay">见第 10 节</a></td></tr>
+              <tr><td class="num">7</td><td class="fw-600">骨架屏 + 过渡</td><td>首屏骨架占位；切换股票时图表 400ms 过渡；尊重 <code>prefers-reduced-motion</code></td><td><a class="t-brand" href="#c-state">见第 11 节</a></td></tr>
+              <tr><td class="num">8</td><td class="fw-600">数据口径问号</td><td>每个数据卡片右上角 <code>.infoq[data-tip]</code>，hover 显示字段口径与更新时间</td><td><a class="t-brand" href="#c-tag">见第 6 节</a></td></tr>
+              <tr><td class="num">9</td><td class="fw-600">全局演示数据角标</td><td>右下角固定「演示数据 · 非实时 · 不构成投资建议」，全站统一</td><td class="t-3">右下角</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- 浮层 -->
+<div class="overlay" id="sgDialog">
+  <div class="dialog">
+    <div class="dialog-head"><h3>新建提醒规则</h3><span class="tag tag-outline">对话框</span>
+      <button class="icon-btn" data-close="sgDialog" style="margin-left:auto">✕</button></div>
+    <div class="dialog-body col gap-4">
+      <div class="field"><label class="label">股票</label><input class="input" value="300750 宁德时代"></div>
+      <div class="field"><label class="label">规则类型</label>
+        <select class="select"><option>价格与涨跌幅</option><option>技术指标</option><option>资金流异动</option><option>公告与事件</option></select></div>
+      <div class="field"><label class="label">触发条件</label>
+        <div class="row gap-2"><select class="select" style="width:130px"><option>上穿</option><option>下穿</option></select>
+        <input class="input input-num" value="280.00"><span class="tag tag-outline">元</span></div></div>
+      <div class="field"><label class="label">通知方式</label>
+        <div class="row gap-4 wrap">
+          <label class="check"><input type="checkbox" checked> 站内通知</label>
+          <label class="check"><input type="checkbox" checked> 浏览器通知栏</label>
+          <label class="check"><input type="checkbox" checked> 震动</label>
+        </div></div>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-ghost" data-close="sgDialog">取消</button>
+      <button class="btn btn-primary" data-close="sgDialog">保存规则</button>
+    </div>
+  </div>
+</div>
+
+<div class="drawer" id="sgDrawer">
+  <div class="drawer-head"><span class="fs-14 fw-600">右侧抽屉</span>
+    <button class="icon-btn" data-close="sgDrawer" style="margin-left:auto">✕</button></div>
+  <div class="drawer-body col gap-4">
+    <div class="hint">用于展示明细：龙虎榜席位、公告原文摘要、事件详情、机构预测明细。</div>
+    <div class="kpi"><span class="kpi-label">示例 · 席位明细</span><span class="kpi-value is-sm">机构专用买入 8.42 亿</span></div>
+  </div>
+</div>
+
+<div class="sheet" id="sgSheet">
+  <div class="sheet-grip"></div>
+  <div class="row-between mb-2" style="margin-bottom:12px">
+    <span class="fs-14 fw-600">底部抽屉（移动端）</span>
+    <button class="icon-btn" data-close="sgSheet">✕</button>
+  </div>
+  <div class="col gap-2">
+    <button class="btn btn-block">近 5 日</button>
+    <button class="btn btn-block btn-outline">近 20 日</button>
+    <button class="btn btn-block btn-outline">近 60 日</button>
+    <button class="btn btn-block btn-ghost" data-close="sgSheet">取消</button>
+  </div>
+</div>
+
+<div class="menu" id="sgMenu">
+  <div class="menu-label">导出</div>
+  <div class="menu-item">导出 CSV <span class="mi-hint">管理员</span></div>
+  <div class="menu-item">导出 PNG</div>
+  <div class="menu-sep"></div>
+  <div class="menu-label">更多</div>
+  <div class="menu-item">复制链接</div>
+  <div class="menu-item is-danger">从自选股移除</div>
+</div>
+
+<script src="_shared/vendor/echarts.min.js"></script>
+<script src="_shared/data.js"></script>
+<script src="_shared/charts.js"></script>
+<script src="_shared/app.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F;
+
+  document.getElementById("sgTheme").addEventListener("click", function () { SA.toggleTheme(); });
+  document.getElementById("sgUpdown").addEventListener("click", function () { SA.toggleUpdown(); });
+
+  /* 图表色板色块 */
+  var sw = document.getElementById("chartSwatches");
+  sw.innerHTML = C.palette().map(function (c, i) {
+    return '<div class="swatch"><div class="chip" style="background:' + c + '"></div>' +
+      '<div class="meta"><b>--chart-' + (i + 1) + "</b><code>" + c + "</code>" + (i === 0 ? "主数据系列" : i === 1 ? "次数据系列" : "辅助系列") + "</div></div>";
+  }).join("");
+
+  /* K 线 */
+  F.kline("#sgKline", D.focusKline.slice(-120), { zoomStart: 30 });
+
+  /* 柱线组合 */
+  F.combo("#sgCombo", {
+    labels: D.finance.years, unit: "亿元",
+    bars: [{ name: "营业收入", data: D.finance.revenue }],
+    lines: [{ name: "净利率 %", data: D.finance.netMargin, axis: 2, color: C.cv("--chart-4") }],
+    unit2: "%"
+  });
+
+  /* 正负柱 */
+  F.posneg("#sgPosneg", { labels: D.capital.mainFlow.labels, data: D.capital.mainFlow.net });
+
+  /* 环形 */
+  F.donut("#sgDonut", {
+    data: D.ratings.distribution.map(function (d) { return { name: d.name, value: d.value, color: d.color }; })
+  });
+
+  /* 雷达 */
+  F.radar("#sgRadar", { indicators: D.industry.peerRadar.indicators, series: D.industry.peerRadar.series });
+
+  /* 桑基 */
+  F.sankey("#sgSankey", { nodes: D.industry.chain.nodes, links: D.industry.chain.links });
+
+  /* 关系图 */
+  F.graph("#sgGraph", {
+    nodes: D.equity.graph.nodes, links: D.equity.graph.links,
+    categories: [
+      { name: "control", color: C.cv("--chart-4") }, { name: "self", color: C.cv("--chart-1") },
+      { name: "sub", color: C.cv("--chart-2") }, { name: "assoc", color: C.cv("--chart-3") },
+      { name: "partner", color: C.cv("--chart-7") }
+    ]
+  });
+
+  /* 热力 */
+  F.heatmap("#sgHeat", {
+    xLabels: ["1 极低", "2 低", "3 中", "4 高", "5 极高"],
+    yLabels: ["发生概率 5", "4", "3", "2", "1"],
+    data: (function () {
+      var out = [];
+      for (var y = 0; y < 5; y++) for (var x = 0; x < 5; x++) {
+        out.push({ x: x, y: y, level: (x + 1) * (5 - y) / 5 | 0 || 1, risks: [] });
+      }
+      return out;
+    })()
+  });
+
+  /* 气泡 */
+  F.bubble("#sgBubble", { data: D.industry.valuation.peersScatter });
+
+  /* 面积 */
+  F.area("#sgArea", { labels: D.capital.northbound.labels, data: D.capital.northbound.ratio, unit: "%" });
+
+  /* 横向排行 */
+  F.hbar("#sgHbar", { data: D.industries.slice(0, 10) });
+
+  /* 仪表 */
+  F.gauge("#sgGauge", { value: D.equity.pledge.ratio, max: 100, suffix: "%", name: "质押比例", warnAt: 20, dangerAt: 50 });
+
+  /* 分位带 */
+  F.band("#sgBand", { band: D.industry.valuation.peBand, name: "PE" });
+
+  /* 筹码 */
+  F.chips("#sgChips", { data: D.capital.chips, current: D.focusProfile.price });
+
+  /* 泳道 */
+  F.lanes("#sgLanes", { lanes: D.events.lanes });
+
+  /* 树图 */
+  F.treemap("#sgTree", { data: D.industries });
+
+  /* Toast */
+  document.getElementById("sgToastOk").addEventListener("click", function () {
+    SA.toast("已加入自选股：宁德时代 300750", "ok");
+  });
+  document.getElementById("sgToastErr").addEventListener("click", function () {
+    SA.toast("数据源「腾讯财经」响应超时，已自动重试", "err");
+  });
+
+  /* 模拟推送 */
+  var ticker = null;
+  document.getElementById("sgPulse").addEventListener("click", function () {
+    if (ticker) { clearInterval(ticker); ticker = null; }
+    ticker = SA.startLiveTicker("#sgLive", { interval: 1200 });
+    SA.toast("已开启模拟推送，3 秒后自动停止", "info");
+    setTimeout(function () { if (ticker) { clearInterval(ticker); ticker = null; } }, 3000);
+  });
+
+  /* 折叠面板 */
+  SA.qsa(".fold-head").forEach(function (h) {
+    h.addEventListener("click", function () { h.parentNode.classList.toggle("is-collapsed"); });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "sa-design-build",
+  "private": true,
+  "version": "0.1.0",
+  "description": "SA 原型设计令牌的 Tailwind v4 编译产物生成（可选，失败不影响原型可用）",
+  "devDependencies": {
+    "tailwindcss": "4.3.3",
+    "@tailwindcss/cli": "4.3.3"
+  },
+  "scripts": {
+    "build": "tailwindcss -i ./input.css -o ../web/_shared/tailwind.css --minify"
+  }
+}

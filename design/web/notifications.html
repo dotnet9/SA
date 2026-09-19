@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>通知中心 · 股析 SA</title>
+<link rel="stylesheet" href="_shared/tokens.css">
+<link rel="stylesheet" href="_shared/tailwind.css">
+<link rel="stylesheet" href="_shared/components.css">
+<style>
+  .nt-item {
+    display: flex; gap: 12px; padding: 12px 16px;
+    border-bottom: 1px solid var(--border-soft); cursor: pointer;
+    transition: background var(--t-fast); position: relative;
+  }
+  .nt-item:hover { background: var(--bg-hover); }
+  .nt-item.is-active { background: var(--bg-active); }
+  .nt-item.is-unread::before {
+    content: ""; position: absolute; left: 6px; top: 50%; transform: translateY(-50%);
+    width: 5px; height: 5px; border-radius: 50%; background: var(--brand);
+  }
+  .nt-item.is-unread .nt-title { font-weight: 600; }
+  .nt-dot {
+    width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center;
+    font-size: 14px; flex: 0 0 auto;
+  }
+  .nt-dot.is-up { background: var(--up-soft); color: var(--up); }
+  .nt-dot.is-down { background: var(--down-soft); color: var(--down); }
+</style>
+</head>
+<body data-page="notifications">
+
+<div class="sa-app">
+  <div class="sa-brand">
+    <div class="sa-logo">SA</div>
+    <div class="sa-brand-text">
+      <div class="sa-brand-name">股析</div>
+      <div class="sa-brand-sub">Stock Analysis</div>
+    </div>
+  </div>
+  <header class="sa-topbar" id="saTop"></header>
+  <nav class="sa-sidenav" id="saNav"></nav>
+  <main class="sa-main">
+    <div class="sa-page">
+
+      <div class="sa-pagehead">
+        <div>
+          <h1>通知中心</h1>
+          <div class="sub">10 条通知 · <span class="t-brand">4 条未读</span> · 按股票分组查看</div>
+        </div>
+        <div class="sa-pagehead-actions">
+          <button class="btn btn-outline btn-sm" id="btnMarkAll">全部标记已读</button>
+          <button class="btn btn-outline btn-sm" id="btnClearRead">清空已读</button>
+          <a class="btn btn-primary btn-sm" href="alerts.html">管理提醒规则</a>
+        </div>
+      </div>
+
+      <div class="sa-split">
+        <div class="col gap-4">
+
+          <!-- 通知列表 -->
+          <div class="card">
+            <div class="card-head">
+              <div class="tabbar is-pill" data-tabs=".nt-panel">
+                <div class="tab is-active" data-tab="unread">未读 <span class="tag tag-brand" style="margin-left:4px">4</span></div>
+                <div class="tab" data-tab="all">全部 <span class="mono fs-11 t-3" style="margin-left:4px">10</span></div>
+                <div class="tab" data-tab="stock">按股票分组</div>
+              </div>
+              <div class="card-tools">
+                <select class="select input-sm" id="fStock" style="width:150px"></select>
+              </div>
+            </div>
+
+            <div class="card-body is-flush">
+              <!-- 未读 -->
+              <div class="nt-panel is-active" data-panel="unread">
+                <div id="unreadList"></div>
+              </div>
+              <!-- 全部 -->
+              <div class="nt-panel" data-panel="all">
+                <div id="allList"></div>
+              </div>
+              <!-- 按股票分组 -->
+              <div class="nt-panel" data-panel="stock">
+                <div style="padding:16px" id="groupList"></div>
+              </div>
+            </div>
+
+            <div class="card-foot">
+              <span id="ntFoot">共 10 条 · 4 条未读</span>
+              <div class="row gap-2" style="margin-left:auto">
+                <button class="btn btn-sm btn-ghost" disabled title="当前仅一页">上一页</button>
+                <span class="mono fs-12 t-3">1 / 1</span>
+                <button class="btn btn-sm btn-ghost" disabled title="当前仅一页">下一页</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 通知偏好 -->
+          <div class="grid grid-2">
+            <div class="card">
+              <div class="card-head"><span class="card-title">通知类型开关</span><span class="card-sub">与提醒规则页同步</span></div>
+              <div class="card-body grid grid-2">
+                <label class="check"><input type="checkbox" checked> 价格与涨跌幅</label>
+                <label class="check"><input type="checkbox" checked> 技术指标</label>
+                <label class="check"><input type="checkbox" checked> 资金流异动</label>
+                <label class="check"><input type="checkbox" checked> 公告与事件</label>
+                <label class="check"><input type="checkbox"> 系统通知（采集失败等）</label>
+                <label class="check"><input type="checkbox" checked> 收盘日报</label>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="card-title">推送渠道状态</span></div>
+              <div class="card-body col gap-2">
+                <div class="row-between"><span class="fs-12 t-2">站内通知中心</span><span class="tag tag-ok tag-dot">可用</span></div>
+                <div class="row-between"><span class="fs-12 t-2">浏览器通知栏</span><span class="tag tag-ok tag-dot">已授权</span></div>
+                <div class="row-between"><span class="fs-12 t-2">震动（移动端）</span><span class="tag tag-warn tag-dot">iOS 不支持</span></div>
+                <div class="row-between"><span class="fs-12 t-2">邮件</span><span class="tag">未接入</span></div>
+                <div class="row-between"><span class="fs-12 t-2">PWA 安装状态</span><span class="tag tag-warn tag-dot">未安装</span></div>
+                <a class="btn btn-outline btn-block mt-2" href="../app/notify-preview.html">查看提醒形态预览 →</a>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 通知详情 -->
+        <aside class="col gap-4">
+          <div class="card" id="detailCard">
+            <div class="card-head">
+              <span class="card-title">通知详情</span>
+              <span class="tag tag-brand" id="dtRule">价格提醒</span>
+            </div>
+            <div class="card-body col gap-3" id="detailBody"></div>
+            <div class="card-foot">
+              <a class="t-brand" id="dtLink" href="stock.html">进入个股分析 →</a>
+              <a class="t-brand" href="alerts.html">调整该规则 →</a>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">今日通知分布</span><span class="card-sub">按类型</span></div>
+            <div class="card-body"><div id="ntDonut" class="chart chart-md"></div></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">通知时效性</span><span class="card-sub">触发到送达的延迟</span></div>
+            <div class="card-body">
+              <div class="col gap-2">
+                <div class="row-between"><span class="fs-12 t-2">站内通知</span><span class="mono fs-12 t-up">≤ 0.5 秒</span></div>
+                <div class="row-between"><span class="fs-12 t-2">浏览器通知栏</span><span class="mono fs-12 t-up">≤ 1.5 秒</span></div>
+                <div class="row-between"><span class="fs-12 t-2">价格类规则巡检间隔</span><span class="mono fs-12">30 秒</span></div>
+                <div class="row-between"><span class="fs-12 t-2">行情数据延迟</span><span class="mono fs-12">≤ 3 秒</span></div>
+              </div>
+              <div class="legend-block mt-3">
+                提醒链路由服务端定时巡检 + SignalR 推送组成：
+                行情每 3 秒更新 → 规则每 30 秒巡检 → 命中后立即推送到所有在线设备。
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="_shared/vendor/echarts.min.js"></script>
+<script src="_shared/data.js"></script>
+<script src="_shared/charts.js"></script>
+<script src="_shared/app.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F;
+  var list = D.notifications.map(function (n) { return Object.assign({}, n); });
+  var activeId = list[0].id;
+
+  function itemHtml(n) {
+    var cls = n.level === "up" ? "is-up" : "is-down";
+    var icon = n.level === "up" ? "↑" : "↓";
+    return '<div class="nt-item' + (n.read ? "" : " is-unread") + (n.id === activeId ? " is-active" : "") + '" data-id="' + n.id + '">' +
+      '<span class="nt-dot ' + cls + '">' + icon + "</span>" +
+      '<div class="grow">' +
+        '<div class="row gap-2 wrap">' +
+          '<span class="nt-title fs-13">' + n.title + "</span>" +
+          '<span class="tag tag-outline">' + n.rule + "</span>" +
+          '<span class="mono fs-11 t-3" style="margin-left:auto">' + n.time + "</span>" +
+        "</div>" +
+        '<div class="fs-12 t-2" style="margin-top:4px;line-height:1.7">' + n.body + "</div>" +
+        '<div class="row gap-2 mt-2"><span class="fs-11 t-3">' + n.name + " " + n.code + "</span></div>" +
+      "</div>" +
+    "</div>";
+  }
+
+  function render() {
+    var unread = list.filter(function (n) { return !n.read; });
+    var fStock = document.getElementById("fStock").value;
+    var all = fStock === "all" ? list : list.filter(function (n) { return n.code === fStock; });
+
+    document.getElementById("unreadList").innerHTML = unread.length
+      ? unread.map(itemHtml).join("")
+      : '<div class="empty"><div class="em-icon">✓</div><div class="fs-13">没有未读通知</div>' +
+        '<div class="hint">所有通知都已处理完毕</div></div>';
+
+    document.getElementById("allList").innerHTML = all.length
+      ? all.map(itemHtml).join("")
+      : '<div class="empty"><div class="em-icon">◌</div><div class="fs-13">该筛选条件下没有通知</div></div>';
+
+    /* 按股票分组 */
+    var groups = {};
+    list.forEach(function (n) { (groups[n.code] = groups[n.code] || { name: n.name, items: [] }).items.push(n); });
+    document.getElementById("groupList").innerHTML = Object.keys(groups).map(function (code) {
+      var g = groups[code];
+      var un = g.items.filter(function (n) { return !n.read; }).length;
+      return '<div class="fold">' +
+        '<div class="fold-head"><span class="fs-12 fw-600">' + g.name + '</span>' +
+        '<span class="mono fs-11 t-3">' + code + "</span>" +
+        '<span class="tag tag-outline">' + g.items.length + " 条</span>" +
+        (un ? '<span class="tag tag-brand">' + un + " 未读</span>" : "") +
+        '<span class="caret">▼</span></div>' +
+        '<div class="fold-body" style="padding:0">' + g.items.map(itemHtml).join("") + "</div>" +
+        "</div>";
+    }).join("");
+
+    document.getElementById("ntFoot").textContent = "共 " + list.length + " 条 · " + unread.length + " 条未读";
+
+    SA.qsa(".nt-item").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var id = el.getAttribute("data-id");
+        activeId = id;
+        var n = list.filter(function (x) { return x.id === id; })[0];
+        n.read = true;
+        render();
+        showDetail(n);
+      });
+    });
+
+    SA.qsa(".fold-head").forEach(function (h) {
+      h.addEventListener("click", function () { h.parentNode.classList.toggle("is-collapsed"); });
+    });
+  }
+
+  function showDetail(n) {
+    var cls = n.level === "up" ? "t-up" : "t-down";
+    document.getElementById("dtRule").textContent = n.rule;
+    document.getElementById("dtLink").setAttribute("href", "stock.html?code=" + n.code);
+    document.getElementById("detailBody").innerHTML =
+      '<div class="row gap-2 wrap">' +
+        '<span class="tag ' + (n.level === "up" ? "tag-up" : "tag-down") + '">' + (n.level === "up" ? "利好信号" : "风险信号") + "</span>" +
+        '<span class="mono fs-11 t-3">' + n.time + "</span>" +
+      "</div>" +
+      '<div class="kpi"><span class="kpi-label">股票</span><span class="kpi-value is-sm">' + n.name + " " + n.code + "</span></div>" +
+      '<div><div class="label">通知内容</div><div class="fs-13 mt-1" style="line-height:1.8">' + n.title + "</div>" +
+        '<div class="fs-12 t-2 mt-2" style="line-height:1.8">' + n.body + "</div></div>" +
+      '<div class="grid grid-2">' +
+        '<div class="kpi"><span class="kpi-label">送达渠道</span><span class="kpi-value is-sm">站内 + 通知栏</span></div>' +
+        '<div class="kpi"><span class="kpi-label">送达延迟</span><span class="kpi-value is-sm t-up">0.4 秒</span></div>' +
+      "</div>" +
+      '<div class="legend-block">该通知由「' + n.rule + '」规则触发，' +
+        "规则巡检间隔 30 秒，行情延迟 ≤ 3 秒。原型中不实现真实推送，通知为演示数据。</div>";
+  }
+
+  /* 股票筛选 */
+  var codes = [];
+  list.forEach(function (n) { if (codes.indexOf(n.code) < 0) codes.push(n.code); });
+  document.getElementById("fStock").innerHTML = '<option value="all">全部股票</option>' +
+    codes.map(function (c) {
+      var n = list.filter(function (x) { return x.code === c; })[0];
+      return '<option value="' + c + '">' + n.name + " " + c + "</option>";
+    }).join("");
+  document.getElementById("fStock").addEventListener("change", render);
+
+  document.getElementById("btnMarkAll").addEventListener("click", function () {
+    list.forEach(function (n) { n.read = true; });
+    render();
+    SA.toast("已把全部通知标记为已读", "ok");
+  });
+  document.getElementById("btnClearRead").addEventListener("click", function () {
+    list = list.filter(function (n) { return !n.read; });
+    render();
+    SA.toast("已清空已读通知", "info");
+  });
+
+  /* 图表 */
+  var typeMap = {};
+  list.forEach(function (n) { typeMap[n.rule] = (typeMap[n.rule] || 0) + 1; });
+  F.donut("#ntDonut", {
+    legendOrient: "vertical", center: ["34%", "50%"], radius: ["48%", "70%"],
+    data: Object.keys(typeMap).map(function (k) { return { name: k, value: typeMap[k] }; })
+  });
+
+  render();
+  showDetail(list[0]);
+})();
+</script>
+</body>
+</html>

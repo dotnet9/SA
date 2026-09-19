@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>行业与同业对比 · 股析 SA（移动端）</title>
+<link rel="stylesheet" href="../web/_shared/tokens.css">
+<link rel="stylesheet" href="../web/_shared/tailwind.css">
+<link rel="stylesheet" href="../web/_shared/components.css">
+<style>
+  .hscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .hscroll::-webkit-scrollbar { display: none; }
+  .freeze-tbl td:first-child, .freeze-tbl th:first-child {
+    position: sticky; left: 0; z-index: 2; background: var(--bg-panel);
+    box-shadow: 1px 0 0 var(--border-soft);
+  }
+</style>
+</head>
+<body data-page="stock-industry" data-title="行业与同业对比" data-desc="产业链桑基图纵向布局、同业对比表横向滚动、雷达图单列。手机端桑基图改为纵向层级，更适合窄屏阅读。">
+<div id="appScreen">
+  <div class="m-topbar">
+    <a class="icon-btn" href="stock.html">←</a>
+    <span class="m-title">行业与同业对比</span>
+    <span class="mono fs-11 t-3" style="margin-left:auto">300750</span>
+  </div>
+
+  <div class="m-page">
+
+    <!-- 行业概览 -->
+    <div class="m-kpi-row" style="grid-template-columns:repeat(2,1fr)">
+      <div class="kpi"><span class="kpi-label">所属行业</span><span class="kpi-value is-sm">电池</span><span class="kpi-delta t-up">今日 +3.86%</span></div>
+      <div class="kpi"><span class="kpi-label">全球市占率</span><span class="kpi-value is-sm t-up">36.8%</span><span class="kpi-delta t-3">第 1 位</span></div>
+      <div class="kpi"><span class="kpi-label">行业景气度</span><span class="kpi-value is-sm">68 / 100</span><span class="kpi-delta t-3">中性偏强</span></div>
+      <div class="kpi"><span class="kpi-label">估值 vs 行业</span><span class="kpi-value is-sm t-up">折价 16%</span><span class="kpi-delta t-3">PE 22.4 vs 26.8</span></div>
+    </div>
+
+    <!-- 产业链 -->
+    <div class="m-section-title">
+      产业链传导拓扑
+      <span class="tag tag-outline" style="margin-left:auto">14 环节</span>
+    </div>
+    <div class="m-card" style="padding:8px 4px">
+      <div id="mChain" class="chart" style="height:340px"></div>
+    </div>
+    <div class="row gap-2 mt-2 wrap">
+      <span class="tag tag-lg tag-outline" id="tgUp">上游 6</span>
+      <span class="tag tag-lg tag-outline" id="tgMid">中游 4</span>
+      <span class="tag tag-lg tag-outline" id="tgDown">下游 4</span>
+    </div>
+    <div class="legend-block mt-2">
+      <b>读图</b>：上游正极材料占电池成本约 42%，是成本传导关键环节；
+      下游储能景气度最高（82），是当前利润弹性的主要来源。
+    </div>
+
+    <!-- 环节卡片 -->
+    <div class="m-section-title">环节明细</div>
+    <div id="mChainCards"></div>
+
+    <!-- 景气与估值 -->
+    <div class="m-section-title">行业景气与估值</div>
+    <div class="m-card">
+      <div id="mBoom" class="chart chart-sm" style="height:150px"></div>
+      <div class="col gap-2 mt-2">
+        <div class="row-between"><span class="fs-12 t-2">开工率</span><span class="mono fs-12 t-up">82%</span></div>
+        <div class="row-between"><span class="fs-12 t-2">订单能见度</span><span class="mono fs-12 t-up">2.4 季度</span></div>
+        <div class="row-between"><span class="fs-12 t-2">库存天数</span><span class="mono fs-12 t-up">38 天</span></div>
+        <div class="row-between"><span class="fs-12 t-2">行业 PE 分位</span><span class="mono fs-12 t-up">38%</span></div>
+      </div>
+    </div>
+
+    <!-- 同业对比表 -->
+    <div class="m-section-title">
+      同业对比
+      <span class="hint" style="margin-left:auto">← 左右滑动 →</span>
+    </div>
+    <div class="m-card" style="padding:0">
+      <div class="hscroll">
+        <table class="tbl freeze-tbl" style="min-width:700px" id="mPeerTbl"></table>
+      </div>
+    </div>
+
+    <!-- 雷达 -->
+    <div class="m-section-title">
+      多指标雷达对比
+      <span class="segmented" style="margin-left:auto">
+        <span class="is-active">3 家</span><span>6 家</span>
+      </span>
+    </div>
+    <div class="m-card" style="padding:8px 4px">
+      <div id="mRadar" class="chart" style="height:280px"></div>
+    </div>
+
+    <!-- 散点 -->
+    <div class="m-section-title">估值 × 盈利散点</div>
+    <div class="m-card" style="padding:8px 4px">
+      <div id="mBubble" class="chart" style="height:280px"></div>
+      <div class="chart-note">宁德时代位于「低 PE + 高 ROE」象限，在同业中性价比最优。</div>
+    </div>
+
+    <!-- 行业地位 -->
+    <div class="m-section-title">行业地位</div>
+    <div class="m-card">
+      <div class="col gap-2">
+        <div class="row-between"><span class="fs-12 t-2">行业排名（按市值）</span><span class="mono fs-12 t-up">1 / 86</span></div>
+        <div class="row-between"><span class="fs-12 t-2">国内市占率</span><span class="mono fs-12 t-up">42.6%</span></div>
+        <div class="row-between"><span class="fs-12 t-2">净利润行业占比</span><span class="mono fs-12 t-up">48.6%</span></div>
+        <div class="row-between"><span class="fs-12 t-2">前五大客户占比</span><span class="mono fs-12 t-warn">42.4%</span></div>
+        <div class="row-between"><span class="fs-12 t-2">海外收入占比</span><span class="mono fs-12 t-up">32.8%</span></div>
+      </div>
+    </div>
+
+    <div class="legend-block mt-4">
+      <b>数据口径</b>：行业分类为申万一级「电池」；市占率来自公开装机量统计，季度更新；
+      景气度由开工率、价格、订单、库存合成（0–100）；演示数据，不构成投资建议。
+    </div>
+
+  </div>
+</div>
+
+<script src="../web/_shared/vendor/echarts.min.js"></script>
+<script src="../web/_shared/data.js"></script>
+<script src="../web/_shared/charts.js"></script>
+<script src="../web/_shared/app.js"></script>
+<script src="../web/_shared/mock-frame.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F, ind = D.industry;
+
+  /* 产业链：手机端用纵向层级（level 映射到上下而非左右） */
+  F.sankey("#mChain", {
+    nodes: ind.chain.nodes.map(function (n) {
+      return {
+        name: n.name, level: n.stage === "上游" ? 0 : n.stage === "中游" ? 1 : 2,
+        color: n.stage === "上游" ? C.cv("--chart-4") : n.stage === "中游" ? C.cv("--chart-1") : C.cv("--chart-2"),
+        note: n.note + " · 景气度 " + n.boom
+      };
+    }),
+    links: ind.chain.links
+  });
+
+  /* 环节卡片 */
+  document.getElementById("mChainCards").innerHTML = ["上游", "中游", "下游"].map(function (stage) {
+    var nodes = ind.chain.nodes.filter(function (n) { return n.stage === stage; });
+    return '<div class="fold">' +
+      '<div class="fold-head"><span class="tag tag-outline">' + stage + '</span>' +
+      '<span class="fs-12 fw-600">' + nodes.length + " 个环节</span>" +
+      '<span class="caret">▼</span></div>' +
+      '<div class="fold-body" style="padding:0">' +
+        nodes.map(function (n) {
+          return '<div style="padding:8px 0;border-bottom:1px solid var(--border-soft)">' +
+            '<div class="row-between"><span class="fs-12 fw-600">' + n.name + "</span>" +
+            '<span class="mono fs-11 ' + (n.boom >= 65 ? "t-up" : n.boom >= 50 ? "t-2" : "t-down") + '">' + n.boom + "</span></div>" +
+            '<div class="hint" style="line-height:1.7">' + n.note + (n.share ? " · 市占率 " + n.share + "%" : "") + "</div>" +
+            '<div class="meter mt-2"><i style="width:' + n.boom + '%"></i></div>' +
+            "</div>";
+        }).join("") +
+      "</div></div>";
+  }).join("");
+
+  F.gauge("#mBoom", { value: 68, max: 100, name: "电池行业景气度", warnAt: 40, dangerAt: 60 });
+
+  /* 同业表 */
+  document.getElementById("mPeerTbl").innerHTML =
+    '<thead><tr><th>公司</th><th class="num">营收</th><th class="num">净利</th><th class="num">毛利率</th><th class="num">ROE</th><th class="num">PE</th><th class="num">涨跌</th></tr></thead><tbody>' +
+    ind.peers.map(function (p) {
+      return '<tr data-chg="' + (p.pct >= 0 ? "up" : "down") + '" class="is-clickable" data-href="stock.html?code=' + p.code + '">' +
+        '<td class="fw-600">' + p.name + (p.self ? ' <span class="tag tag-brand">本股</span>' : "") + "</td>" +
+        '<td class="num">' + p.revenue.toFixed(1) + "</td>" +
+        '<td class="num">' + p.netProfit.toFixed(1) + "</td>" +
+        '<td class="num">' + p.grossMargin.toFixed(1) + "%</td>" +
+        '<td class="num ' + (p.roe >= 0 ? "t-up" : "t-down") + '">' + p.roe.toFixed(1) + "%</td>" +
+        '<td class="num">' + (p.pe ? p.pe.toFixed(1) : "亏损") + "</td>" +
+        '<td class="num ' + (p.pct >= 0 ? "t-up" : "t-down") + '">' + (p.pct >= 0 ? "+" : "") + p.pct.toFixed(2) + "%</td>" +
+        "</tr>";
+    }).join("") + "</tbody>";
+
+  F.radar("#mRadar", { indicators: ind.peerRadar.indicators, series: ind.peerRadar.series, radius: "60%" });
+  F.bubble("#mBubble", { data: ind.valuation.peersScatter });
+
+  /* 雷达家数切换 */
+  SA.qsa(".segmented > *").forEach(function (el) {
+    el.addEventListener("click", function () {
+      SA.qsa(".segmented > *", el.parentNode).forEach(function (o) { o.classList.toggle("is-active", o === el); });
+      var six = el.textContent.trim() === "6 家";
+      document.getElementById("mRadar").innerHTML = "";
+      F.radar("#mRadar", {
+        indicators: ind.peerRadar.indicators,
+        series: six ? ind.peerRadar.series.concat([
+          { name: "欣旺达", values: [14.2, 3.9, 9.8, 14.6, 3.2, 2.4] },
+          { name: "贝特瑞", values: [21.4, 8.4, 12.8, 18.2, 4.1, 3.1] },
+          { name: "国轩高科", values: [16.8, 4.2, 6.4, 22.4, 4.8, 3.6] }
+        ]) : ind.peerRadar.series,
+        radius: "60%"
+      });
+      C.rebuildAll();
+    });
+  });
+})();
+</script>
+</body>
+</html>

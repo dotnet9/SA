@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>角色与权限 · 股析 SA</title>
+<link rel="stylesheet" href="_shared/tokens.css">
+<link rel="stylesheet" href="_shared/tailwind.css">
+<link rel="stylesheet" href="_shared/components.css">
+<style>
+  .role-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 10px; cursor: pointer;
+    border: 1px solid transparent; transition: all var(--t-fast);
+  }
+  .role-item:hover { background: var(--bg-hover); }
+  .role-item.is-active { background: var(--brand-soft); border-color: var(--brand); }
+  .role-item .ri-name { font-size: 13px; font-weight: 600; }
+  .role-item .ri-meta { font-size: 11px; color: var(--text-3); }
+  .matrix-wrap { max-height: 640px; overflow: auto; }
+  .matrix thead th { z-index: 3; }
+  .matrix .fp-name { white-space: nowrap; }
+  .col-check { width: 92px; }
+</style>
+</head>
+<body data-page="admin-permissions">
+
+<div class="sa-app">
+  <div class="sa-brand">
+    <div class="sa-logo">SA</div>
+    <div class="sa-brand-text">
+      <div class="sa-brand-name">股析</div>
+      <div class="sa-brand-sub">Stock Analysis</div>
+    </div>
+  </div>
+  <header class="sa-topbar" id="saTop"></header>
+  <nav class="sa-sidenav" id="saNav"></nav>
+  <main class="sa-main">
+    <div class="sa-page is-wide">
+
+      <div class="sa-pagehead">
+        <div>
+          <div class="breadcrumb"><a href="market.html">市场概览</a><span class="sep">/</span><span>系统管理</span><span class="sep">/</span><span>角色与权限</span></div>
+          <h1>角色与功能点开关矩阵</h1>
+          <div class="sub">通用「角色 + 功能点」模型 · 支持模块级 / 数据范围级 / 操作级 / 编辑级 · 勾选后左侧导航实时裁剪</div>
+        </div>
+        <div class="sa-pagehead-actions">
+          <span class="segmented" id="previewRole"></span>
+          <button class="btn btn-outline btn-sm" id="btnResetDefault">恢复默认</button>
+          <button class="btn btn-primary btn-sm" id="btnSave">保存全部变更</button>
+        </div>
+      </div>
+
+      <!-- 闭环提示 -->
+      <div class="card is-accent">
+        <div class="card-body is-tight row gap-4 wrap">
+          <div class="row gap-2">
+            <span class="tag tag-accent">演示闭环</span>
+            <span class="fs-12 t-2">1. 在下方矩阵勾选 / 取消某个角色的功能点</span>
+          </div>
+          <span class="t-3">→</span>
+          <div class="row gap-2">
+            <span class="fs-12 t-2">2. 点右上角「以此角色预览」</span>
+          </div>
+          <span class="t-3">→</span>
+          <div class="row gap-2">
+            <span class="fs-12 t-2">3. 左侧导航与页面内功能按权限实时裁剪</span>
+          </div>
+          <span class="tag tag-outline" id="liveInfo" style="margin-left:auto">当前角色：管理员 · 24 / 24 项</span>
+        </div>
+      </div>
+
+      <div class="grid grid-sidebar mt-4" style="grid-template-columns:300px minmax(0,1fr)">
+
+        <!-- 角色列表 -->
+        <div class="col gap-3">
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">角色</span>
+              <div class="card-tools"><button class="btn btn-sm btn-ghost" id="btnAddRole">+ 新增</button></div>
+            </div>
+            <div class="card-body is-tight">
+              <div class="col gap-1" id="roleList"></div>
+            </div>
+            <div class="card-foot">
+              <span class="hint">内置角色不可删除，仅可调整功能点</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">当前角色权限摘要</span></div>
+            <div class="card-body col gap-3" id="roleSummary"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">批量操作</span></div>
+            <div class="card-body col gap-2">
+              <button class="btn btn-outline btn-block" id="btnCopyRole">复制角色权限…</button>
+              <button class="btn btn-outline btn-block" id="btnSelectAll">全选当前角色</button>
+              <button class="btn btn-outline btn-block" id="btnClearAll">清空当前角色</button>
+              <button class="btn btn-outline btn-block" id="btnReadonly">设为只读分析权限</button>
+              <div class="legend-block mt-2">
+                「只读分析权限」= 全部模块访问 + 数据范围全市场，不含导出、编辑与后台管理。
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 权限矩阵 -->
+        <div class="col gap-4">
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">功能点矩阵</span>
+              <span class="card-sub">行 = 功能点 · 列 = 角色 · 表头可整列全选</span>
+              <div class="card-tools">
+                <input class="input input-sm" id="fFp" placeholder="搜索功能点" style="width:170px">
+                <span class="tag tag-outline" id="fpCount"></span>
+              </div>
+            </div>
+            <div class="card-body is-flush">
+              <div class="matrix-wrap">
+                <table class="matrix" id="matrixTbl">
+                  <thead id="matrixHead"></thead>
+                  <tbody id="matrixBody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card-foot">
+              <span id="matrixFoot">共 24 个功能点 · 7 个分组</span>
+              <span class="hint" style="margin-left:auto">悬浮功能点名称可查看说明</span>
+            </div>
+          </div>
+
+          <!-- 操作权限数值 -->
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">操作级权限参数</span>
+              <span class="card-sub">按角色设置具体数值（历史年限、查询上限等）</span>
+            </div>
+            <div class="card-body is-flush">
+              <div class="tbl-wrap">
+                <table class="tbl is-comfort" id="numTbl">
+                  <thead><tr><th style="width:220px">参数</th><th style="width:300px">说明</th><th id="numRoleHead">管理员</th></tr></thead>
+                  <tbody>
+                    <tr><td class="fw-600">历史数据年限</td><td class="hint">可查看的历史数据最大年限</td>
+                      <td><input class="input input-sm input-num" value="10" style="width:80px"> <span class="hint">年</span></td></tr>
+                    <tr><td class="fw-600">单日查询上限</td><td class="hint">单日可发起的分析查询次数</td>
+                      <td><input class="input input-sm input-num" value="2000" style="width:100px"> <span class="hint">次</span></td></tr>
+                    <tr><td class="fw-600">导出单次上限</td><td class="hint">单次导出最大行数</td>
+                      <td><input class="input input-sm input-num" value="100000" style="width:110px"> <span class="hint">行</span></td></tr>
+                    <tr><td class="fw-600">自选股数量上限</td><td class="hint">可加入自选的最大股票数</td>
+                      <td><input class="input input-sm input-num" value="500" style="width:90px"> <span class="hint">只</span></td></tr>
+                    <tr><td class="fw-600">提醒规则数量上限</td><td class="hint">可创建的提醒规则条数</td>
+                      <td><input class="input input-sm input-num" value="200" style="width:90px"> <span class="hint">条</span></td></tr>
+                    <tr><td class="fw-600">保存策略数量上限</td><td class="hint">可保存的选股策略个数</td>
+                      <td><input class="input input-sm input-num" value="50" style="width:80px"> <span class="hint">个</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- 数据范围 -->
+          <div class="card">
+            <div class="card-head"><span class="card-title">数据范围策略</span><span class="card-sub">按角色限制可见股票范围</span></div>
+            <div class="card-body is-flush">
+              <div class="tbl-wrap">
+                <table class="tbl is-comfort" id="scopeTbl">
+                  <thead><tr><th style="width:220px">数据范围</th><th>含义</th><th style="width:120px">启用角色数</th></tr></thead>
+                  <tbody>
+                    <tr><td class="fw-600">全市场数据 <span class="fp-code">data.scope.all</span></td>
+                      <td class="hint">可查询与查看全市场任意股票的分析矩阵</td>
+                      <td class="num" id="scopeAllCount">2</td></tr>
+                    <tr><td class="fw-600">仅自选数据 <span class="fp-code">data.scope.watchlist</span></td>
+                      <td class="hint">仅可查看自选股范围内的股票，搜索页只返回自选股</td>
+                      <td class="num" id="scopeWlCount">1</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="tbl-foot">
+                <span class="hint">两个范围互斥；若都不勾选，该角色无法查看任何个股数据</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 影响提示 -->
+          <div class="card">
+            <div class="card-head"><span class="card-title">变更影响</span><span class="card-sub">保存前的影响评估</span></div>
+            <div class="card-body">
+              <div id="impactList" class="col gap-2"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="legend-block mt-4">
+        <b>权限模型说明</b><br>
+        功能点（function point）是全系统最小的授权单位，采用「角色 → 功能点」的多对多关系（对应后续数据库的
+        <code>Role</code> / <code>FunctionPoint</code> / <code>RoleFunctionPoint</code> 三张表）。
+        后端用策略式授权在 API 层校验，前端按同一份配置裁剪路由与菜单，避免「看不到但能调」的漏洞。
+        本页勾选即时写入本地配置并影响左侧导航，用于直观演示权限效果。
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- 复制角色 -->
+<div class="overlay" id="dlgCopy">
+  <div class="dialog">
+    <div class="dialog-head"><h3>复制角色权限</h3>
+      <button class="icon-btn" data-close="dlgCopy" style="margin-left:auto">✕</button></div>
+    <div class="dialog-body col gap-4">
+      <div class="field"><label class="label">源角色</label>
+        <select class="select" id="copyFrom"></select></div>
+      <div class="field"><label class="label">目标角色</label>
+        <select class="select" id="copyTo"></select></div>
+      <div class="notice" style="border-left:3px solid var(--warn);background:var(--warn-soft);padding:12px;border-radius:0 8px 8px 0">
+        <div class="fs-13 fw-600 t-warn">将覆盖目标角色的全部功能点配置</div>
+        <div class="hint mt-1">目标角色当前已分配的用户会立即受影响。</div>
+      </div>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-ghost" data-close="dlgCopy">取消</button>
+      <button class="btn btn-primary" id="btnDoCopy" data-close="dlgCopy">确认复制</button>
+    </div>
+  </div>
+</div>
+
+<script src="_shared/vendor/echarts.min.js"></script>
+<script src="_shared/data.js"></script>
+<script src="_shared/charts.js"></script>
+<script src="_shared/app.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA;
+  var activeRoleId = "admin";
+  var fpFilter = "";
+  var defaults = JSON.parse(JSON.stringify(D.roles.map(function (r) { return { id: r.id, fps: r.fps }; })));
+
+  function role(id) { return D.roles.filter(function (r) { return r.id === id; })[0]; }
+  function active() { return role(activeRoleId); }
+
+  /* ---------- 角色列表 ---------- */
+  function renderRoles() {
+    document.getElementById("roleList").innerHTML = D.roles.map(function (r) {
+      return '<div class="role-item' + (r.id === activeRoleId ? " is-active" : "") + '" data-id="' + r.id + '">' +
+        '<span class="avatar">' + r.name.charAt(0) + "</span>" +
+        '<div class="grow">' +
+          '<div class="ri-name">' + r.name + (r.builtin ? ' <span class="tag tag-outline" style="margin-left:4px">内置</span>' : "") + "</div>" +
+          '<div class="ri-meta">' + r.fps.length + " / " + D.allFpCodes.length + " 项 · " + r.users + " 个用户</div>" +
+        "</div>" +
+        (r.builtin ? "" : '<button class="icon-btn roleDel" data-id="' + r.id + '" title="删除角色">✕</button>') +
+      "</div>";
+    }).join("");
+
+    SA.qsa(".role-item").forEach(function (el) {
+      el.addEventListener("click", function (e) {
+        if (e.target.closest(".roleDel")) return;
+        activeRoleId = el.getAttribute("data-id");
+        renderAll();
+      });
+    });
+    SA.qsa(".roleDel").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var r = role(b.getAttribute("data-id"));
+        SA.toast("已删除角色：" + r.name + "（" + r.users + " 个用户已回退到访客权限）", "warn");
+      });
+    });
+  }
+
+  /* ---------- 预览角色切换 ---------- */
+  function renderPreview() {
+    document.getElementById("previewRole").innerHTML = D.roles.map(function (r) {
+      return '<span data-v="' + r.id + '"' + (r.id === SA.currentRole().id ? ' class="is-active"' : "") + ">" + r.name + "</span>";
+    }).join("");
+    SA.qsa("#previewRole > *").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var id = el.getAttribute("data-v");
+        SA.setRole(id);
+        SA.renderNav();
+        SA.qsa("#previewRole > *").forEach(function (o) { o.classList.toggle("is-active", o === el); });
+        updateLive();
+        SA.toast("已切换为「" + role(id).name + "」视角，左侧导航已按权限裁剪", "ok");
+      });
+    });
+  }
+
+  function updateLive() {
+    var cur = SA.currentRole();
+    document.getElementById("liveInfo").textContent = "当前角色：" + cur.name + " · " +
+      cur.fps.length + " / " + D.allFpCodes.length + " 项";
+  }
+
+  /* ---------- 矩阵 ---------- */
+  function renderMatrix() {
+    document.getElementById("matrixHead").innerHTML = "<tr>" +
+      '<th style="min-width:300px">功能点</th>' +
+      D.roles.map(function (r) {
+        return '<th class="is-role col-check">' + r.name +
+          '<div style="margin-top:4px"><button class="btn btn-sm btn-ghost colAll" data-role="' + r.id + '">全选</button></div>' +
+          "</th>";
+      }).join("") + "</tr>";
+
+    var html = "";
+    var total = 0;
+    D.functionPoints.forEach(function (g) {
+      var items = g.items.filter(function (i) {
+        return !fpFilter || i.code.indexOf(fpFilter) >= 0 || i.name.indexOf(fpFilter) >= 0;
+      });
+      if (!items.length) return;
+      html += '<tr class="matrix-group"><td colspan="' + (D.roles.length + 1) + '">' + g.group +
+        " · " + items.length + " 项</td></tr>";
+      items.forEach(function (i) {
+        total++;
+        html += "<tr>" +
+          '<td class="fp-name" title="' + i.desc + '"><span>' + i.name + '</span> <span class="fp-code">' + i.code + "</span></td>" +
+          D.roles.map(function (r) {
+            var on = r.fps.indexOf(i.code) >= 0;
+            return '<td class="is-check"><input type="checkbox" class="fpChk" data-role="' + r.id + '" data-fp="' + i.code + '"' + (on ? " checked" : "") + "></td>";
+          }).join("") + "</tr>";
+      });
+    });
+    document.getElementById("matrixBody").innerHTML = html;
+    document.getElementById("fpCount").textContent = total + " 项";
+    document.getElementById("matrixFoot").textContent = "共 " + total + " 个功能点 · " + D.functionPoints.length + " 个分组";
+
+    SA.qsa(".fpChk").forEach(function (c) {
+      c.addEventListener("change", function () {
+        var rid = c.getAttribute("data-role");
+        var fp = c.getAttribute("data-fp");
+        var r = role(rid);
+        var idx = r.fps.indexOf(fp);
+        if (c.checked && idx < 0) r.fps.push(fp);
+        if (!c.checked && idx >= 0) r.fps.splice(idx, 1);
+        renderRoles(); renderSummary(); renderImpact(); updateLive();
+        if (rid === SA.currentRole().id) { SA.renderNav(); }
+      });
+    });
+    SA.qsa(".colAll").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var r = role(b.getAttribute("data-role"));
+        var allOn = r.fps.length === D.allFpCodes.length;
+        r.fps = allOn ? [] : D.allFpCodes.slice();
+        renderAll();
+        SA.toast("已" + (allOn ? "清空" : "全选") + "「" + r.name + "」的 " + D.allFpCodes.length + " 个功能点", "info");
+      });
+    });
+  }
+
+  /* ---------- 摘要 ---------- */
+  function renderSummary() {
+    var r = active();
+    var byGroup = D.functionPoints.map(function (g) {
+      var on = g.items.filter(function (i) { return r.fps.indexOf(i.code) >= 0; }).length;
+      var pct = Math.round(on / g.items.length * 100);
+      return '<div><div class="row-between"><span class="fs-12 t-2">' + g.group + '</span>' +
+        '<span class="mono fs-11 t-3">' + on + " / " + g.items.length + "</span></div>" +
+        '<div class="meter' + (pct === 100 ? " is-ok" : pct === 0 ? " is-warn" : "") + ' mt-1"><i style="width:' + pct + '%"></i></div></div>';
+    }).join("");
+    document.getElementById("roleSummary").innerHTML =
+      '<div class="row gap-3"><span class="avatar" style="width:34px;height:34px">' + r.name.charAt(0) + "</span>" +
+        '<div class="grow"><div class="fs-13 fw-600">' + r.name + "</div>" +
+        '<div class="hint">' + r.desc + "</div></div></div>" +
+      '<div class="kpi"><span class="kpi-label">已授权功能点</span><span class="kpi-value is-sm">' +
+        r.fps.length + " / " + D.allFpCodes.length + "</span>" +
+        '<span class="kpi-delta t-3">' + r.users + " 个用户使用此角色</span></div>" +
+      byGroup;
+  }
+
+  /* ---------- 操作级参数表头 ---------- */
+  function renderNumTable() {
+    document.getElementById("numRoleHead").textContent = active().name;
+    document.getElementById("numTbl").querySelectorAll("input").forEach(function (inp) {
+      if (active().id === "admin") { inp.disabled = false; return; }
+      inp.disabled = active().id === "guest";
+    });
+  }
+
+  /* ---------- 数据范围计数 ---------- */
+  function renderScope() {
+    document.getElementById("scopeAllCount").textContent = D.roles.filter(function (r) { return r.fps.indexOf("data.scope.all") >= 0; }).length;
+    document.getElementById("scopeWlCount").textContent = D.roles.filter(function (r) { return r.fps.indexOf("data.scope.watchlist") >= 0; }).length;
+  }
+
+  /* ---------- 影响评估 ---------- */
+  function renderImpact() {
+    var out = [];
+    D.roles.forEach(function (r) {
+      if (r.fps.length === 0) out.push({ t: "danger", msg: "「" + r.name + "」当前没有任何功能点，该角色下 " + r.users + " 个用户将无法使用任何功能" });
+      if (r.fps.indexOf("data.scope.all") < 0 && r.fps.indexOf("data.scope.watchlist") < 0 && r.fps.length > 0)
+        out.push({ t: "warn", msg: "「" + r.name + "」未设置数据范围，将无法查看任何个股数据" });
+      if (r.fps.indexOf("admin.permissions") >= 0 && r.id !== "admin")
+        out.push({ t: "warn", msg: "「" + r.name + "」拥有权限管理功能点，可自行提权" });
+      if (r.fps.indexOf("export.data") >= 0 && r.id === "guest")
+        out.push({ t: "warn", msg: "「" + r.name + "」被授予导出权限，注意数据外流风险" });
+    });
+    if (!out.length) out.push({ t: "ok", msg: "当前配置未发现明显风险；所有角色均有数据范围与可用功能点" });
+
+    document.getElementById("impactList").innerHTML = out.map(function (o) {
+      var tag = o.t === "danger" ? "tag-danger" : o.t === "warn" ? "tag-warn" : "tag-ok";
+      return '<div class="row gap-2" style="align-items:flex-start">' +
+        '<span class="tag ' + tag + '">' + (o.t === "danger" ? "严重" : o.t === "warn" ? "注意" : "正常") + "</span>" +
+        '<span class="fs-12 t-2" style="line-height:1.7">' + o.msg + "</span></div>";
+    }).join("");
+  }
+
+  function renderAll() {
+    renderRoles(); renderPreview(); renderMatrix(); renderSummary();
+    renderNumTable(); renderScope(); renderImpact(); updateLive();
+  }
+  renderAll();
+
+  /* ---------- 交互 ---------- */
+  document.getElementById("fFp").addEventListener("input", function () {
+    fpFilter = this.value.trim().toLowerCase();
+    renderMatrix();
+  });
+
+  document.getElementById("btnAddRole").addEventListener("click", function () {
+    var id = "custom" + (D.roles.length + 1);
+    D.roles.push({ id: id, name: "自定义角色 " + (D.roles.length + 1), desc: "新建角色，默认无权限", users: 0, builtin: false, fps: [] });
+    activeRoleId = id;
+    renderAll();
+    SA.toast("已新增角色，请在矩阵中勾选功能点", "ok");
+  });
+
+  document.getElementById("btnSelectAll").addEventListener("click", function () {
+    active().fps = D.allFpCodes.slice();
+    renderAll();
+    SA.toast("已为「" + active().name + "」勾选全部功能点", "ok");
+  });
+  document.getElementById("btnClearAll").addEventListener("click", function () {
+    active().fps = [];
+    renderAll();
+    SA.toast("已清空「" + active().name + "」的全部功能点", "warn");
+  });
+  document.getElementById("btnReadonly").addEventListener("click", function () {
+    active().fps = D.functionPoints[0].items.map(function (i) { return i.code; })
+      .concat(["watchlist.view", "watchlist.edit", "screener.use", "screener.saveStrategy", "alert.manage", "notify.view", "data.scope.all", "history.years", "quota.daily"]);
+    renderAll();
+    SA.toast("已设为只读分析权限（不含导出、编辑与后台管理）", "ok");
+  });
+
+  document.getElementById("btnCopyRole").addEventListener("click", function () {
+    document.getElementById("copyFrom").innerHTML = D.roles.map(function (r) {
+      return '<option value="' + r.id + '"' + (r.id === activeRoleId ? " selected" : "") + ">" + r.name + "</option>";
+    }).join("");
+    document.getElementById("copyTo").innerHTML = D.roles.map(function (r) {
+      return '<option value="' + r.id + '">' + r.name + "</option>";
+    }).join("");
+    SA.openDialog("dlgCopy");
+  });
+  document.getElementById("btnDoCopy").addEventListener("click", function () {
+    var from = role(document.getElementById("copyFrom").value);
+    var to = role(document.getElementById("copyTo").value);
+    to.fps = from.fps.slice();
+    renderAll();
+    SA.toast("已把「" + from.name + "」的 " + from.fps.length + " 个功能点复制到「" + to.name + "」", "ok");
+  });
+
+  document.getElementById("btnResetDefault").addEventListener("click", function () {
+    D.roles.forEach(function (r) {
+      var d = defaults.filter(function (x) { return x.id === r.id; })[0];
+      if (d) r.fps = d.fps.slice();
+    });
+    renderAll();
+    SA.setRole("admin");
+    SA.renderNav();
+    renderPreview();
+    SA.toast("已恢复三个内置角色的默认权限", "info");
+  });
+
+  document.getElementById("btnSave").addEventListener("click", function () {
+    SA.toast("权限配置已保存；该角色下的用户下次请求即生效", "ok");
+  });
+})();
+</script>
+</body>
+</html>

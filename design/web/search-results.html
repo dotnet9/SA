@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>搜索结果 · 股析 SA</title>
+<link rel="stylesheet" href="_shared/tokens.css">
+<link rel="stylesheet" href="_shared/tailwind.css">
+<link rel="stylesheet" href="_shared/components.css">
+</head>
+<body data-page="search">
+
+<div class="sa-app">
+  <div class="sa-brand">
+    <div class="sa-logo">SA</div>
+    <div class="sa-brand-text">
+      <div class="sa-brand-name">股析</div>
+      <div class="sa-brand-sub">Stock Analysis</div>
+    </div>
+  </div>
+  <header class="sa-topbar" id="saTop"></header>
+  <nav class="sa-sidenav" id="saNav"></nav>
+  <main class="sa-main">
+    <div class="sa-page">
+
+      <div class="sa-pagehead">
+        <div>
+          <div class="breadcrumb"><a href="market.html">市场概览</a><span class="sep">/</span><span>搜索结果</span></div>
+          <h1 id="kwTitle">「宁德」的搜索结果</h1>
+          <div class="sub" id="kwSub">共命中 2 只 · 按相关度排序 · 支持代码 / 名称 / 拼音首字母</div>
+        </div>
+        <div class="sa-pagehead-actions">
+          <button class="btn btn-outline btn-sm" id="btnAddAll">批量加入自选</button>
+          <button class="btn btn-outline btn-sm" id="btnExportRes">导出结果</button>
+        </div>
+      </div>
+
+      <!-- 快捷筛选 -->
+      <div class="card">
+        <div class="card-body is-tight row gap-3 wrap">
+          <span class="label" style="width:auto">板块</span>
+          <span class="segmented" id="fBoard">
+            <span class="is-active" data-v="all">全部</span>
+            <span data-v="沪市主板">沪市主板</span>
+            <span data-v="深市主板">深市主板</span>
+            <span data-v="创业板">创业板</span>
+            <span data-v="科创板">科创板</span>
+            <span data-v="北交所">北交所</span>
+          </span>
+          <span class="label" style="width:auto;margin-left:8px">行业</span>
+          <select class="select" id="fIndustry" style="width:140px"></select>
+          <span class="label" style="width:auto;margin-left:8px">市值</span>
+          <select class="select" id="fCap" style="width:130px">
+            <option value="0">不限</option>
+            <option value="500">≥ 500 亿</option>
+            <option value="1000">≥ 1000 亿</option>
+            <option value="5000">≥ 5000 亿</option>
+          </select>
+          <span class="label" style="width:auto;margin-left:8px">关键词</span>
+          <input class="input input-sm" id="fKw" style="width:180px" placeholder="代码 / 名称 / 拼音">
+          <button class="btn btn-sm btn-ghost" id="btnReset">重置</button>
+          <span class="tag tag-outline" style="margin-left:auto" id="hitCount">命中 2 只</span>
+        </div>
+      </div>
+
+      <!-- 结果表 -->
+      <div class="card mt-4">
+        <div class="card-head">
+          <span class="card-title">搜索结果</span>
+          <span class="card-sub">点击任意行进入个股分析矩阵</span>
+          <div class="card-tools">
+            <span class="segmented">
+              <span class="is-active">按相关度</span><span>按涨跌幅</span><span>按市值</span>
+            </span>
+          </div>
+        </div>
+        <div class="card-body is-flush">
+          <div class="tbl-wrap">
+            <table class="tbl is-comfort" id="resTbl">
+              <thead>
+                <tr>
+                  <th style="width:36px"><input type="checkbox" id="chkAll"></th>
+                  <th class="is-sortable">名称 / 代码 <span class="sort-caret">▼</span></th>
+                  <th>板块</th>
+                  <th>所属行业</th>
+                  <th class="num is-sortable">现价 <span class="sort-caret">▼</span></th>
+                  <th class="num is-sortable">涨跌幅 <span class="sort-caret">▼</span></th>
+                  <th class="num">换手率</th>
+                  <th class="num">量比</th>
+                  <th class="num is-sortable">PE(TTM) <span class="sort-caret">▼</span></th>
+                  <th class="num">PB</th>
+                  <th class="num is-sortable">总市值 <span class="sort-caret">▼</span></th>
+                  <th style="width:104px">近 30 日走势</th>
+                  <th class="col-actions" style="width:130px">操作</th>
+                </tr>
+              </thead>
+              <tbody id="resBody"></tbody>
+            </table>
+          </div>
+          <div class="tbl-foot">
+            <span id="footInfo">共 2 条 · 已选 0 条</span>
+            <div class="pager"><span>‹</span><span class="is-active">1</span><span>›</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 搜索技巧 + 相关 -->
+      <div class="grid grid-2 mt-4">
+        <div class="card">
+          <div class="card-head"><span class="card-title">搜索技巧</span></div>
+          <div class="card-body col gap-2">
+            <div class="row gap-3"><span class="tag tag-outline mono">300750</span><span class="fs-12 t-2">6 位代码精确匹配</span></div>
+            <div class="row gap-3"><span class="tag tag-outline">宁德时代</span><span class="fs-12 t-2">中文名称模糊匹配</span></div>
+            <div class="row gap-3"><span class="tag tag-outline mono">ndsd</span><span class="fs-12 t-2">拼音首字母匹配</span></div>
+            <div class="row gap-3"><span class="tag tag-outline">电池</span><span class="fs-12 t-2">行业关键词（返回该行业全部个股）</span></div>
+            <div class="row gap-3"><span class="kbd"><kbd>⌘</kbd><kbd>K</kbd></span><span class="fs-12 t-2">在任意页面唤起搜索框</span></div>
+            <div class="row gap-3"><span class="kbd"><kbd>/</kbd></span><span class="fs-12 t-2">快速聚焦搜索框</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">相关行业与概念</span><span class="card-sub">点击查看该行业同业对比</span></div>
+          <div class="card-body row gap-2 wrap">
+            <a class="tag tag-lg tag-brand" href="stock-industry.html">电池 +3.86%</a>
+            <a class="tag tag-lg tag-outline" href="stock-industry.html">储能 +5.24%</a>
+            <a class="tag tag-lg tag-outline" href="stock-industry.html">固态电池 +6.82%</a>
+            <a class="tag tag-lg tag-outline" href="stock-industry.html">动力电池回收 +2.42%</a>
+            <a class="tag tag-lg tag-outline" href="stock-industry.html">锂电池 +3.24%</a>
+            <a class="tag tag-lg tag-outline" href="stock-industry.html">新能源汽车 +1.82%</a>
+            <div class="legend-block mt-3" style="width:100%">
+              行业与概念板块数据每交易日 15:20 更新；概念板块口径来自公开接口的板块成分，同一只股票可属于多个概念。
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="_shared/vendor/echarts.min.js"></script>
+<script src="_shared/data.js"></script>
+<script src="_shared/charts.js"></script>
+<script src="_shared/app.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, F = window.SA_CHARTS.F;
+
+  var params = new URLSearchParams(location.search);
+  var kw = params.get("q") || "宁德";
+  var filter = { board: "all", industry: "all", cap: 0, kw: kw };
+  var selected = {};
+
+  /* 行业下拉 */
+  var inds = ["all"].concat(D.industries.map(function (i) { return i.name; }));
+  document.getElementById("fIndustry").innerHTML = inds.map(function (n) {
+    return '<option value="' + n + '">' + (n === "all" ? "全部行业" : n) + "</option>";
+  }).join("");
+
+  function match(s) {
+    var k = (filter.kw || "").trim().toLowerCase();
+    var okKw = !k || s.code.indexOf(k) >= 0 || s.name.toLowerCase().indexOf(k) >= 0 || s.py.indexOf(k) >= 0;
+    var okBoard = filter.board === "all" || s.board === filter.board;
+    var okInd = filter.industry === "all" || s.industry === filter.industry;
+    var okCap = s.cap >= filter.cap;
+    return okKw && okBoard && okInd && okCap;
+  }
+
+  function render() {
+    var rows = D.stocks.filter(match);
+    document.getElementById("kwTitle").textContent = "「" + (filter.kw || "全部") + "」的搜索结果";
+    document.getElementById("kwSub").textContent = "共命中 " + rows.length + " 只 · 支持代码 / 名称 / 拼音首字母";
+    document.getElementById("hitCount").textContent = "命中 " + rows.length + " 只";
+    document.getElementById("footInfo").textContent = "共 " + rows.length + " 条 · 已选 " +
+      Object.keys(selected).length + " 条";
+
+    if (!rows.length) {
+      document.getElementById("resBody").innerHTML =
+        '<tr><td colspan="13"><div class="empty"><div class="em-icon">◌</div>' +
+        '<div class="fs-13">没有匹配的股票</div>' +
+        '<div class="hint">试试更换关键词，或清空板块 / 行业 / 市值筛选条件</div></div></td></tr>';
+      return;
+    }
+
+    document.getElementById("resBody").innerHTML = rows.map(function (s) {
+      var cls = s.pct >= 0 ? "is-up" : "is-down";
+      var inWatch = D.watchlist.items.some(function (w) { return w.code === s.code; });
+      return '<tr data-chg="' + (s.pct >= 0 ? "up" : "down") + '">' +
+        '<td><input type="checkbox" class="rowChk" data-code="' + s.code + '"' + (selected[s.code] ? " checked" : "") + "></td>" +
+        '<td class="is-clickable" data-href="stock.html?code=' + s.code + '">' +
+          '<span class="stock-cell"><span class="sc-name">' + s.name +
+          (inWatch ? ' <span class="tag tag-brand">自选</span>' : "") +
+          '</span><span class="sc-code">' + s.code + " · " + s.py + "</span></span></td>" +
+        '<td><span class="tag tag-outline">' + s.board + "</span></td>" +
+        "<td>" + s.industry + "</td>" +
+        '<td class="num" style="color:var(--' + (s.pct >= 0 ? "up" : "down") + ')">' + s.price.toFixed(2) + "</td>" +
+        '<td class="num"><span class="chg ' + cls + '">' + (s.pct >= 0 ? "+" : "") + s.chg.toFixed(2) +
+          " <span>" + (s.pct >= 0 ? "+" : "") + s.pct.toFixed(2) + "%</span></span></td>" +
+        '<td class="num">' + s.turnover.toFixed(2) + "%</td>" +
+        '<td class="num">' + s.volRatio.toFixed(2) + "</td>" +
+        '<td class="num">' + (s.pe ? s.pe.toFixed(1) : "亏损") + "</td>" +
+        '<td class="num">' + s.pb.toFixed(2) + "</td>" +
+        '<td class="num">' + s.cap.toLocaleString() + " 亿</td>" +
+        '<td><div class="chart chart-xs" id="spark_' + s.code + '"></div></td>' +
+        '<td class="col-actions">' +
+          '<button class="btn btn-sm btn-ghost actWatch" data-code="' + s.code + '">' + (inWatch ? "已自选" : "+ 自选") + "</button> " +
+          '<a class="btn btn-sm btn-ghost" href="stock.html?code=' + s.code + '">分析</a>' +
+        "</td></tr>";
+    }).join("");
+
+    rows.forEach(function (s) { F.spark("#spark_" + s.code, s.spark, { up: s.pct >= 0 }); });
+
+    SA.qsa(".actWatch").forEach(function (b) {
+      b.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var code = b.getAttribute("data-code");
+        var s = D.stockByCode[code];
+        var now = b.textContent.trim() === "已自选";
+        b.textContent = now ? "+ 自选" : "已自选";
+        SA.toast(now ? "已从自选股移除：" + s.name : "已加入自选股：" + s.name + " " + code, now ? "info" : "ok");
+      });
+    });
+
+    SA.qsa(".rowChk").forEach(function (c) {
+      c.addEventListener("change", function () {
+        var code = c.getAttribute("data-code");
+        if (c.checked) selected[code] = true; else delete selected[code];
+        document.getElementById("footInfo").textContent = "共 " + rows.length + " 条 · 已选 " +
+          Object.keys(selected).length + " 条";
+      });
+    });
+  }
+
+  /* 筛选交互 */
+  SA.qsa("#fBoard > *").forEach(function (el) {
+    el.addEventListener("click", function () { filter.board = el.getAttribute("data-v"); render(); });
+  });
+  document.getElementById("fIndustry").addEventListener("change", function () {
+    filter.industry = this.value; render();
+  });
+  document.getElementById("fCap").addEventListener("change", function () {
+    filter.cap = parseFloat(this.value) || 0; render();
+  });
+  var kwTimer = null;
+  document.getElementById("fKw").addEventListener("input", function () {
+    var v = this.value;
+    clearTimeout(kwTimer);
+    kwTimer = setTimeout(function () { filter.kw = v; render(); }, 200);
+  });
+  document.getElementById("fKw").value = kw;
+  document.getElementById("btnReset").addEventListener("click", function () {
+    filter = { board: "all", industry: "all", cap: 0, kw: "" };
+    document.getElementById("fKw").value = "";
+    document.getElementById("fIndustry").value = "all";
+    document.getElementById("fCap").value = "0";
+    SA.qsa("#fBoard > *").forEach(function (o, i) { o.classList.toggle("is-active", i === 0); });
+    render();
+  });
+  document.getElementById("chkAll").addEventListener("change", function () {
+    var on = this.checked;
+    SA.qsa(".rowChk").forEach(function (c) {
+      c.checked = on;
+      var code = c.getAttribute("data-code");
+      if (on) selected[code] = true; else delete selected[code];
+    });
+    render();
+  });
+  document.getElementById("btnAddAll").addEventListener("click", function () {
+    var n = Object.keys(selected).length;
+    if (!n) { SA.toast("请先勾选要加入自选的股票", "warn"); return; }
+    SA.toast("已将 " + n + " 只股票加入自选股", "ok");
+    selected = {};
+    render();
+  });
+  document.getElementById("btnExportRes").addEventListener("click", function () {
+    SA.toast("已导出当前搜索结果（" + D.stocks.filter(match).length + " 只）为 CSV（原型不产生文件）", "ok");
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

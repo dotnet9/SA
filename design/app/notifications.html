@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>通知中心 · 股析 SA（移动端）</title>
+<link rel="stylesheet" href="../web/_shared/tokens.css">
+<link rel="stylesheet" href="../web/_shared/tailwind.css">
+<link rel="stylesheet" href="../web/_shared/components.css">
+<style>
+  .nt-card {
+    border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
+    background: var(--bg-sunken); display: flex; gap: 10px; position: relative;
+  }
+  .nt-card.is-unread { border-color: var(--brand); background: var(--brand-soft); }
+  .nt-dot {
+    width: 26px; height: 26px; border-radius: 8px; flex: 0 0 auto;
+    display: grid; place-items: center; font-size: 12px;
+  }
+  .nt-dot.is-up { background: var(--up-soft); color: var(--up); }
+  .nt-dot.is-down { background: var(--down-soft); color: var(--down); }
+  .pull-tip {
+    text-align: center; font-size: 11px; color: var(--text-3);
+    padding: 8px 0 2px;
+  }
+</style>
+</head>
+<body data-page="notifications" data-title="通知中心" data-desc="未读角标、按股票分组、下拉刷新、全部已读。手机端通知是第一入口，故底部 Tab 常驻且带未读角标。">
+<div id="appScreen">
+
+  <div class="m-topbar">
+    <span class="m-title">通知中心</span>
+    <span class="tag tag-brand" style="margin-left:auto" id="mUnread">4 未读</span>
+    <button class="icon-btn" id="mReadAll">✓</button>
+  </div>
+
+  <div class="m-page">
+
+    <div class="pull-tip" id="mPull">下拉刷新</div>
+
+    <!-- 分段 -->
+    <div class="segmented" style="width:100%">
+      <span class="is-active" data-v="unread">未读 4</span>
+      <span data-v="all">全部 10</span>
+      <span data-v="stock">按股票</span>
+    </div>
+
+    <!-- 列表 -->
+    <div class="col gap-2 mt-3" id="mList"></div>
+
+    <!-- 渠道状态 -->
+    <div class="m-section-title">推送渠道</div>
+    <div class="m-card">
+      <div class="col gap-2">
+        <div class="row-between"><span class="fs-12 t-2">站内通知中心</span><span class="tag tag-ok tag-dot">可用</span></div>
+        <div class="row-between"><span class="fs-12 t-2">浏览器通知栏</span><span class="tag tag-ok tag-dot">已授权</span></div>
+        <div class="row-between"><span class="fs-12 t-2">震动</span><span class="tag tag-warn tag-dot">iOS 不支持</span></div>
+        <div class="row-between"><span class="fs-12 t-2">PWA 安装状态</span><span class="tag tag-warn tag-dot">未安装</span></div>
+      </div>
+      <a class="btn btn-outline btn-block mt-3" href="notify-preview.html">查看提醒形态预览 →</a>
+    </div>
+
+    <!-- 时效 -->
+    <div class="m-section-title">通知时效性</div>
+    <div class="m-card">
+      <div class="col gap-2">
+        <div class="row-between"><span class="fs-12 t-2">价格类巡检间隔</span><span class="mono fs-12">30 秒</span></div>
+        <div class="row-between"><span class="fs-12 t-2">行情数据延迟</span><span class="mono fs-12">≤ 3 秒</span></div>
+        <div class="row-between"><span class="fs-12 t-2">站内送达</span><span class="mono fs-12 t-up">≤ 0.5 秒</span></div>
+        <div class="row-between"><span class="fs-12 t-2">通知栏送达</span><span class="mono fs-12 t-up">≤ 1.5 秒</span></div>
+      </div>
+      <div class="chart-note">行情每 3 秒更新 → 规则每 30 秒巡检 → 命中后立即推送到所有在线设备。</div>
+    </div>
+
+    <div class="legend-block mt-4">
+      演示数据 · 原型不实现真实推送，通知为预置演示内容。<br>
+      iOS 需先「添加到主屏幕」并从主屏图标启动，才可申请通知权限。
+    </div>
+
+  </div>
+</div>
+
+<script src="../web/_shared/vendor/echarts.min.js"></script>
+<script src="../web/_shared/data.js"></script>
+<script src="../web/_shared/charts.js"></script>
+<script src="../web/_shared/app.js"></script>
+<script src="../web/_shared/mock-frame.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA;
+  var list = D.notifications.map(function (n) { return Object.assign({}, n); });
+  var mode = "unread";
+
+  function card(n) {
+    var isUp = n.level === "up";
+    return '<div class="nt-card' + (n.read ? "" : " is-unread") + '" data-id="' + n.id + '">' +
+      '<span class="nt-dot ' + (isUp ? "is-up" : "is-down") + '">' + (isUp ? "↑" : "↓") + "</span>" +
+      '<div class="grow" style="min-width:0">' +
+        '<div class="row gap-2"><span class="fs-13 fw-600">' + n.title + "</span>" +
+        '<span class="mono fs-10 t-3" style="margin-left:auto">' + n.time.slice(11) + "</span></div>" +
+        '<div class="fs-11 t-2 mt-1" style="margin-top:4px;line-height:1.7">' + n.body + "</div>" +
+        '<div class="row gap-2 mt-2">' +
+          '<span class="tag tag-outline">' + n.rule + "</span>" +
+          '<span class="fs-10 t-3">' + n.name + " " + n.code + "</span>" +
+        "</div>" +
+      "</div></div>";
+  }
+
+  function render() {
+    var unread = list.filter(function (n) { return !n.read; });
+    document.getElementById("mUnread").textContent = unread.length + " 未读";
+
+    if (mode === "stock") {
+      var groups = {};
+      list.forEach(function (n) { (groups[n.code] = groups[n.code] || { name: n.name, items: [] }).items.push(n); });
+      document.getElementById("mList").innerHTML = Object.keys(groups).map(function (code) {
+        var g = groups[code];
+        var un = g.items.filter(function (n) { return !n.read; }).length;
+        return '<div class="fold">' +
+          '<div class="fold-head"><span class="fs-12 fw-600">' + g.name + "</span>" +
+          '<span class="tag tag-outline">' + g.items.length + " 条</span>" +
+          (un ? '<span class="tag tag-brand">' + un + " 未读</span>" : "") +
+          '<span class="caret" style="margin-left:auto">▼</span></div>' +
+          '<div class="fold-body col gap-2" style="padding:12px">' + g.items.map(card).join("") + "</div>" +
+          "</div>";
+      }).join("");
+    } else {
+      var rows = mode === "unread" ? unread : list;
+      document.getElementById("mList").innerHTML = rows.length ? rows.map(card).join("")
+        : '<div class="empty"><div class="em-icon">✓</div><div class="fs-13">没有未读通知</div></div>';
+    }
+
+    SA.qsa(".nt-card").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var n = list.filter(function (x) { return x.id === el.getAttribute("data-id"); })[0];
+        n.read = true;
+        render();
+        SA.toast("已读 · " + n.title, "info");
+      });
+    });
+    SA.qsa(".fold-head").forEach(function (h) {
+      h.addEventListener("click", function () { h.parentNode.classList.toggle("is-collapsed"); });
+    });
+  }
+
+  SA.qsa(".segmented > *").forEach(function (el) {
+    el.addEventListener("click", function () {
+      SA.qsa(".segmented > *").forEach(function (o) { o.classList.toggle("is-active", o === el); });
+      mode = el.getAttribute("data-v");
+      render();
+    });
+  });
+
+  document.getElementById("mReadAll").addEventListener("click", function () {
+    list.forEach(function (n) { n.read = true; });
+    render();
+    SA.toast("已全部标记为已读", "ok");
+  });
+
+  /* 下拉刷新模拟 */
+  var pull = document.getElementById("mPull");
+  pull.addEventListener("click", function () {
+    pull.textContent = "刷新中…";
+    setTimeout(function () {
+      pull.textContent = "已更新 · " + new Date().toTimeString().slice(0, 5);
+      SA.toast("已拉取最新通知", "ok");
+    }, 700);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

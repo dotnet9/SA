@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>提醒形态预览 · 股析 SA（移动端）</title>
+<link rel="stylesheet" href="../web/_shared/tokens.css">
+<link rel="stylesheet" href="../web/_shared/tailwind.css">
+<link rel="stylesheet" href="../web/_shared/components.css">
+<style>
+  .mock-banner {
+    border-radius: 14px; padding: 12px 14px;
+    background: var(--bg-glass); backdrop-filter: blur(14px);
+    border: 1px solid var(--border); box-shadow: var(--shadow-2);
+    display: flex; gap: 10px;
+  }
+  .mock-lock {
+    border-radius: 18px; padding: 14px;
+    background: linear-gradient(160deg, rgba(24,33,49,.92), rgba(11,15,23,.92));
+    backdrop-filter: blur(14px); border: 1px solid var(--border);
+    box-shadow: var(--shadow-3);
+  }
+  .app-ico {
+    width: 34px; height: 34px; border-radius: 9px; flex: 0 0 auto;
+    background: linear-gradient(135deg, var(--brand), var(--accent));
+    display: grid; place-items: center; color: #fff;
+    font-family: var(--font-num); font-weight: 700; font-size: 12px;
+  }
+  .vibrate-demo {
+    display: inline-flex; gap: 3px; align-items: flex-end; height: 18px;
+  }
+  .vibrate-demo > i {
+    width: 3px; border-radius: 2px; background: var(--accent);
+    animation: vb 900ms ease-in-out infinite;
+  }
+  .vibrate-demo > i:nth-child(2) { animation-delay: 120ms; }
+  .vibrate-demo > i:nth-child(3) { animation-delay: 240ms; }
+  .vibrate-demo > i:nth-child(4) { animation-delay: 360ms; }
+  .vibrate-demo > i:nth-child(5) { animation-delay: 480ms; }
+  @keyframes vb { 0%, 100% { height: 5px; } 50% { height: 18px; } }
+</style>
+</head>
+<body data-page="notify-preview" data-title="提醒形态预览" data-desc="站内通知 / 浏览器通知栏 / 锁屏通知三种样式对照 + 震动说明 + iOS 需「添加到主屏」的提示。用于确认提醒在手机上的真实观感。">
+<div id="appScreen">
+  <div class="m-topbar">
+    <a class="icon-btn" href="alerts.html">←</a>
+    <span class="m-title">提醒形态预览</span>
+  </div>
+
+  <div class="m-page">
+
+    <!-- 站内通知 -->
+    <div class="m-section-title">① 站内通知（通知中心）</div>
+    <div class="m-card" style="border-left:3px solid var(--up)">
+      <div class="row gap-2">
+        <span class="fs-13 fw-600">股价上穿 280.00 元</span>
+        <span class="mono fs-10 t-3" style="margin-left:auto">14:32</span>
+      </div>
+      <div class="fs-11 t-2 mt-1" style="margin-top:4px;line-height:1.7">
+        现价 280.16 元，涨幅 4.86%，成交量放大至 1.86 倍。
+      </div>
+      <div class="row gap-2 mt-2">
+        <span class="tag tag-outline">价格提醒</span>
+        <span class="fs-10 t-3">宁德时代 300750</span>
+      </div>
+    </div>
+    <div class="chart-note">站内通知在应用内展示，有未读角标，不依赖任何系统权限，所有设备都可用。</div>
+
+    <!-- 浏览器通知栏 -->
+    <div class="m-section-title">② 浏览器通知栏（PWA）</div>
+    <div class="mock-banner">
+      <div class="app-ico">SA</div>
+      <div class="grow">
+        <div class="row gap-2">
+          <span class="fs-12 fw-600">股析 SA</span>
+          <span class="fs-10 t-3" style="margin-left:auto">现在</span>
+        </div>
+        <div class="fs-12 fw-600 mt-1" style="margin-top:2px">宁德时代 上穿 280.00 元</div>
+        <div class="fs-11 t-2" style="line-height:1.6">现价 280.16，+4.86% · 主力净流入 18.62 亿</div>
+      </div>
+    </div>
+    <div class="chart-note">
+      需要 HTTPS + 已安装 PWA + 通知权限授权。iOS 必须先在 Safari 中「添加到主屏幕」并从主屏图标启动，
+      才可申请通知权限。
+    </div>
+
+    <!-- 锁屏通知 -->
+    <div class="m-section-title">③ 锁屏通知</div>
+    <div class="mock-lock">
+      <div class="row-between" style="margin-bottom:10px">
+        <span class="mono fs-11 t-3">14:32</span>
+        <span class="fs-11 t-3">9 月 18 日 星期五</span>
+      </div>
+      <div class="mock-banner" style="background:rgba(24,33,49,.7)">
+        <div class="app-ico">SA</div>
+        <div class="grow">
+          <div class="row gap-2">
+            <span class="fs-12 fw-600">股析 SA</span>
+            <span class="fs-10 t-3" style="margin-left:auto">现在</span>
+          </div>
+          <div class="fs-12 fw-600 mt-1" style="margin-top:2px">寒武纪 主力净流入 9.86 亿</div>
+          <div class="fs-11 t-2" style="line-height:1.6">超大单净流入 6.42 亿，居半导体板块首位</div>
+        </div>
+      </div>
+      <div class="fs-11 t-3 mt-3" style="text-align:center">上滑查看 · 长按管理通知</div>
+    </div>
+    <div class="chart-note">锁屏样式由系统决定，应用只能提供标题与正文；不同厂商的 Android 皮肤差异较大。</div>
+
+    <!-- 震动 -->
+    <div class="m-section-title">④ 震动</div>
+    <div class="m-card">
+      <div class="row gap-3">
+        <span class="vibrate-demo"><i></i><i></i><i></i><i></i><i></i></span>
+        <div class="grow">
+          <div class="fs-12 fw-600">触发时短震动提示</div>
+          <div class="hint" style="line-height:1.7">使用 Web Vibration API，需 HTTPS 与用户手势授权。</div>
+        </div>
+      </div>
+      <div class="row gap-2 mt-3">
+        <button class="btn btn-outline btn-sm" id="mTryVibrate">试一下震动</button>
+        <button class="btn btn-ghost btn-sm" id="mTryNotify">发一条测试通知</button>
+      </div>
+      <div class="chart-note">
+        <b>iOS 限制</b>：Safari 不支持 Web Vibration API，iPhone 上无法通过网页触发震动；
+        Android（Chrome / Edge）支持。
+      </div>
+    </div>
+
+    <!-- 不做的能力 -->
+    <div class="m-section-title">⑤ 明确不做：桌面小组件</div>
+    <div class="concept-note">
+      <b>为什么不做手机主屏小组件</b><br>
+      纯 PWA 无法注册桌面小组件（Widget）：<br>
+      · iOS 完全不支持 Web 应用提供主屏小组件；<br>
+      · Android 需要原生 App 或第三方壳（Capacitor / Tauri Mobile）才能注册 AppWidget。<br><br>
+      已决定用「通知栏提醒 + 站内通知 + 震动」替代小组件的实时性需求。
+      如后续确实需要小组件，可另做轻量 Android 壳或原生小组件 App 读取同一个 API。
+    </div>
+
+    <!-- 概念示意 -->
+    <div class="m-section-title">概念示意（不承诺实现）</div>
+    <div class="m-card">
+      <div class="hint" style="margin-bottom:10px">若未来实现 Android 小组件，可能的形态：</div>
+      <div class="grid grid-2" style="gap:10px">
+        <div style="border:1px dashed var(--border-strong);border-radius:14px;padding:10px;background:var(--bg-sunken)">
+          <div class="fs-10 t-3">自选股 2×2</div>
+          <div class="col gap-1 mt-2">
+            <div class="row-between"><span class="fs-11 fw-600">宁德时代</span><span class="mono fs-11 t-up">+4.86%</span></div>
+            <div class="row-between"><span class="fs-11 fw-600">寒武纪</span><span class="mono fs-11 t-up">+8.42%</span></div>
+            <div class="row-between"><span class="fs-11 fw-600">天齐锂业</span><span class="mono fs-11 t-down">-3.28%</span></div>
+          </div>
+        </div>
+        <div style="border:1px dashed var(--border-strong);border-radius:14px;padding:10px;background:var(--bg-sunken)">
+          <div class="fs-10 t-3">大盘 4×2</div>
+          <div class="mt-2">
+            <div class="mono fs-16 fw-700 t-up">3286.42</div>
+            <div class="mono fs-11 t-up">+0.45%</div>
+            <div class="row gap-2 mt-2">
+              <span class="fs-10 t-3">涨 <b class="t-up">3124</b></span>
+              <span class="fs-10 t-3">跌 <b class="t-down">1786</b></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="chart-note">仅为愿景示意，本项目的原型与实现均不包含桌面小组件。</div>
+    </div>
+
+    <!-- 权限前置条件 -->
+    <div class="m-section-title">前置条件清单</div>
+    <div class="m-card">
+      <table class="tbl">
+        <tbody>
+          <tr><td class="t-2">HTTPS 域名</td><td><span class="tag tag-ok">已就绪</span></td></tr>
+          <tr><td class="t-2">Service Worker 注册</td><td><span class="tag tag-ok">已注册</span></td></tr>
+          <tr><td class="t-2">通知权限</td><td><span class="tag tag-ok">已授权</span></td></tr>
+          <tr><td class="t-2">PWA 安装到主屏</td><td><span class="tag tag-warn">未安装</span></td></tr>
+          <tr><td class="t-2">震动 API</td><td><span class="tag tag-warn">iOS 不支持</span></td></tr>
+        </tbody>
+      </table>
+      <a class="btn btn-primary btn-block mt-3" href="settings.html">去「我的」页安装 PWA →</a>
+    </div>
+
+  </div>
+</div>
+
+<script src="../web/_shared/vendor/echarts.min.js"></script>
+<script src="../web/_shared/data.js"></script>
+<script src="../web/_shared/charts.js"></script>
+<script src="../web/_shared/app.js"></script>
+<script src="../web/_shared/mock-frame.js"></script>
+<script>
+(function () {
+  document.getElementById("mTryVibrate").addEventListener("click", function () {
+    if (navigator.vibrate) {
+      try { navigator.vibrate([80, 40, 80]); } catch (e) { }
+      SA.toast("已触发震动（若设备支持）", "ok");
+    } else {
+      SA.toast("当前环境不支持震动 API（iOS Safari 与桌面浏览器均不支持）", "warn");
+    }
+  });
+
+  document.getElementById("mTryNotify").addEventListener("click", function () {
+    if (window.Notification && Notification.permission === "granted") {
+      try {
+        new Notification("股析 SA · 宁德时代", { body: "股价上穿 280.00 元，现价 280.16，+4.86%（演示）" });
+        SA.toast("已发送浏览器通知", "ok");
+        return;
+      } catch (e) { }
+    }
+    SA.toast("未获得通知权限，已改为站内通知（演示）", "warn");
+  });
+})();
+</script>
+</body>
+</html>

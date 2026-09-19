@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>机构评级与盈利预测 · 股析 SA（移动端）</title>
+<link rel="stylesheet" href="../web/_shared/tokens.css">
+<link rel="stylesheet" href="../web/_shared/tailwind.css">
+<link rel="stylesheet" href="../web/_shared/components.css">
+<style>
+  .rating-badge { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+  .rb-buy { background: var(--up-soft); color: var(--up); }
+  .rb-add { background: var(--brand-soft); color: var(--brand); }
+  .rb-neutral { background: var(--neutral-soft); color: var(--text-2); }
+  .rb-reduce { background: var(--down-soft); color: var(--down); }
+  .hero-target {
+    border-radius: 14px; padding: 16px;
+    background: linear-gradient(135deg, var(--brand-soft), transparent 70%);
+    border: 1px solid var(--border);
+  }
+  .upside-band { height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--down), var(--flat) 42%, var(--up)); position: relative; }
+  .upside-band .m { position: absolute; top: -4px; width: 3px; height: 16px; border-radius: 2px; background: var(--text-1); box-shadow: 0 0 0 2px var(--bg-panel); transform: translateX(-50%); }
+</style>
+</head>
+<body data-page="stock-rating" data-title="机构评级与盈利预测" data-desc="评级分布环形、目标价散点、评级明细列表。手机端把一致目标价与上行空间放在首屏最显眼位置。">
+<div id="appScreen">
+  <div class="m-topbar">
+    <a class="icon-btn" href="stock.html">←</a>
+    <span class="m-title">机构评级与预测</span>
+    <span class="mono fs-11 t-3" style="margin-left:auto">300750</span>
+  </div>
+
+  <div class="m-page">
+
+    <!-- 一致目标价 -->
+    <div class="hero-target">
+      <div class="row-between">
+        <span class="hint">一致目标价</span>
+        <span class="tag tag-outline">12 家机构</span>
+      </div>
+      <div class="mono fw-700 t-up" style="font-size:34px;line-height:1.15">320.00<span class="fs-14"> 元</span></div>
+      <div class="upside-band mt-3"><span class="m" style="left:19.2%"></span></div>
+      <div class="row-between mt-2">
+        <span class="hint">现价 268.42</span>
+        <span class="mono fs-12 t-up">+19.2% 上行空间</span>
+      </div>
+      <div class="hint mt-1">区间 252 – 320 元 · 中位 308 元</div>
+    </div>
+
+    <!-- 评级分布 -->
+    <div class="m-section-title">评级分布</div>
+    <div class="m-card" style="padding:8px 4px">
+      <div id="mDist" class="chart" style="height:200px"></div>
+      <div class="row gap-2 mt-2 wrap" style="justify-content:center">
+        <span class="rating-badge rb-buy">买入 18</span>
+        <span class="rating-badge rb-add">增持 12</span>
+        <span class="rating-badge rb-neutral">中性 4</span>
+        <span class="rating-badge rb-reduce">减持 1</span>
+      </div>
+      <div class="chart-note">看多占比（买入 + 增持）<b class="t-up">85.7%</b>；近 3 月上调 5 家、下调 1 家。</div>
+    </div>
+
+    <!-- 一致预期 -->
+    <div class="m-section-title">一致预期（未来 3 年）</div>
+    <div class="m-card" style="padding:8px 4px">
+      <div id="mCons" class="chart" style="height:220px"></div>
+      <table class="tbl mt-3">
+        <thead><tr><th>年度</th><th class="num">EPS</th><th class="num">净利</th><th class="num">增速</th><th class="num">PE</th></tr></thead>
+        <tbody id="mConsBody"></tbody>
+      </table>
+    </div>
+
+    <!-- 目标价散点 -->
+    <div class="m-section-title">
+      目标价分布
+      <span class="fs-11 t-3" style="margin-left:auto">虚线 = 现价</span>
+    </div>
+    <div class="m-card" style="padding:8px 4px">
+      <div id="mTarget" class="chart" style="height:280px"></div>
+      <div class="m-kpi-row mt-3" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi"><span class="kpi-label">最高</span><span class="kpi-value is-sm t-up">320.00</span></div>
+        <div class="kpi"><span class="kpi-label">中位</span><span class="kpi-value is-sm">308.00</span></div>
+        <div class="kpi"><span class="kpi-label">最低</span><span class="kpi-value is-sm t-down">252.00</span></div>
+      </div>
+    </div>
+
+    <!-- 评级历史 -->
+    <div class="m-section-title">评级与目标价走势</div>
+    <div class="m-card" style="padding:8px 4px">
+      <div id="mHist" class="chart" style="height:260px"></div>
+      <div class="chart-note">买入评级从 12 家增至 18 家，平均目标价由 268 元升至 308 元。</div>
+    </div>
+
+    <!-- 预测调整 -->
+    <div class="m-section-title">盈利预测调整</div>
+    <div class="m-card" style="padding:8px 4px">
+      <div id="mRevise" class="chart" style="height:220px"></div>
+      <div class="chart-note">2026 年净利一致预期由 712 亿上修至 786 亿（+10.4%），近 1 个月上调 3.1%。</div>
+    </div>
+
+    <!-- 明细 -->
+    <div class="m-section-title">
+      评级明细
+      <span class="segmented" style="margin-left:auto">
+        <span class="is-active" data-v="all">全部</span>
+        <span data-v="买入">买入</span>
+        <span data-v="增持">增持</span>
+      </span>
+    </div>
+    <div class="col gap-2" id="mRatingList"></div>
+
+    <div class="legend-block mt-4">
+      <b>数据口径</b>：公开机构评级汇总（不含研报全文），每交易日 20:00 更新；
+      目标价为机构公开给出的目标价，非本项目预测；一致预期 = 各机构预测中位数。
+      演示数据，不构成任何投资建议。
+    </div>
+
+  </div>
+</div>
+
+<script src="../web/_shared/vendor/echarts.min.js"></script>
+<script src="../web/_shared/data.js"></script>
+<script src="../web/_shared/charts.js"></script>
+<script src="../web/_shared/app.js"></script>
+<script src="../web/_shared/mock-frame.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F, rt = D.ratings;
+  var price = D.focusProfile.price;
+  var ratingFilter = "all";
+
+  F.donut("#mDist", {
+    label: false, legendOrient: "horizontal",
+    center: ["50%", "48%"], radius: ["50%", "74%"],
+    data: rt.distribution.map(function (d) { return { name: d.name, value: d.value, color: d.color }; })
+  });
+
+  F.combo("#mCons", {
+    labels: rt.consensus.years, unit: "亿元", unit2: "元",
+    bars: [
+      { name: "营收", data: rt.consensus.revenue },
+      { name: "净利", data: rt.consensus.netProfit }
+    ],
+    lines: [{ name: "EPS", data: rt.consensus.eps, axis: 2, color: C.cv("--chart-4") }]
+  });
+
+  document.getElementById("mConsBody").innerHTML = rt.consensus.years.map(function (y, i) {
+    var g = i === 0 ? "+26.2%" : "+" + (((rt.consensus.netProfit[i] - rt.consensus.netProfit[i - 1]) / rt.consensus.netProfit[i - 1]) * 100).toFixed(1) + "%";
+    return "<tr><td class=\"fw-600\">" + y + "</td>" +
+      '<td class="num">' + rt.consensus.eps[i].toFixed(2) + "</td>" +
+      '<td class="num t-up">' + rt.consensus.netProfit[i].toFixed(1) + "</td>" +
+      '<td class="num t-up">' + g + "</td>" +
+      '<td class="num t-up">' + rt.consensus.pe[i].toFixed(1) + "</td></tr>";
+  }).join("");
+
+  var sorted = rt.targetPrices.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+  F.targetBand("#mTarget", {
+    labels: sorted.map(function (t) { return t.date.slice(5) + " " + t.org.slice(0, 4); }),
+    data: sorted, current: price
+  });
+
+  F.ratingHistory("#mHist");
+
+  F.combo("#mRevise", {
+    labels: ["26-04", "26-05", "26-06", "26-07", "26-08", "26-09"],
+    unit: "亿元",
+    bars: [{ name: "2026E 净利预期", data: [712, 726, 738, 748, 762, 786] }],
+    lines: [{ name: "月度上修 %", data: [0.6, 1.9, 1.7, 1.4, 1.9, 3.1], axis: 2, color: C.cv("--chart-4") }],
+    unit2: "%",
+    rotate: 30
+  });
+
+  /* 评级明细卡片 */
+  function renderRatings() {
+    var rows = rt.targetPrices.filter(function (t) { return ratingFilter === "all" || t.rating === ratingFilter; });
+    document.getElementById("mRatingList").innerHTML = rows.map(function (t) {
+      var badge = t.rating === "买入" ? "rb-buy" : t.rating === "增持" ? "rb-add" : t.rating === "中性" ? "rb-neutral" : "rb-reduce";
+      var chg = t.target - t.prev;
+      return '<div class="fold">' +
+        '<div class="fold-head">' +
+          '<span class="fs-12 fw-600">' + t.org + "</span>" +
+          '<span class="rating-badge ' + badge + '">' + t.rating + "</span>" +
+          '<span class="mono fs-12 t-up" style="margin-left:auto">' + t.target.toFixed(0) + " 元</span>" +
+          '<span class="caret">▼</span>' +
+        "</div>" +
+        '<div class="fold-body">' +
+          '<div class="row-between"><span class="fs-12 t-2">分析师</span><span class="fs-12">' + t.analyst + "</span></div>" +
+          '<div class="row-between mt-2"><span class="fs-12 t-2">发布日期</span><span class="mono fs-12">' + t.date + "</span></div>" +
+          '<div class="row-between mt-2"><span class="fs-12 t-2">目标价变动</span><span class="mono fs-12 ' + (chg > 0 ? "t-up" : chg < 0 ? "t-down" : "t-flat") + '">' +
+            t.prev.toFixed(0) + " → " + t.target.toFixed(0) + (chg !== 0 ? "（" + (chg > 0 ? "+" : "") + chg.toFixed(0) + "）" : "") + "</span></div>" +
+          '<div class="row-between mt-2"><span class="fs-12 t-2">距现价</span><span class="mono fs-12 ' + (t.upside >= 0 ? "t-up" : "t-down") + '">' +
+            (t.upside >= 0 ? "+" : "") + t.upside.toFixed(1) + "%</span></div>" +
+        "</div></div>";
+    }).join("");
+    SA.qsa(".fold-head").forEach(function (h) {
+      h.addEventListener("click", function () { h.parentNode.classList.toggle("is-collapsed"); });
+    });
+  }
+  renderRatings();
+
+  SA.qsa(".segmented > *").forEach(function (el) {
+    el.addEventListener("click", function () {
+      SA.qsa(".segmented > *", el.parentNode).forEach(function (o) { o.classList.toggle("is-active", o === el); });
+      ratingFilter = el.getAttribute("data-v");
+      renderRatings();
+    });
+  });
+})();
+</script>
+</body>
+</html>

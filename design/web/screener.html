@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>条件选股器 · 股析 SA</title>
+<link rel="stylesheet" href="_shared/tokens.css">
+<link rel="stylesheet" href="_shared/tailwind.css">
+<link rel="stylesheet" href="_shared/components.css">
+<style>
+  .cond-row .cr-val { display: flex; gap: 4px; align-items: center; }
+  .cond-row .cr-val .input { height: 26px; font-size: 12px; font-family: var(--font-num); text-align: right; }
+  .preset-card {
+    border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
+    background: var(--bg-sunken); cursor: pointer; transition: all var(--t-fast);
+  }
+  .preset-card:hover { border-color: var(--brand); background: var(--brand-soft); }
+</style>
+</head>
+<body data-page="screener">
+
+<div class="sa-app">
+  <div class="sa-brand">
+    <div class="sa-logo">SA</div>
+    <div class="sa-brand-text">
+      <div class="sa-brand-name">股析</div>
+      <div class="sa-brand-sub">Stock Analysis</div>
+    </div>
+  </div>
+  <header class="sa-topbar" id="saTop"></header>
+  <nav class="sa-sidenav" id="saNav"></nav>
+  <main class="sa-main">
+    <div class="sa-page is-wide">
+
+      <div class="sa-pagehead">
+        <div>
+          <h1>条件选股器</h1>
+          <div class="sub">组合条件筛选全 A 股（5,428 只）· 结果可批量加自选 · 策略可保存复用</div>
+        </div>
+        <div class="sa-pagehead-actions">
+          <select class="select input-sm" id="presetSel" style="width:210px"></select>
+          <button class="btn btn-outline btn-sm" id="btnSaveStrategy">保存为我的策略</button>
+          <button class="btn btn-primary btn-sm" id="btnRun">开始筛选</button>
+        </div>
+      </div>
+
+      <!-- 预设策略 -->
+      <div class="card is-accent">
+        <div class="card-head">
+          <span class="card-title">预设策略</span>
+          <span class="card-sub">一键套用，之后再微调条件</span>
+          <div class="card-tools"><button class="btn btn-sm btn-ghost" id="btnManageStrategy">管理我的策略（6 个）</button></div>
+        </div>
+        <div class="card-body">
+          <div class="grid grid-3" id="presetGrid"></div>
+        </div>
+      </div>
+
+      <div class="grid grid-sidebar mt-4" style="grid-template-columns:340px minmax(0,1fr)">
+
+        <!-- 条件面板 -->
+        <div class="col gap-3">
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">筛选条件</span>
+              <div class="card-tools">
+                <button class="btn btn-sm btn-ghost" id="btnClear">清空</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="condGroups"></div>
+            </div>
+            <div class="card-foot">
+              <span id="hitPreview" class="mono fs-12 t-brand">预计命中 64 只</span>
+              <button class="btn btn-sm btn-primary" style="margin-left:auto" id="btnRun2">执行筛选</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">已选条件</span><span class="card-sub" id="condCount">5 条</span></div>
+            <div class="card-body row gap-2 wrap" id="activeConds"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">结果预览统计</span></div>
+            <div class="card-body col gap-3">
+              <div class="kpi"><span class="kpi-label">预计命中</span><span class="kpi-value is-xl t-brand" id="hitBig">64</span><span class="kpi-delta t-3">占全市场 1.18%</span></div>
+              <div>
+                <div class="row-between"><span class="fs-12 t-2">筛选严格度</span><span class="mono fs-12 t-warn">中高</span></div>
+                <div class="meter is-warn mt-2"><i style="width:68%"></i></div>
+                <div class="hint mt-1">条件越多命中越少，建议控制在 5–8 条</div>
+              </div>
+              <div class="legend-block">
+                <b>提示</b>：本原型不执行真实筛选，命中的为演示结果集；
+                正式版由服务端按指标计算并缓存，单次筛选约 200–600ms。
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 结果 -->
+        <div class="col gap-4">
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">筛选结果</span>
+              <span class="card-sub">按综合评分排序 · 点击行进入个股分析</span>
+              <div class="card-tools">
+                <span class="tag tag-outline" id="resCount">命中 12 只</span>
+                <button class="btn btn-sm btn-outline" id="btnAddAll">批量加自选</button>
+                <button class="btn btn-sm btn-ghost" id="btnExport">导出</button>
+              </div>
+            </div>
+            <div class="card-body is-flush">
+              <div class="tbl-wrap">
+                <table class="tbl is-comfort" id="resTbl">
+                  <thead>
+                    <tr>
+                      <th style="width:36px"><input type="checkbox" id="chkAll"></th>
+                      <th class="is-sortable">名称 <span class="sort-caret">▼</span></th>
+                      <th>行业</th>
+                      <th>板块</th>
+                      <th class="num is-sortable">现价 <span class="sort-caret">▼</span></th>
+                      <th class="num is-sortable">涨跌幅 <span class="sort-caret">▼</span></th>
+                      <th class="num is-sortable">PE <span class="sort-caret">▼</span></th>
+                      <th class="num">PB</th>
+                      <th class="num is-sortable">ROE <span class="sort-caret">▼</span></th>
+                      <th class="num">净利增速</th>
+                      <th class="num is-sortable">主力净流入 <span class="sort-caret">▼</span></th>
+                      <th class="num is-sortable">总市值 <span class="sort-caret">▼</span></th>
+                      <th class="num is-sortable">综合评分 <span class="sort-caret">▼</span></th>
+                      <th class="col-actions" style="width:110px">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="resBody"></tbody>
+                </table>
+              </div>
+              <div class="tbl-foot">
+                <span id="resFoot">共 12 条 · 已选 0 条 · 演示结果集</span>
+                <div class="pager"><span>‹</span><span class="is-active">1</span><span>2</span><span>3</span><span>›</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-2">
+            <div class="card">
+              <div class="card-head"><span class="card-title">结果分布散点</span><span class="card-sub">PE × ROE · 气泡 = 市值</span></div>
+              <div class="card-body"><div id="resBubble" class="chart chart-lg"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="card-title">结果行业分布</span><span class="card-sub">命中数量</span></div>
+              <div class="card-body"><div id="resIndustry" class="chart chart-lg"></div></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">筛选过程日志</span><span class="card-sub">演示：展示条件逐步收敛的命中数</span></div>
+            <div class="card-body is-flush">
+              <div class="tbl-wrap">
+                <table class="tbl">
+                  <thead><tr><th style="width:56px" class="num">步骤</th><th>条件</th><th class="num" style="width:120px">剩余命中</th><th class="num" style="width:110px">耗时</th></tr></thead>
+                  <tbody>
+                    <tr><td class="num t-3">0</td><td>全市场初始集</td><td class="num">5,428</td><td class="num t-3">—</td></tr>
+                    <tr><td class="num t-3">1</td><td>板块 = 全部</td><td class="num">5,428</td><td class="num t-3">12ms</td></tr>
+                    <tr><td class="num t-3">2</td><td>总市值 ≥ 100 亿</td><td class="num">1,842</td><td class="num t-3">28ms</td></tr>
+                    <tr><td class="num t-3">3</td><td>PE ≤ 25</td><td class="num">862</td><td class="num t-3">34ms</td></tr>
+                    <tr><td class="num t-3">4</td><td>ROE ≥ 15%</td><td class="num">186</td><td class="num t-3">42ms</td></tr>
+                    <tr><td class="num t-3">5</td><td>净利增速 ≥ 20%</td><td class="num">64</td><td class="num t-3">38ms</td></tr>
+                    <tr><td class="num t-3">6</td><td>排序 + 取前 500</td><td class="num">64</td><td class="num t-3">16ms</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="tbl-foot"><span>总耗时 170ms（演示值）· 正式版由服务端计算并缓存 5 分钟</span></div>
+            </div>
+          </div>
+
+          <div class="legend-block">
+            <b>说明</b>：选股器基于每日批量更新后的快照数据（技术指标每交易日 16:00 计算，
+            财务数据 18:00 同步，资金流 15:20 采集），因此盘中筛选结果不会随实时行情变化；
+            如需盘中实时条件，可在「提醒规则」中配置并接收推送。
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="_shared/vendor/echarts.min.js"></script>
+<script src="_shared/data.js"></script>
+<script src="_shared/charts.js"></script>
+<script src="_shared/app.js"></script>
+<script>
+(function () {
+  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F, sc = D.screener;
+  var selected = {};
+
+  /* 预设策略 */
+  document.getElementById("presetGrid").innerHTML = sc.presets.map(function (p) {
+    return '<div class="preset-card" data-id="' + p.id + '">' +
+      '<div class="row-between"><span class="fs-13 fw-600">' + p.name + "</span>" +
+      '<span class="mono fs-11 t-3">' + p.hits + " 只</span></div>" +
+      '<div class="hint mt-2" style="line-height:1.7">' + p.desc + "</div>" +
+      '<div class="row gap-1 mt-2 wrap">' + p.tags.map(function (t) { return '<span class="tag tag-outline">' + t + "</span>"; }).join("") + "</div>" +
+      "</div>";
+  }).join("");
+
+  document.getElementById("presetSel").innerHTML = '<option value="">套用预设策略…</option>' +
+    sc.presets.map(function (p) { return '<option value="' + p.id + '">' + p.name + "（" + p.hits + " 只）</option>"; }).join("");
+
+  SA.qsa(".preset-card").forEach(function (c) {
+    c.addEventListener("click", function () {
+      var p = sc.presets.filter(function (x) { return x.id === c.getAttribute("data-id"); })[0];
+      SA.toast("已套用预设策略：「" + p.name + "」，命中 " + p.hits + " 只", "ok");
+      document.getElementById("hitBig").textContent = p.hits;
+      document.getElementById("hitPreview").textContent = "预计命中 " + p.hits + " 只";
+    });
+  });
+  document.getElementById("presetSel").addEventListener("change", function () {
+    if (!this.value) return;
+    var p = sc.presets.filter(function (x) { return x.id === this.value; }.bind(this))[0];
+    if (p) SA.toast("已套用：「" + p.name + "」", "ok");
+  });
+  document.getElementById("btnManageStrategy").addEventListener("click", function () {
+    SA.toast("策略管理功能在此原型中未展开（可保存 / 载入 / 删除 / 共享）", "info");
+  });
+  document.getElementById("btnSaveStrategy").addEventListener("click", function () {
+    SA.toast("已保存为「我的策略：低估值高 ROE v2」", "ok");
+  });
+
+  /* 条件面板 */
+  document.getElementById("condGroups").innerHTML = sc.groups.map(function (g) {
+    return '<div class="cond-group">' +
+      '<div class="cond-group-head" data-g="' + g.id + '">' +
+        "<span>" + (g.open ? "▼" : "▶") + "</span>" + g.name +
+        '<span class="hint" style="margin-left:auto">' + g.conds.length + " 项</span>" +
+      "</div>" +
+      '<div class="cond-body"' + (g.open ? "" : ' style="display:none"') + ">" +
+        g.conds.map(function (c) {
+          if (c.select) {
+            return '<div class="cond-row" style="grid-template-columns:1fr 1.4fr">' +
+              '<span class="cr-name">' + c.name + "</span>" +
+              '<select class="select input-sm">' + c.select.map(function (o) { return "<option>" + o + "</option>"; }).join("") + "</select>" +
+              "</div>";
+          }
+          return '<div class="cond-row">' +
+            '<span class="cr-name">' + c.name + "</span>" +
+            '<div class="cr-val"><input class="input input-sm" value="' + c.min + '" placeholder="不限"><span class="hint">~</span></div>' +
+            '<div class="cr-val"><input class="input input-sm" value="' + c.max + '" placeholder="不限"><span class="hint">' + (c.unit || "") + "</span></div>" +
+            "</div>";
+        }).join("") +
+      "</div></div>";
+  }).join("");
+
+  SA.qsa(".cond-group-head").forEach(function (h) {
+    h.addEventListener("click", function () {
+      var body = h.nextElementSibling;
+      var open = body.style.display !== "none";
+      body.style.display = open ? "none" : "";
+      h.firstElementChild.textContent = open ? "▶" : "▼";
+    });
+  });
+
+  /* 已选条件气泡 */
+  document.getElementById("activeConds").innerHTML = sc.activeConds.map(function (c, i) {
+    return '<span class="cond-chip">' + c.label + ' <span class="x" data-i="' + i + '">✕</span></span>';
+  }).join("");
+  SA.qsa("#activeConds .x").forEach(function (x) {
+    x.addEventListener("click", function () {
+      x.parentNode.remove();
+      var n = SA.qsa("#activeConds .cond-chip").length;
+      document.getElementById("condCount").textContent = n + " 条";
+      SA.toast("已移除条件，命中数将随之变化", "info");
+    });
+  });
+
+  document.getElementById("btnClear").addEventListener("click", function () {
+    document.getElementById("activeConds").innerHTML = "";
+    document.getElementById("condCount").textContent = "0 条";
+    document.getElementById("hitBig").textContent = "5428";
+    document.getElementById("hitPreview").textContent = "预计命中 5,428 只";
+    SA.toast("已清空全部条件", "info");
+  });
+
+  function run() {
+    SA.toast("筛选完成：命中 " + sc.results.length + " 只（演示结果集），耗时 170ms", "ok");
+  }
+  document.getElementById("btnRun").addEventListener("click", run);
+  document.getElementById("btnRun2").addEventListener("click", run);
+
+  /* 结果表 */
+  function render() {
+    document.getElementById("resCount").textContent = "命中 " + sc.results.length + " 只";
+    document.getElementById("resFoot").textContent = "共 " + sc.results.length + " 条 · 已选 " +
+      Object.keys(selected).length + " 条 · 演示结果集";
+
+    document.getElementById("resBody").innerHTML = sc.results.map(function (r) {
+      var cls = r.pct >= 0 ? "is-up" : "is-down";
+      var flowCls = r.mainFlow >= 0 ? "t-up" : "t-down";
+      var scoreCls = r.score >= 85 ? "t-up" : r.score >= 70 ? "" : "t-warn";
+      return '<tr data-chg="' + (r.pct >= 0 ? "up" : "down") + '">' +
+        '<td><input type="checkbox" class="resChk" data-code="' + r.code + '"' + (selected[r.code] ? " checked" : "") + "></td>" +
+        '<td class="is-clickable" data-href="stock.html?code=' + r.code + '">' +
+          '<span class="stock-cell"><span class="sc-name">' + r.name + '</span><span class="sc-code">' + r.code + "</span></span></td>" +
+        '<td><span class="tag tag-outline">' + r.industry + "</span></td>" +
+        '<td class="fs-11 t-3">' + r.board + "</td>" +
+        '<td class="num" style="color:var(--' + (r.pct >= 0 ? "up" : "down") + ')">' + r.price.toFixed(2) + "</td>" +
+        '<td class="num"><span class="chg ' + cls + '">' + (r.pct >= 0 ? "+" : "") + r.pct.toFixed(2) + "%</span></td>" +
+        '<td class="num">' + r.pe.toFixed(1) + "</td>" +
+        '<td class="num">' + r.pb.toFixed(2) + "</td>" +
+        '<td class="num t-up">' + r.roe.toFixed(1) + "%</td>" +
+        '<td class="num t-up">+' + r.npg.toFixed(1) + "%</td>" +
+        '<td class="num ' + flowCls + '">' + (r.mainFlow >= 0 ? "+" : "") + r.mainFlow.toFixed(2) + " 亿</td>" +
+        '<td class="num">' + r.cap.toLocaleString() + " 亿</td>" +
+        '<td class="num fw-600 ' + scoreCls + '">' + r.score + "</td>" +
+        '<td class="col-actions">' +
+          '<button class="btn btn-sm btn-ghost resAdd" data-code="' + r.code + '">+ 自选</button>' +
+        "</td></tr>";
+    }).join("");
+
+    SA.qsa(".resChk").forEach(function (c) {
+      c.addEventListener("change", function () {
+        var code = c.getAttribute("data-code");
+        if (c.checked) selected[code] = true; else delete selected[code];
+        document.getElementById("resFoot").textContent = "共 " + sc.results.length + " 条 · 已选 " +
+          Object.keys(selected).length + " 条 · 演示结果集";
+      });
+    });
+    SA.qsa(".resAdd").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var s = D.stockByCode[b.getAttribute("data-code")];
+        SA.toast("已加入自选股：" + (s ? s.name : b.getAttribute("data-code")), "ok");
+      });
+    });
+  }
+  render();
+
+  document.getElementById("chkAll").addEventListener("change", function () {
+    var on = this.checked;
+    SA.qsa(".resChk").forEach(function (c) {
+      c.checked = on;
+      var code = c.getAttribute("data-code");
+      if (on) selected[code] = true; else delete selected[code];
+    });
+    render();
+  });
+  document.getElementById("btnAddAll").addEventListener("click", function () {
+    var n = Object.keys(selected).length;
+    if (!n) { SA.toast("请先勾选要加入自选的股票", "warn"); return; }
+    SA.toast("已将 " + n + " 只股票加入自选股", "ok");
+    selected = {}; render();
+  });
+  document.getElementById("btnExport").addEventListener("click", function () {
+    SA.toast("已导出筛选结果为 CSV（原型不产生文件）", "ok");
+  });
+
+  /* 图表 */
+  F.bubble("#resBubble", { data: sc.results.map(function (r) { return { name: r.name, pe: r.pe, roe: r.roe, cap: r.cap }; }) });
+
+  F.donut("#resIndustry", {
+    legendOrient: "vertical", center: ["32%", "52%"], radius: ["48%", "70%"],
+    data: sc.industryDist
+  });
+})();
+</script>
+</body>
+</html>
