@@ -41,6 +41,7 @@ public sealed class SchedulerHostedService(
     private DateTimeOffset _lastMarketStatAt = DateTimeOffset.MinValue;
     private DateTimeOffset _lastUniverseAt = DateTimeOffset.MinValue;
     private DateTimeOffset _lastCalendarAt = DateTimeOffset.MinValue;
+    private DateTimeOffset _lastSectorKlineAt = DateTimeOffset.MinValue;
 
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -114,6 +115,11 @@ public sealed class SchedulerHostedService(
 
         await RunAsync("行业板块", () => provider.GetRequiredService<SectorJob>().RunAsync(cancellationToken)).ConfigureAwait(false);
         await RunAsync("全市场快照", () => provider.GetRequiredService<QuoteSnapshotJob>().RunAsync(cancellationToken)).ConfigureAwait(false);
+
+        // 行业指数日线依赖行业板块快照（按资金显著度挑选行业），因此必须排在它之后
+        await RunAsync("行业指数日线", () => provider.GetRequiredService<SectorKlineJob>().RunPriorityAsync(cancellationToken)).ConfigureAwait(false);
+        _lastSectorKlineAt = SaTime.Now;
+
         await RunAsync("市场统计", () => provider.GetRequiredService<MarketStatJob>().RunAsync(cancellationToken)).ConfigureAwait(false);
         _lastMarketStatAt = SaTime.Now;
     }
@@ -169,6 +175,13 @@ public sealed class SchedulerHostedService(
         {
             await RunAsync("交易日历", () => provider.GetRequiredService<TradingCalendarJob>().RunAsync(cancellationToken)).ConfigureAwait(false);
             _lastCalendarAt = now;
+        }
+
+        // 行业指数日线每天滚动补齐一次（收盘后一次即可；景气度依赖它算相对强弱与带宽）
+        if (now - _lastSectorKlineAt >= TimeSpan.FromHours(12))
+        {
+            await RunAsync("行业指数日线", () => provider.GetRequiredService<SectorKlineJob>().RunPriorityAsync(cancellationToken)).ConfigureAwait(false);
+            _lastSectorKlineAt = now;
         }
 
         // 按需采集不在这里：它由 OnDemandHostedService 以 3 秒节拍独立处理，

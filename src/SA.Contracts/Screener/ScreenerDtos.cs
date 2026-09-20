@@ -121,12 +121,92 @@ public sealed record ScreenerFieldDto(string Field, string Name, string Unit, de
 /// <param name="Boards">可选板块。</param>
 /// <param name="ExportQuota">今日剩余导出次数；<c>-1</c> 表示未配置上限（不限）。</param>
 /// <param name="ExportRowLimit">单次导出的行数上限。</param>
+/// <param name="StrategyQuota">可保存的策略数量上限；<c>-1</c> 表示不限。</param>
 public sealed record ScreenerMetaDto(
     IReadOnlyList<ScreenerFieldDto> Fields,
     IReadOnlyList<ScreenerPresetDto> Presets,
     IReadOnlyList<string> Boards,
     int ExportQuota,
-    int ExportRowLimit);
+    int ExportRowLimit,
+    int StrategyQuota);
+
+/// <summary>
+/// 一次筛选的执行记录（同一张表同时承担筛选日志与「我的策略」）。
+/// </summary>
+/// <param name="Id">记录 Id。</param>
+/// <param name="Name">策略名；为空表示这是普通日志。</param>
+/// <param name="IsStrategy">是否已保存为策略。</param>
+/// <param name="Summary">条件摘要（服务端生成，界面直接展示，避免前端重解析条件 JSON）。</param>
+/// <param name="Total">命中数量。</param>
+/// <param name="PresetKey">来源预设键（由预设生成时非空）。</param>
+/// <param name="CreatedAt">执行时间。</param>
+public sealed record ScreenerRunDto(
+    long Id,
+    string? Name,
+    bool IsStrategy,
+    string? Summary,
+    int Total,
+    string? PresetKey,
+    string CreatedAt);
+
+/// <summary>筛选日志与策略列表。</summary>
+/// <param name="Items">记录。</param>
+/// <param name="Strategies">已保存的策略数量（与配额对照）。</param>
+/// <param name="Quota">策略数量上限；<c>-1</c> 表示不限。</param>
+public sealed record ScreenerRunListDto(IReadOnlyList<ScreenerRunDto> Items, int Strategies, int Quota);
+
+/// <summary>保存为策略请求。</summary>
+/// <param name="RunId">要保存的记录 Id（「把这次筛选存为策略」）。</param>
+/// <param name="Name">策略名。</param>
+/// <param name="Request">直接用新条件存为策略（与 <paramref name="RunId"/> 二选一）。</param>
+public sealed record ScreenerStrategySaveRequest(long? RunId, string Name, ScreenerRequest? Request);
+
+/// <summary>重命名策略请求；<c>name</c> 为空表示取消策略标记、退回普通日志。</summary>
+/// <param name="Name">新的策略名。</param>
+public sealed record ScreenerStrategyRenameRequest(string? Name);
+
+/// <summary>直方图的一个分箱。</summary>
+/// <param name="From">区间左端（含）。</param>
+/// <param name="To">区间右端（不含；最后一箱含右端）。</param>
+/// <param name="Count">落入该箱的标的数。</param>
+public sealed record ScreenerHistogramBinDto(decimal From, decimal To, int Count);
+
+/// <summary>
+/// 结果的分布统计。
+/// </summary>
+/// <remarks>
+/// 「命中 128 只」只说明规模，不说明这批股票长什么样。分布统计（分位数 + 直方图）
+/// 让用户立刻看出结果是集中在低估值区间，还是被少数极端值拉出来的。
+/// </remarks>
+/// <param name="Field">统计字段。</param>
+/// <param name="FieldName">字段中文名。</param>
+/// <param name="Unit">单位。</param>
+/// <param name="Count">参与统计的样本数（该字段有值的标的）。</param>
+/// <param name="Min">最小值。</param>
+/// <param name="P25">下四分位。</param>
+/// <param name="Median">中位数。</param>
+/// <param name="P75">上四分位。</param>
+/// <param name="Max">最大值。</param>
+/// <param name="Bins">直方图分箱。</param>
+public sealed record ScreenerDistributionDto(
+    string Field,
+    string FieldName,
+    string Unit,
+    int Count,
+    decimal? Min,
+    decimal? P25,
+    decimal? Median,
+    decimal? P75,
+    decimal? Max,
+    IReadOnlyList<ScreenerHistogramBinDto> Bins);
+
+/// <summary>导出记录一行。</summary>
+/// <param name="Id">记录 Id。</param>
+/// <param name="Dataset">数据集标识。</param>
+/// <param name="Format">导出格式。</param>
+/// <param name="Rows">行数。</param>
+/// <param name="CreatedAt">导出时间。</param>
+public sealed record ExportLogDto(long Id, string Dataset, string Format, int Rows, string CreatedAt);
 
 /// <summary>
 /// 选股器字段名常量。与前端、服务端共用同一份定义。

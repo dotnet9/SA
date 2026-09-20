@@ -92,6 +92,41 @@ public sealed class EastMoneyKlineSource(CollectHttpClient http) : IKlineSource
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<DailyBar>> GetSectorDailyAsync(
+        string sectorCode,
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default)
+    {
+        // 板块指数没有复权概念，fqt 固定 0；secid 必须带 90. 前缀
+        var url = $"{BaseUrl}?secid={Domain.Common.MarketCodes.SectorSecId(sectorCode)}&{Fields}" +
+                  $"&klt={PeriodDaily}&fqt={AdjustNone}&beg={from:yyyyMMdd}&end={to:yyyyMMdd}";
+
+        using var document = await http.GetJsonAsync(url, Name, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        if (!JsonValueReader.TryGet(document.RootElement, "data", out var data)
+            || data.ValueKind != JsonValueKind.Object
+            || !JsonValueReader.TryGet(data, "klines", out var klines)
+            || klines.ValueKind != JsonValueKind.Array)
+        {
+            // 板块刚建立或上游无该板块日线时返回空：由调用方按「样本不足」处理
+            return [];
+        }
+
+        var bars = new List<DailyBar>(klines.GetArrayLength());
+        foreach (var element in klines.EnumerateArray())
+        {
+            var line = element.GetString();
+            if (!string.IsNullOrWhiteSpace(line) && ParseKline(line) is { } bar)
+            {
+                bars.Add(bar);
+            }
+        }
+
+        return bars;
+    }
+
+    /// <inheritdoc />
     public async Task<SourceProbeResult> ProbeAsync(CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();

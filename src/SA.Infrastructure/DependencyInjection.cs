@@ -14,6 +14,7 @@ using SA.Infrastructure.History;
 using SA.Infrastructure.Persistence;
 using SA.Infrastructure.Persistence.Seed;
 using SA.Infrastructure.Persistence.Stores;
+using SA.Infrastructure.Push;
 using SA.Infrastructure.Search;
 using SA.Infrastructure.Security;
 using SA.Infrastructure.Storage;
@@ -140,6 +141,7 @@ public static class DependencyInjection
         services.AddScoped<FinanceJob>();
         services.AddScoped<EquityJob>();
         services.AddScoped<CapitalJob>();
+        services.AddScoped<SectorKlineJob>();
         services.AddScoped<RatingJob>();
 
         services.AddSingleton<IOnDemandQueue, OnDemandQueue>();
@@ -175,6 +177,14 @@ public static class DependencyInjection
         services.AddScoped<IRoleAdminStore, RoleAdminStore>();
         services.AddScoped<ISessionAdminStore, SessionAdminStore>();
         services.AddScoped<IAuditStore, AuditStore>();
+        services.AddScoped<IPushSubscriptionStore, PushSubscriptionStore>();
+        services.AddScoped<IScreenerRunStore, ScreenerRunStore>();
+        services.AddScoped<IExportLogStore, ExportLogStore>();
+
+        // Web Push 发送器是单例：它内部持有 VAPID 密钥与 WebPushClient，
+        // 每次请求都重新生成密钥会让已有订阅静默失效
+        services.AddSingleton<IPushSender, VapidKeyProvider>();
+
         services.AddSingleton<SA.Application.Abstractions.IDataPaths>(provider => provider.GetRequiredService<SA.Infrastructure.Storage.DataPaths>());
         services.AddScoped<IDataScopeService, DataScopeService>();
 

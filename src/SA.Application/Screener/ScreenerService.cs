@@ -32,10 +32,21 @@ public sealed class ScreenerService(
     MarketSnapshotCache cache,
     IQuoteSnapshotStore quotes,
     IInstrumentStore instruments,
-    DataScopeFilter scopeFilter)
+    DataScopeFilter scopeFilter,
+    IScreenerRunStore runs,
+    IExportLogStore exportLogs)
 {
     /// <summary>每页上限（与详细设计 §1.3 一致）。</summary>
     private const int MaxPageSize = 200;
+
+    /// <summary>
+    /// 非策略记录的保留条数（筛选日志上限）。
+    /// </summary>
+    /// <remarks>
+    /// 只裁剪未保存为策略的记录：策略是用户显式保存的，不能被自动清理掉。
+    /// 50 条足够覆盖「最近在筛什么」的追溯需求，又不至于让日志表无限增长。
+    /// </remarks>
+    private const int KeptRunLogs = 50;
 
     /// <summary>
     /// 预设条件。
@@ -78,10 +89,12 @@ public sealed class ScreenerService(
     /// </summary>
     /// <param name="exportQuota">今日剩余导出次数；<c>-1</c> 表示未配置上限（不限）。</param>
     /// <param name="exportRowLimit">单次导出行数上限。</param>
+    /// <param name="strategyQuota">可保存的策略数量上限；<c>-1</c> 表示不限。</param>
     /// <param name="cancellationToken">取消令牌。</param>
     public async Task<ServiceResult<ScreenerMetaDto>> GetMetaAsync(
         int exportQuota,
         int exportRowLimit,
+        int strategyQuota,
         CancellationToken cancellationToken = default)
     {
         await EnsureLoadedAsync(cancellationToken).ConfigureAwait(false);
@@ -97,22 +110,339 @@ public sealed class ScreenerService(
             Presets: Presets.Select(preset => new ScreenerPresetDto(preset.Key, preset.Name, preset.Description)).ToList(),
             Boards: boards,
             ExportQuota: exportQuota,
-            ExportRowLimit: exportRowLimit));
+            ExportRowLimit: exportRowLimit,
+            StrategyQuota: strategyQuota));
     }
 
     /// <summary>
     /// 执行筛选。
     /// </summary>
+    /// <param name="request">筛选条件。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    /// <remarks>
+    /// 本方法<b>没有副作用</b>（不写筛选日志）：导出与分布统计都要用到同一套筛选结果，
+    /// 若在筛选内部写日志，一次导出会额外留下一条「筛选」记录，日志会被噪音填满。
+    /// 需要留痕时由调用方显式调用 <see cref="RecordRunAsync"/>。
+    /// </remarks>
     public async Task<ServiceResult<ScreenerResultDto>> RunAsync(
         ScreenerRequest request,
         CancellationToken cancellationToken = default)
+    {
+        var filtered = await FilterAsync(request, cancellationToken).ConfigureAwait(false);
+        // 元组是值类型：ServiceResult 的 Value 对它不可能是 null，因此只判 Ok
+        if (!filtered.Ok)
+        {
+            return ServiceResult<ScreenerResultDto>.Fail(filtered.Error, filtered.Message ?? "筛选失败");
+        }
+
+        var (rows, applied, asOf, scopeNote) = filtered.Value;
+        var page = Math.Max(1, request.Page);
+        var pageSize = Math.Clamp(request.PageSize <= 0 ? 50 : request.PageSize, 1, MaxPageSize);
+
+        return ServiceResult<ScreenerResultDto>.Success(new ScreenerResultDto(
+            Total: rows.Count,
+            Page: page,
+            PageSize: pageSize,
+            Rows: rows.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
+            AsOf: asOf,
+            Applied: applied,
+            ScopeNote: scopeNote));
+    }
+
+    /// <summary>
+    /// 执行筛选并计入筛选日志（用户在界面上点「开始筛选」走这条路径）。
+    /// </summary>
+    /// <param name="request">筛选条件。</param>
+    /// <param name="userId">执行者。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    public async Task<ServiceResult<ScreenerResultDto>> RunAndRecordAsync(
+        ScreenerRequest request,
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await RunAsync(request, cancellationToken).ConfigureAwait(false);
+        if (!result.Ok || result.Value is null)
+        {
+            return result;
+        }
+
+        await RecordRunAsync(request, userId, result.Value.Total, cancellationToken).ConfigureAwait(false);
+        return result;
+    }
+
+    /// <summary>
+    /// 写一条筛选日志。
+    /// </summary>
+    /// <remarks>
+    /// 日志只保留最近 <see cref="KeptRunLogs"/> 条<b>非策略</b>记录（策略永久保留）：
+    /// 用户每次调整条件都会产生一条，不裁剪会让日志表快速膨胀，而旧日志的追溯价值很低。
+    /// </remarks>
+    public async Task<long> RecordRunAsync(
+        ScreenerRequest request,
+        string userId,
+        int total,
+        CancellationToken cancellationToken = default)
+    {
+        var id = await runs.AddAsync(new Domain.Entities.Screener.ScreenerRun
+        {
+            UserId = userId,
+            RequestJson = ScreenerRunCodec.Serialize(request),
+            Summary = ScreenerRunCodec.Summarize(request),
+            Total = total,
+            PresetKey = string.IsNullOrWhiteSpace(request.Preset) ? null : request.Preset,
+            CreatedAt = SaTime.Now
+        }, cancellationToken).ConfigureAwait(false);
+
+        await runs.TrimAsync(userId, KeptRunLogs, cancellationToken).ConfigureAwait(false);
+        return id;
+    }
+
+    /// <summary>
+    /// 计算结果的分布统计（分位数 + 直方图）。
+    /// </summary>
+    /// <param name="request">筛选条件（与列表用同一套条件）。</param>
+    /// <param name="field">统计字段。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    public async Task<ServiceResult<Contracts.Screener.ScreenerDistributionDto>> GetDistributionAsync(
+        ScreenerRequest request,
+        string field,
+        CancellationToken cancellationToken = default)
+    {
+        if (DistributionStats.Resolve(field) is null)
+        {
+            return ServiceResult<Contracts.Screener.ScreenerDistributionDto>.Fail(
+                ErrorCode.InvalidParameter, $"不支持分布统计的字段：{field}");
+        }
+
+        var filtered = await FilterAsync(request with { Page = 1, PageSize = MaxPageSize }, cancellationToken)
+            .ConfigureAwait(false);
+        if (!filtered.Ok)
+        {
+            return ServiceResult<Contracts.Screener.ScreenerDistributionDto>.Fail(
+                filtered.Error, filtered.Message ?? "筛选失败");
+        }
+
+        var stats = DistributionStats.Compute(filtered.Value.Rows, field);
+        return stats is null
+            ? ServiceResult<Contracts.Screener.ScreenerDistributionDto>.Fail(
+                ErrorCode.InvalidParameter, $"不支持分布统计的字段：{field}")
+            : ServiceResult<Contracts.Screener.ScreenerDistributionDto>.Success(stats);
+    }
+
+    /// <summary>取筛选日志（<paramref name="strategiesOnly"/> 为 true 时只取已保存的策略）。</summary>
+    public async Task<ServiceResult<ScreenerRunListDto>> GetRunsAsync(
+        string userId,
+        bool strategiesOnly,
+        int limit,
+        int strategyQuota,
+        CancellationToken cancellationToken = default)
+    {
+        var items = await runs.GetRecentAsync(userId, strategiesOnly, limit, cancellationToken).ConfigureAwait(false);
+        var strategies = await runs.CountStrategiesAsync(userId, cancellationToken).ConfigureAwait(false);
+
+        return ServiceResult<ScreenerRunListDto>.Success(new ScreenerRunListDto(
+            Items: items.Select(ToRunDto).ToList(),
+            Strategies: strategies,
+            Quota: strategyQuota));
+    }
+
+    /// <summary>
+    /// 把一条记录保存为策略（或直接用新条件创建策略）。
+    /// </summary>
+    public async Task<ServiceResult<ScreenerRunDto>> SaveStrategyAsync(
+        string userId,
+        ScreenerStrategySaveRequest request,
+        int strategyQuota,
+        CancellationToken cancellationToken = default)
+    {
+        var name = request.Name?.Trim();
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return ServiceResult<ScreenerRunDto>.Fail(ErrorCode.InvalidParameter, "策略名不能为空");
+        }
+
+        if (name.Length > 64)
+        {
+            return ServiceResult<ScreenerRunDto>.Fail(ErrorCode.InvalidParameter, "策略名不能超过 64 个字符");
+        }
+
+        // 同名策略会让「按名字回放」变得不确定，直接拒绝比事后困惑好
+        if (await runs.FindByNameAsync(userId, name, cancellationToken).ConfigureAwait(false) is not null)
+        {
+            return ServiceResult<ScreenerRunDto>.Fail(ErrorCode.InvalidParameter, $"已存在同名策略「{name}」");
+        }
+
+        var current = await runs.CountStrategiesAsync(userId, cancellationToken).ConfigureAwait(false);
+        if (strategyQuota >= 0 && current >= strategyQuota)
+        {
+            return ServiceResult<ScreenerRunDto>.Fail(
+                ErrorCode.QuotaExceeded, $"策略数量上限为 {strategyQuota} 条，当前 {current} 条");
+        }
+
+        if (request.RunId is { } runId)
+        {
+            var row = await runs.FindAsync(userId, runId, cancellationToken).ConfigureAwait(false);
+            if (row is null)
+            {
+                return ServiceResult<ScreenerRunDto>.Fail(ErrorCode.NotFound, "记录不存在");
+            }
+
+            await runs.RenameAsync(userId, runId, name, cancellationToken).ConfigureAwait(false);
+            row.Name = name;
+            return ServiceResult<ScreenerRunDto>.Success(ToRunDto(row));
+        }
+
+        if (request.Request is null)
+        {
+            return ServiceResult<ScreenerRunDto>.Fail(ErrorCode.InvalidParameter, "需要提供 runId 或 request");
+        }
+
+        // 直接用条件创建策略：先用该条件算一次命中数，保证策略里记的是真实结果
+        var probe = await RunAsync(request.Request, cancellationToken).ConfigureAwait(false);
+        if (!probe.Ok || probe.Value is null)
+        {
+            return ServiceResult<ScreenerRunDto>.Fail(probe.Error, probe.Message ?? "条件无效");
+        }
+
+        var id = await runs.AddAsync(new Domain.Entities.Screener.ScreenerRun
+        {
+            UserId = userId,
+            RequestJson = ScreenerRunCodec.Serialize(request.Request),
+            Summary = ScreenerRunCodec.Summarize(request.Request),
+            Total = probe.Value.Total,
+            Name = name,
+            PresetKey = string.IsNullOrWhiteSpace(request.Request.Preset) ? null : request.Request.Preset,
+            CreatedAt = SaTime.Now
+        }, cancellationToken).ConfigureAwait(false);
+
+        return ServiceResult<ScreenerRunDto>.Success(new ScreenerRunDto(
+            Id: id,
+            Name: name,
+            IsStrategy: true,
+            Summary: ScreenerRunCodec.Summarize(request.Request),
+            Total: probe.Value.Total,
+            PresetKey: request.Request.Preset,
+            CreatedAt: SaTime.Format(SaTime.Now)));
+    }
+
+    /// <summary>重命名策略；<c>name</c> 为空表示取消策略标记（退回普通日志）。</summary>
+    public async Task<ServiceResult<int>> RenameStrategyAsync(
+        string userId,
+        long id,
+        string? name,
+        CancellationToken cancellationToken = default)
+    {
+        var trimmed = string.IsNullOrWhiteSpace(name) ? null : name.Trim();
+        if (trimmed is not null && trimmed.Length > 64)
+        {
+            return ServiceResult<int>.Fail(ErrorCode.InvalidParameter, "策略名不能超过 64 个字符");
+        }
+
+        if (trimmed is not null
+            && await runs.FindByNameAsync(userId, trimmed, cancellationToken).ConfigureAwait(false) is { } existing
+            && existing.Id != id)
+        {
+            return ServiceResult<int>.Fail(ErrorCode.InvalidParameter, $"已存在同名策略「{trimmed}」");
+        }
+
+        var updated = await runs.RenameAsync(userId, id, trimmed, cancellationToken).ConfigureAwait(false);
+        return updated
+            ? ServiceResult<int>.Success(1)
+            : ServiceResult<int>.Fail(ErrorCode.NotFound, "记录不存在");
+    }
+
+    /// <summary>删除一条记录（策略或日志）。</summary>
+    public async Task<ServiceResult<int>> DeleteRunAsync(
+        string userId,
+        long id,
+        CancellationToken cancellationToken = default)
+    {
+        var removed = await runs.DeleteAsync(userId, id, cancellationToken).ConfigureAwait(false);
+        return removed > 0
+            ? ServiceResult<int>.Success(removed)
+            : ServiceResult<int>.Fail(ErrorCode.NotFound, "记录不存在");
+    }
+
+    /// <summary>回放策略：按记录里的条件重新筛一次（并计入筛选日志）。</summary>
+    public async Task<ServiceResult<ScreenerResultDto>> ReplayAsync(
+        string userId,
+        long id,
+        CancellationToken cancellationToken = default)
+    {
+        var row = await runs.FindAsync(userId, id, cancellationToken).ConfigureAwait(false);
+        if (row is null)
+        {
+            return ServiceResult<ScreenerResultDto>.Fail(ErrorCode.NotFound, "记录不存在");
+        }
+
+        var request = ScreenerRunCodec.Deserialize(row.RequestJson);
+        if (request is null)
+        {
+            return ServiceResult<ScreenerResultDto>.Fail(ErrorCode.InvalidParameter, "记录中的条件已损坏，无法回放");
+        }
+
+        return await RunAndRecordAsync(request, userId, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>取导出记录（选股器页的「导出记录」区块）。</summary>
+    public async Task<ServiceResult<IReadOnlyList<Contracts.Screener.ExportLogDto>>> GetExportLogsAsync(
+        string userId,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        var rows = await exportLogs.GetRecentAsync(userId, limit, cancellationToken).ConfigureAwait(false);
+
+        return ServiceResult<IReadOnlyList<Contracts.Screener.ExportLogDto>>.Success(
+            rows.Select(row => new Contracts.Screener.ExportLogDto(
+                Id: row.Id,
+                Dataset: row.Dataset,
+                Format: row.Format,
+                Rows: row.Rows,
+                CreatedAt: SaTime.Format(row.CreatedAt))).ToList());
+    }
+
+    /// <summary>写一条导出记录（导出成功后调用）。</summary>
+    public Task RecordExportAsync(
+        string userId,
+        string dataset,
+        int rows,
+        CancellationToken cancellationToken = default) =>
+        exportLogs.AddAsync(new Domain.Entities.System.ExportLog
+        {
+            UserId = userId,
+            Dataset = dataset,
+            Format = "csv",
+            Rows = rows,
+            CreatedAt = SaTime.Now
+        }, cancellationToken);
+
+    private static ScreenerRunDto ToRunDto(Domain.Entities.Screener.ScreenerRun row) =>
+        new(
+            Id: row.Id,
+            Name: row.Name,
+            IsStrategy: row.Name is not null,
+            Summary: row.Summary,
+            Total: row.Total,
+            PresetKey: row.PresetKey,
+            CreatedAt: SaTime.Format(row.CreatedAt));
+
+    /// <summary>
+    /// 筛选的核心：返回全部命中（不分页）与生效条件说明。
+    /// </summary>
+    /// <remarks>
+    /// 元组元素带名字，且三处（返回类型、失败、成功）必须用同一个具名元组类型：
+    /// 具名与不具名的元组在 C# 里是不同类型，混用会直接编译失败。
+    /// </remarks>
+    private async Task<ServiceResult<(List<ScreenerRowDto> Rows, List<string> Applied, string? AsOf, string? ScopeNote)>>
+        FilterAsync(ScreenerRequest request, CancellationToken cancellationToken)
     {
         await EnsureLoadedAsync(cancellationToken).ConfigureAwait(false);
 
         var snapshot = cache.Current;
         if (snapshot.Rows.Count == 0)
         {
-            return ServiceResult<ScreenerResultDto>.Fail(ErrorCode.DataNotReady, "全市场快照正在采集，请稍后重试");
+            return ServiceResult<(List<ScreenerRowDto> Rows, List<string> Applied, string? AsOf, string? ScopeNote)>.Fail(
+                ErrorCode.DataNotReady, "全市场快照正在采集，请稍后重试");
         }
 
         var allowed = await scopeFilter.AllowedAsync(cancellationToken).ConfigureAwait(false);
@@ -132,9 +462,8 @@ public sealed class ScreenerService(
             var preset = Presets.FirstOrDefault(item => item.Key == request.Preset);
             if (preset.Filter is null)
             {
-                return ServiceResult<ScreenerResultDto>.Fail(
-                    ErrorCode.InvalidParameter,
-                    $"未知的预设条件：{request.Preset}");
+                return ServiceResult<(List<ScreenerRowDto> Rows, List<string> Applied, string? AsOf, string? ScopeNote)>.Fail(
+                    ErrorCode.InvalidParameter, $"未知的预设条件：{request.Preset}");
             }
 
             rows = rows.Where(preset.Filter).ToList();
@@ -150,18 +479,11 @@ public sealed class ScreenerService(
         var sortBy = string.IsNullOrWhiteSpace(request.SortBy) ? ScreenerFields.Amount : request.SortBy;
         rows = Sort(rows, sortBy, request.SortDesc);
 
-        var page = Math.Max(1, request.Page);
-        var pageSize = Math.Clamp(request.PageSize <= 0 ? 50 : request.PageSize, 1, MaxPageSize);
-        var total = rows.Count;
-
-        return ServiceResult<ScreenerResultDto>.Success(new ScreenerResultDto(
-            Total: total,
-            Page: page,
-            PageSize: pageSize,
-            Rows: rows.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
-            AsOf: snapshot.AsOf == DateOnly.MinValue ? null : SaTime.Format(snapshot.AsOf),
-            Applied: applied.Count == 0 ? ["未设置条件：返回全市场按成交额倒序的结果"] : applied,
-            ScopeNote: allowed is null ? null : "当前账号的数据范围为「仅自选股」，结果已按自选范围过滤。"));
+        return ServiceResult<(List<ScreenerRowDto> Rows, List<string> Applied, string? AsOf, string? ScopeNote)>.Success((
+            rows,
+            applied.Count == 0 ? ["未设置条件：返回全市场按成交额倒序的结果"] : applied,
+            snapshot.AsOf == DateOnly.MinValue ? null : SaTime.Format(snapshot.AsOf),
+            allowed is null ? null : "当前账号的数据范围为「仅自选股」，结果已按自选范围过滤。"));
     }
 
     /// <summary>

@@ -82,6 +82,8 @@ public static class DependencyInjection
         services.AddScoped<EquityService>();
         services.AddScoped<CapitalService>();
         services.AddScoped<IndustryService>();
+        services.AddScoped<ProsperityService>();
+        services.AddScoped<CausalChainService>();
         services.AddScoped<EventTimelineService>();
         services.AddScoped<RatingService>();
         services.AddScoped<RiskService>();

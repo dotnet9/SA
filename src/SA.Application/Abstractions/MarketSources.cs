@@ -354,4 +354,22 @@ public interface IKlineSource : IProbeable
         int adjust,
         int period = 101,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 取板块指数日线（行业 / 概念）。
+    /// </summary>
+    /// <remarks>
+    /// 单列一个方法是因为板块走 <c>90.</c> 前缀（<c>90.BK1033</c>），与个股的 0./1. 不同；
+    /// 用同一个 <see cref="GetDailyAsync"/> 会让调用方不得不自己拼 secid，
+    /// 而拼错的后果是「拿到空数据但不报错」。
+    /// </remarks>
+    /// <param name="sectorCode">板块码（BK 开头）。</param>
+    /// <param name="from">起始日期（含）。</param>
+    /// <param name="to">结束日期（含）。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    Task<IReadOnlyList<Domain.History.DailyBar>> GetSectorDailyAsync(
+        string sectorCode,
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default);
 }

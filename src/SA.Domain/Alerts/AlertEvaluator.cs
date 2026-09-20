@@ -51,12 +51,14 @@ public static class AlertEvaluator
     /// <param name="closes">日线收盘（升序）。</param>
     /// <param name="highs">日线最高（升序）。</param>
     /// <param name="lows">日线最低（升序）。</param>
+    /// <param name="fundFlow">个股逐日资金流主力净额（单位：元，升序）；资金类规则需要它。</param>
     public static AlertEvaluation Evaluate(
         AlertRule rule,
         QuoteSnapshot quote,
         IReadOnlyList<decimal> closes,
         IReadOnlyList<decimal> highs,
-        IReadOnlyList<decimal> lows)
+        IReadOnlyList<decimal> lows,
+        IReadOnlyList<decimal>? fundFlow = null)
     {
         var name = quote.Code;
 
@@ -127,6 +129,81 @@ public static class AlertEvaluator
                         $"最新换手率 {quote.Turnover:F2}%，已达到阈值 {turnover:F2}%。",
                         quote.Pct >= 0 ? "up" : "down")
                     : AlertEvaluation.NotTriggered($"换手率 {quote.Turnover:F2}% < 阈值 {turnover:F2}%");
+
+            case AlertRuleTypes.AmountAbove:
+                if (rule.Threshold is not { } amountYi)
+                {
+                    return AlertEvaluation.NotTriggered("未设置阈值");
+                }
+
+                // 快照的成交额以元存储，阈值以亿元填写：比较前必须换算到同一单位
+                var amount = quote.Amount / 100_000_000m;
+                return amount >= amountYi
+                    ? AlertEvaluation.Fired(
+                        $"成交额达到 {amount:F2} 亿",
+                        $"当前成交额 {amount:F2} 亿元，已达到阈值 {amountYi:F2} 亿元。",
+                        quote.Pct >= 0 ? "up" : "down")
+                    : AlertEvaluation.NotTriggered($"成交额 {amount:F2} 亿 < 阈值 {amountYi:F2} 亿");
+
+            case AlertRuleTypes.FundFlowMainAbs:
+            {
+                if (rule.Threshold is not { } flowThreshold)
+                {
+                    return AlertEvaluation.NotTriggered("未设置阈值");
+                }
+
+                if (fundFlow is null || fundFlow.Count == 0)
+                {
+                    // 没有资金流数据时保持沉默：资金流按日发布，当日可能尚未生成
+                    return AlertEvaluation.NotTriggered("暂无资金流数据（按日发布，当日可能尚未生成）");
+                }
+
+                var mainNet = fundFlow[^1] / 100_000_000m;
+                var abs = Math.Abs(mainNet);
+
+                return abs >= flowThreshold
+                    ? AlertEvaluation.Fired(
+                        mainNet >= 0 ? $"主力净流入 {mainNet:F2} 亿" : $"主力净流出 {abs:F2} 亿",
+                        $"最近一日主力净额 {mainNet:+0.00;-0.00} 亿元，绝对值已达到阈值 {flowThreshold:F2} 亿元。",
+                        mainNet >= 0 ? "up" : "down")
+                    : AlertEvaluation.NotTriggered($"主力净额绝对值 {abs:F2} 亿 < 阈值 {flowThreshold:F2} 亿");
+            }
+
+            case AlertRuleTypes.FundFlowStreak:
+            {
+                if (rule.Threshold is not { } streakDays)
+                {
+                    return AlertEvaluation.NotTriggered("未设置阈值");
+                }
+
+                if (fundFlow is null || fundFlow.Count == 0)
+                {
+                    return AlertEvaluation.NotTriggered("暂无资金流数据");
+                }
+
+                var required = (int)Math.Clamp(streakDays, 2, 20);
+                var direction = fundFlow[^1] >= 0;
+                var streak = 0;
+
+                // 从最后一天往前数同向天数；0 视作中断（既不算流入也不算流出）
+                for (var i = fundFlow.Count - 1; i >= 0; i--)
+                {
+                    var current = fundFlow[i];
+                    if (current == 0 || (current >= 0) != direction)
+                    {
+                        break;
+                    }
+
+                    streak++;
+                }
+
+                return streak >= required
+                    ? AlertEvaluation.Fired(
+                        $"主力连续 {streak} 日{(direction ? "净流入" : "净流出")}",
+                        $"最近 {streak} 个交易日主力资金持续{(direction ? "净流入" : "净流出")}，已达到阈值 {required} 天。",
+                        direction ? "up" : "down")
+                    : AlertEvaluation.NotTriggered($"主力连续同向仅 {streak} 天 < 阈值 {required} 天");
+            }
 
             case AlertRuleTypes.BreakMa20:
                 if (closes.Count < 20)

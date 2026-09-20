@@ -23,7 +23,8 @@ public sealed class AlertService(
     IAlertStore store,
     IInstrumentStore instruments,
     IQuoteSnapshotStore quotes,
-    IDailyHistoryStore daily)
+    IDailyHistoryStore daily,
+    ICapitalStore capital)
 {
     /// <summary>
     /// 取规则列表。
@@ -226,6 +227,7 @@ public sealed class AlertService(
     /// <param name="closes">最近日线收盘序列（按日期升序；可为空）。</param>
     /// <param name="highs">最近日线最高序列。</param>
     /// <param name="lows">最近日线最低序列。</param>
+    /// <param name="fundFlow">资金流主力净额序列（元，升序）；资金类规则需要。</param>
     /// <param name="now">当前时间（用于冷却判断）。</param>
     public static AlertEvaluation Evaluate(
         AlertRule rule,
@@ -233,6 +235,7 @@ public sealed class AlertService(
         IReadOnlyList<decimal> closes,
         IReadOnlyList<decimal> highs,
         IReadOnlyList<decimal> lows,
+        IReadOnlyList<decimal>? fundFlow,
         DateTimeOffset now)
     {
         if (!rule.Enabled)
@@ -252,6 +255,26 @@ public sealed class AlertService(
             return AlertEvaluation.NotTriggered($"冷却中（剩余 {remaining.TotalMinutes:F0} 分钟）");
         }
 
-        return AlertEvaluator.Evaluate(rule, quote, closes, highs, lows);
+        return AlertEvaluator.Evaluate(rule, quote, closes, highs, lows, fundFlow);
     }
+
+    /// <summary>
+    /// 取某标的的资金流主力净额序列（元，升序），供资金类规则使用。
+    /// </summary>
+    /// <remarks>
+    /// 只取最近 20 个交易日：连续同向规则的阈值上限是 20 天，更长的历史对判定没有帮助，
+    /// 却要让每个资金类规则都多读一次库。
+    /// </remarks>
+    public async Task<IReadOnlyList<decimal>> LoadFundFlowAsync(
+        string code,
+        CancellationToken cancellationToken = default)
+    {
+        var rows = await capital.GetFundFlowAsync(code, 20, cancellationToken).ConfigureAwait(false);
+        return rows.Select(row => row.MainNet).ToList();
+    }
+
+    /// <summary>判断某类型是否为资金类规则（决定是否需要加载资金流）。</summary>
+    public static bool NeedsFundFlow(string ruleType) =>
+        ruleType is SA.Domain.Entities.Alerts.AlertRuleTypes.FundFlowMainAbs
+            or SA.Domain.Entities.Alerts.AlertRuleTypes.FundFlowStreak;
 }

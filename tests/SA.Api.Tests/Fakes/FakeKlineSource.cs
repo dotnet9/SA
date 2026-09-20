@@ -95,6 +95,45 @@ internal sealed class FakeKlineSource : IKlineSource
     public Task<SourceProbeResult> ProbeAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(SourceProbeResult.Success(1, 200, TradingDays));
 
+    /// <summary>
+    /// 板块指数日线替身：生成一条与个股同结构、但趋势略弱的序列，
+    /// 用于验证景气度与传导带宽在「行业指数可用」时的计算路径。
+    /// </summary>
+    public Task<IReadOnlyList<DailyBar>> GetSectorDailyAsync(
+        string sectorCode,
+        DateOnly from,
+        DateOnly to,
+        CancellationToken cancellationToken = default)
+    {
+        RequestCount[sectorCode] = RequestCount.TryGetValue(sectorCode, out var count) ? count + 1 : 1;
+
+        var bars = new List<DailyBar>();
+        for (var i = 0; i < TradingDays; i++)
+        {
+            var date = NextTradingDay(Start, i);
+            if (date < from || date > to)
+            {
+                continue;
+            }
+
+            // 与个股相近但不同的斜率：相关性应当较高但不等于 1
+            var close = 1000m + i * 1.05m;
+            bars.Add(new DailyBar(
+                Date: date,
+                Open: close - 2,
+                High: close + 4,
+                Low: close - 4,
+                Close: close,
+                Volume: 5_000_000m,
+                Amount: 5_000_000m * close,
+                Turnover: 1m,
+                VolRatio: 1m,
+                AdjFactor: 1m));
+        }
+
+        return Task.FromResult<IReadOnlyList<DailyBar>>(bars);
+    }
+
     /// <summary>第 i 个交易日（跳过周末；不处理节假日，测试数据不需要）。</summary>
     public static DateOnly NextTradingDay(DateOnly start, int index)
     {

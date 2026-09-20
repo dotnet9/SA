@@ -22,6 +22,13 @@
     <PackageVersion Include="ToolGood.Words.Pinyin" Version="3.1.0.4" />
   </ItemGroup>
 
+  <ItemGroup Label="Web Push">
+    <!-- Web Push 需要 aes128gcm 内容加密与 VAPID 签名（RFC 8291 / 8292）。
+         自行实现属于密码学代码：出错时表现为「通知静默不到达」，且难以验证，
+         因此按实施计划 §3.3 的选版原则使用成熟实现。 -->
+    <PackageVersion Include="WebPush" Version="1.0.13" />
+  </ItemGroup>
+
   <ItemGroup Label="鉴权">
     <!-- 走稳定 10.x 线，避免把鉴权链拖进 RC；net10.0 资产可在 net11.0 下引用（实施计划 §3.3） -->
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />

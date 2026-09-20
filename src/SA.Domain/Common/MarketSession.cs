@@ -53,6 +53,32 @@ public static class MarketCodes
     public static string SecId(string code) => $"{MarketOf(code)}.{code.Trim()}";
 
     /// <summary>
+    /// 板块指数的 <c>secid</c> 前缀。
+    /// </summary>
+    /// <remarks>
+    /// 行业板块走 <c>90.</c> 前缀（如 <c>90.BK1033</c>），与个股的 0./1. 不同。
+    /// 用错前缀不会报错，只会返回空 <c>data</c>——实测识别出来的一条坑。
+    /// </remarks>
+    public const string SectorSecIdPrefix = "90";
+
+    /// <summary>
+    /// 判断代码是否为东财板块码（<c>BK</c> 开头）。
+    /// </summary>
+    public static bool IsSectorCode(string? code) =>
+        !string.IsNullOrEmpty(code) && code.StartsWith("BK", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// 拼出板块指数的 <c>secid</c>，形如 <c>90.BK1033</c>。
+    /// </summary>
+    public static string SectorSecId(string sectorCode)
+    {
+        var trimmed = sectorCode.Trim();
+
+        // 已经带了前缀就原样返回，避免拼成 90.90.BK1033
+        return trimmed.Contains('.') ? trimmed : $"{SectorSecIdPrefix}.{trimmed}";
+    }
+
+    /// <summary>
     /// 拼出带市场后缀的 <c>SECUCODE</c>，形如 <c>300750.SZ</c>。
     /// </summary>
     /// <remarks>

@@ -6,6 +6,7 @@ using SA.Domain.Entities.Equity;
 using SA.Domain.Entities.Events;
 using SA.Domain.Entities.Finance;
 using SA.Domain.Entities.Rating;
+using SA.Domain.Entities.Screener;
 using SA.Domain.Entities.Identity;
 using SA.Domain.Entities.Market;
 using SA.Domain.Entities.System;
@@ -133,6 +134,12 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
 
     /// <summary>后台操作审计日志。</summary>
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
+    /// <summary>浏览器的 Web Push 订阅。</summary>
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
+
+    /// <summary>选股器执行记录（筛选日志 + 我的策略）。</summary>
+    public DbSet<ScreenerRun> ScreenerRuns => Set<ScreenerRun>();
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -689,6 +696,39 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
             entity.Property(e => e.CreatedAt).HasConversion(timeConverter);
             entity.HasIndex(e => e.CreatedAt);
             entity.HasIndex(e => e.UserId);
+        });
+
+        modelBuilder.Entity<PushSubscription>(entity =>
+        {
+            entity.ToTable("PushSubscription");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).HasMaxLength(64).IsRequired();
+            // 推送端点可长达数百字符，且必须全局唯一：这是订阅的唯一自然键
+            entity.Property(e => e.Endpoint).HasMaxLength(512).IsRequired();
+            entity.Property(e => e.P256dh).HasMaxLength(256).IsRequired();
+            entity.Property(e => e.Auth).HasMaxLength(64).IsRequired();
+            entity.Property(e => e.UserAgent).HasMaxLength(256);
+            entity.Property(e => e.LastError).HasMaxLength(512);
+            entity.Property(e => e.LastOkAt).HasConversion(nullableTimeConverter);
+            entity.Property(e => e.CreatedAt).HasConversion(timeConverter);
+            entity.HasIndex(e => e.Endpoint).IsUnique();
+            entity.HasIndex(e => new { e.UserId, e.Enabled });
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ScreenerRun>(entity =>
+        {
+            entity.ToTable("ScreenerRun");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).HasMaxLength(64).IsRequired();
+            // 条件以请求体 JSON 原文保存：策略回放要求完全复现，逐字段建模会在新增字段时静默丢条件
+            entity.Property(e => e.RequestJson).HasMaxLength(4096).IsRequired();
+            entity.Property(e => e.Summary).HasMaxLength(512);
+            entity.Property(e => e.Name).HasMaxLength(64);
+            entity.Property(e => e.PresetKey).HasMaxLength(32);
+            entity.Property(e => e.CreatedAt).HasConversion(timeConverter);
+            entity.HasIndex(e => new { e.UserId, e.Id });
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<AlertRule>(entity =>

@@ -94,11 +94,14 @@ public sealed class OnDemandHostedService(
         var equityJob = provider.GetRequiredService<EquityJob>();
         var capitalJob = provider.GetRequiredService<CapitalJob>();
         var ratingJob = provider.GetRequiredService<RatingJob>();
+        var sectorKlineJob = provider.GetRequiredService<SectorKlineJob>();
+        var instruments = provider.GetRequiredService<SA.Application.Abstractions.IInstrumentStore>();
+        var sectors = provider.GetRequiredService<SA.Application.Abstractions.ISectorStore>();
 
         var succeeded = 0;
         foreach (var code in codes)
         {
-            // 三步各自独立 try：财务失败不应把已完成的日线一起算作失败，
+            // 各自独立 try：财务失败不应把已完成的日线一起算作失败，
             // 反之亦然（用户可能只看趋势页，不想因为财报接口抖动而整只标的重来）
             await RunStepAsync(code, "日线", () => dailyJob.RunIncrementalAsync(code, cancellationToken)).ConfigureAwait(false);
             await RunStepAsync(code, "指标", () => indicatorJob.RunAsync(code, cancellationToken)).ConfigureAwait(false);
@@ -106,10 +109,47 @@ public sealed class OnDemandHostedService(
             await RunStepAsync(code, "股权", () => equityJob.RunAsync(code, cancellationToken)).ConfigureAwait(false);
             await RunStepAsync(code, "资金", () => capitalJob.RunAsync(code, cancellationToken)).ConfigureAwait(false);
             await RunStepAsync(code, "评级", () => ratingJob.RunAsync(code, cancellationToken)).ConfigureAwait(false);
+
+            // 该股所属行业的指数日线：因果链的传导带宽要用它。
+            // 放在这里而不是只在每日补齐里做，是因为用户正看的这只股票所属行业很可能
+            // 不在「资金最显著的 30 个行业」里（会一直拿不到带宽）。
+            await RunStepAsync(code, "行业指数", () => EnsureSectorKlineAsync(instruments, sectors, sectorKlineJob, code, cancellationToken))
+                .ConfigureAwait(false);
+
             succeeded++;
         }
 
         return succeeded;
+    }
+
+    /// <summary>
+    /// 补齐某标的所属行业的指数日线。
+    /// </summary>
+    /// <remarks>
+    /// 取不到行业（新股、行业缺失）时直接跳过，不算失败：
+    /// 这是数据缺失而不是采集故障。
+    /// </remarks>
+    private static async Task EnsureSectorKlineAsync(
+        SA.Application.Abstractions.IInstrumentStore instruments,
+        SA.Application.Abstractions.ISectorStore sectors,
+        SectorKlineJob job,
+        string code,
+        CancellationToken cancellationToken)
+    {
+        var instrument = await instruments.FindAsync(code, cancellationToken).ConfigureAwait(false);
+        if (instrument?.Industry is null)
+        {
+            return;
+        }
+
+        var all = await sectors.GetAllAsync(cancellationToken).ConfigureAwait(false);
+        var sector = all.FirstOrDefault(row => string.Equals(row.Name, instrument.Industry, StringComparison.Ordinal));
+        if (sector is null)
+        {
+            return;
+        }
+
+        await job.RunAsync(sector.Code, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task RunStepAsync(string code, string step, Func<Task> action)

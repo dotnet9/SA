@@ -114,6 +114,10 @@ app.MapRatingEndpoints();
 app.MapRiskEndpoints();
 app.MapAlertEndpoints();
 app.MapScreenerEndpoints();
+// 规则引擎推算：行业景气度与因果链/传导带宽（实施计划 §2 决策 13）
+app.MapAnalysisEndpoints();
+// Web Push 与提醒偏好（免打扰在服务端执行）
+app.MapPushEndpoints();
 app.MapAdminEndpoints();
 // 站点信息（页头名称与全局公告）：只要求登录，页头在每个页面都要用
 app.MapSiteEndpoints();

@@ -98,3 +98,66 @@ public sealed record NotificationListDto(IReadOnlyList<NotificationDto> Items, i
 /// <summary>标记已读请求（<c>ids</c> 为空表示全部已读）。</summary>
 /// <param name="Ids">通知 Id 集合。</param>
 public sealed record NotificationReadRequest(IReadOnlyList<long>? Ids);
+
+/// <summary>VAPID 公钥。</summary>
+/// <param name="PublicKey">base64url 编码的公钥；前端用它调用 <c>pushManager.subscribe</c>。</param>
+public sealed record PushKeyDto(string PublicKey);
+
+/// <summary>浏览器推送订阅请求。</summary>
+/// <param name="Endpoint">推送端点。</param>
+/// <param name="Keys">订阅密钥。</param>
+public sealed record PushSubscribeRequest(string Endpoint, PushSubscribeKeys? Keys);
+
+/// <summary>订阅密钥。</summary>
+/// <param name="P256dh">客户端公钥（base64url）。</param>
+/// <param name="Auth">认证密钥（base64url）。</param>
+public sealed record PushSubscribeKeys(string? P256dh, string? Auth);
+
+/// <summary>取消订阅请求。</summary>
+/// <param name="Endpoint">推送端点。</param>
+public sealed record PushUnsubscribeRequest(string Endpoint);
+
+/// <summary>一条订阅（界面展示用；端点是长 URL，只回传主机名）。</summary>
+/// <param name="Id">订阅 Id。</param>
+/// <param name="Host">推送服务主机名。</param>
+/// <param name="UserAgent">设备 UA（截断）。</param>
+/// <param name="Enabled">是否启用。</param>
+/// <param name="FailCount">连续失败次数。</param>
+/// <param name="LastOkAt">最近成功时间。</param>
+/// <param name="LastError">最近错误。</param>
+/// <param name="CreatedAt">订阅时间。</param>
+public sealed record PushSubscriptionRowDto(
+    long Id,
+    string Host,
+    string? UserAgent,
+    bool Enabled,
+    int FailCount,
+    string? LastOkAt,
+    string? LastError,
+    string CreatedAt);
+
+/// <summary>提醒偏好（免打扰与渠道开关）。</summary>
+/// <param name="DndEnabled">是否启用免打扰。</param>
+/// <param name="DndFrom">开始时刻（HH:mm）。</param>
+/// <param name="DndTo">结束时刻（HH:mm）。</param>
+/// <param name="DndKeepInbox">免打扰期间是否仍写站内通知（默认是）。</param>
+/// <param name="PushEnabled">是否启用浏览器推送。</param>
+public sealed record NotifySettingsDto(
+    bool DndEnabled,
+    string DndFrom,
+    string DndTo,
+    bool DndKeepInbox,
+    bool PushEnabled);
+
+/// <summary>保存提醒偏好请求。</summary>
+/// <param name="DndEnabled">是否启用免打扰。</param>
+/// <param name="DndFrom">开始时刻（HH:mm）。</param>
+/// <param name="DndTo">结束时刻（HH:mm）。</param>
+/// <param name="DndKeepInbox">免打扰期间是否仍写站内通知。</param>
+/// <param name="PushEnabled">是否启用浏览器推送。</param>
+public sealed record NotifySettingsRequest(
+    bool DndEnabled,
+    string DndFrom,
+    string DndTo,
+    bool DndKeepInbox,
+    bool PushEnabled);

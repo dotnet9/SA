@@ -29,6 +29,9 @@ public static class AlertRuleCatalog
         new(AlertRuleTypes.BreakMa20, "跌破 20 日均线", "元", "当最新价 ≤ 20 日均线时触发（阈值可留空，按均线自动判断）"),
         new(AlertRuleTypes.NewHigh, "创近 N 日新高", "日", "取最近 N 个交易日最高价，当最新价 ≥ 该价时触发；阈值即 N（默认 60）"),
         new(AlertRuleTypes.NewLow, "创近 N 日新低", "日", "取最近 N 个交易日最低价，当最新价 ≤ 该价时触发；阈值即 N（默认 60）"),
+        new(AlertRuleTypes.AmountAbove, "成交额", "亿元", "当成交额 ≥ 阈值时触发"),
+        new(AlertRuleTypes.FundFlowMainAbs, "主力资金净额", "亿元", "当主力净额绝对值 ≥ 阈值时触发（流入与流出都算，方向体现在通知里）"),
+        new(AlertRuleTypes.FundFlowStreak, "主力资金连续同向", "天", "当主力连续净流入或连续净流出达到阈值天数时触发（阈值 2–20）"),
         new(AlertRuleTypes.EventOccurred, "事件触发", null, "当有新事件（业绩预告 / 龙虎榜 / 大宗交易等）时触发，不需要阈值")
     ];
 
@@ -50,7 +53,9 @@ public static class AlertRuleCatalog
         type switch
         {
             AlertRuleTypes.PriceAbove or AlertRuleTypes.PriceBelow or AlertRuleTypes.ChangeAbs
-                or AlertRuleTypes.VolRatioAbove or AlertRuleTypes.TurnoverAbove => true,
+                or AlertRuleTypes.VolRatioAbove or AlertRuleTypes.TurnoverAbove
+                or AlertRuleTypes.AmountAbove or AlertRuleTypes.FundFlowMainAbs
+                or AlertRuleTypes.FundFlowStreak => true,
             _ => false
         };
 }

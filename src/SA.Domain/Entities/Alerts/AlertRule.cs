@@ -20,6 +20,22 @@ public static class AlertRuleTypes
     /// <summary>换手率超过阈值。</summary>
     public const string TurnoverAbove = "turnover.above";
 
+    /// <summary>成交额超过阈值（亿元）。</summary>
+    public const string AmountAbove = "amount.above";
+
+    /// <summary>
+    /// 主力资金净额触发（亿元，阈值取绝对值）。
+    /// </summary>
+    /// <remarks>
+    /// 资金类规则的语义是「主力净流入或净流出达到阈值」：阈值存正数、判定看绝对值，
+    /// 方向体现在通知文案上（净流入 / 净流出）。用户只需填一个数，
+    /// 不必为了分辨方向再建两条规则。
+    /// </remarks>
+    public const string FundFlowMainAbs = "fundflow.main.abs";
+
+    /// <summary>主力资金连续同向天数达到阈值。</summary>
+    public const string FundFlowStreak = "fundflow.streak";
+
     /// <summary>跌破均线（MA20）。</summary>
     public const string BreakMa20 = "ma20.break";
 
