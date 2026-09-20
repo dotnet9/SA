@@ -1,0 +1,46 @@
+/* ============================================================
+   SA · 股析 — 应用补充样式
+   原型三件套（tokens.css / tailwind.css / components.css）已经提供令牌、重置与组件样式，
+   本文件只放「原型未覆盖」的少量规则，每条都注明来源与原因，避免与原型产生第二套样式体系。
+   见实施计划 §5.9。
+   ============================================================ */
+
+/* 1. 应用挂载点铺满视口：原型是整页 HTML，React 需要一个满高根节点承载 .sa-app 的网格布局 */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* 2. 启动与致命错误态：原型没有承载「接口不可用」的整页形态，这里补一个最小可用版本 */
+.sa-boot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-2);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+.sa-boot-error {
+  max-width: 520px;
+  padding: 24px;
+  text-align: center;
+}
+
+.sa-boot-error h1 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  color: var(--text-1);
+}
+
+.sa-boot-error p {
+  margin: 0 0 6px;
+  line-height: 1.7;
+}
+
+.sa-boot-error code {
+  color: var(--text-3);
+  font-size: 12px;
+}

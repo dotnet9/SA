@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>SA.Application</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SA.Domain\SA.Domain.csproj" />
+    <ProjectReference Include="..\SA.Contracts\SA.Contracts.csproj" />
+  </ItemGroup>
+
+  <!-- DI / 日志 / 配置 / 缓存 / HttpClient 抽象均取自已安装的 ASP.NET Core 共享框架，
+       避免与共享框架版本漂移（实施计划 §3.3） -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+</Project>

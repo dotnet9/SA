@@ -1,0 +1,69 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SA.Domain", "src\SA.Domain\SA.Domain.csproj", "{1A1B2C3D-0001-4A01-9E01-000000000001}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SA.Contracts", "src\SA.Contracts\SA.Contracts.csproj", "{1A1B2C3D-0002-4A01-9E01-000000000002}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SA.Application", "src\SA.Application\SA.Application.csproj", "{1A1B2C3D-0003-4A01-9E01-000000000003}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SA.Infrastructure", "src\SA.Infrastructure\SA.Infrastructure.csproj", "{1A1B2C3D-0004-4A01-9E01-000000000004}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SA.Api", "src\SA.Api\SA.Api.csproj", "{1A1B2C3D-0005-4A01-9E01-000000000005}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SA.Collector", "src\SA.Collector\SA.Collector.csproj", "{1A1B2C3D-0006-4A01-9E01-000000000006}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SA.Domain.Tests", "tests\SA.Domain.Tests\SA.Domain.Tests.csproj", "{1A1B2C3D-0007-4A01-9E01-000000000007}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SA.Application.Tests", "tests\SA.Application.Tests\SA.Application.Tests.csproj", "{1A1B2C3D-0008-4A01-9E01-000000000008}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SA.Api.Tests", "tests\SA.Api.Tests\SA.Api.Tests.csproj", "{1A1B2C3D-0009-4A01-9E01-000000000009}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1A1B2C3D-0001-4A01-9E01-000000000001}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A1B2C3D-0001-4A01-9E01-000000000001}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A1B2C3D-0001-4A01-9E01-000000000001}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A1B2C3D-0001-4A01-9E01-000000000001}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A1B2C3D-0002-4A01-9E01-000000000002}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A1B2C3D-0002-4A01-9E01-000000000002}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A1B2C3D-0002-4A01-9E01-000000000002}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A1B2C3D-0002-4A01-9E01-000000000002}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A1B2C3D-0003-4A01-9E01-000000000003}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A1B2C3D-0003-4A01-9E01-000000000003}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A1B2C3D-0003-4A01-9E01-000000000003}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A1B2C3D-0003-4A01-9E01-000000000003}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A1B2C3D-0004-4A01-9E01-000000000004}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A1B2C3D-0004-4A01-9E01-000000000004}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A1B2C3D-0004-4A01-9E01-000000000004}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A1B2C3D-0004-4A01-9E01-000000000004}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A1B2C3D-0005-4A01-9E01-000000000005}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A1B2C3D-0005-4A01-9E01-000000000005}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A1B2C3D-0005-4A01-9E01-000000000005}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A1B2C3D-0005-4A01-9E01-000000000005}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A1B2C3D-0006-4A01-9E01-000000000006}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A1B2C3D-0006-4A01-9E01-000000000006}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A1B2C3D-0006-4A01-9E01-000000000006}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A1B2C3D-0006-4A01-9E01-000000000006}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A1B2C3D-0007-4A01-9E01-000000000007}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A1B2C3D-0007-4A01-9E01-000000000007}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A1B2C3D-0007-4A01-9E01-000000000007}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A1B2C3D-0007-4A01-9E01-000000000007}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A1B2C3D-0008-4A01-9E01-000000000008}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A1B2C3D-0008-4A01-9E01-000000000008}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A1B2C3D-0008-4A01-9E01-000000000008}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A1B2C3D-0008-4A01-9E01-000000000008}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A1B2C3D-0009-4A01-9E01-000000000009}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A1B2C3D-0009-4A01-9E01-000000000009}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A1B2C3D-0009-4A01-9E01-000000000009}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A1B2C3D-0009-4A01-9E01-000000000009}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

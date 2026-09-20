@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>SA.Api</RootNamespace>
+    <UserSecretsId>sa-api-secrets</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SA.Domain\SA.Domain.csproj" />
+    <ProjectReference Include="..\SA.Contracts\SA.Contracts.csproj" />
+    <ProjectReference Include="..\SA.Application\SA.Application.csproj" />
+    <ProjectReference Include="..\SA.Infrastructure\SA.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

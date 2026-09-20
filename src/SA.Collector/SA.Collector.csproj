@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>SA.Collector</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SA.Domain\SA.Domain.csproj" />
+    <ProjectReference Include="..\SA.Contracts\SA.Contracts.csproj" />
+    <ProjectReference Include="..\SA.Application\SA.Application.csproj" />
+    <ProjectReference Include="..\SA.Infrastructure\SA.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <!-- 采集器既是独立可运行进程（探针排障模式），也以 HostedService 形式内嵌进 SA.Api -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+</Project>

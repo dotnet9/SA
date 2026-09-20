@@ -1,0 +1,33 @@
+<Project>
+
+  <!--
+    中央包版本管理（CPM）。csproj 中的 PackageReference 一律不写 Version。
+    选版原则见实施计划 §3.3：EF Core 与 Microsoft.Extensions.* 走稳定版 10.x（其 net10.0 资产可在 net11.0 下引用），
+    避免把整个依赖图拖进 RC；共享框架带来的类型（DI / 日志 / 配置 / 缓存 / HttpClient 抽象）
+    以 FrameworkReference Microsoft.AspNetCore.App 提供，不重复引包。
+  -->
+
+  <ItemGroup Label="数据访问">
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup Label="时序历史">
+    <!-- 必须用 .Data.Full：DuckDB.NET.Data 与 DuckDB.NET.Bindings 均不含原生 duckdb 库，
+         Full 包才带 runtimes/**/native（见实施计划 §3.3） -->
+    <PackageVersion Include="DuckDB.NET.Data.Full" Version="1.5.5" />
+  </ItemGroup>
+
+  <ItemGroup Label="搜索">
+    <PackageVersion Include="ToolGood.Words.Pinyin" Version="3.1.0.4" />
+  </ItemGroup>
+
+  <ItemGroup Label="测试">
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+  </ItemGroup>
+
+</Project>
