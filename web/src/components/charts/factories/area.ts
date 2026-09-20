@@ -14,19 +14,33 @@ export interface AreaSeries {
 /** 面积图选项。 */
 export interface AreaOptions {
   labels: readonly string[];
-  series: readonly AreaSeries[];
+  /** 单序列形态：与原型 `charts.js` 的 `F.area(el, { labels, data, unit })` 调用一致。 */
+  data?: readonly number[];
+  /** 多序列形态：需要对比两条以上时使用。 */
+  series?: readonly AreaSeries[];
   unit?: string;
   /** 纵轴是否从 0 起（资金净额等含负值时保持 false 以放大波动）。 */
   startAtZero?: boolean;
+  /** 单序列形态下的序列名。 */
+  name?: string;
 }
 
 /**
- * 面积图（可多序列）。移植自原型 `charts.js` 的 `F.area`。
- *
- * 用于资金流累计、成交量趋势这类「看形状与拐点」的序列。
+ * 面积图。移植自原型 `charts.js` 的 `F.area`，同时支持原型的单序列形态
+ * （`{ labels, data, unit }`）与本项目扩展的多序列形态（`{ labels, series }`）。
  */
 export const area: ChartFactory<AreaOptions> = (h, cfg) => {
-  if (!cfg || !cfg.labels || cfg.labels.length === 0 || !cfg.series || cfg.series.length === 0) {
+  if (!cfg || !cfg.labels || cfg.labels.length === 0) {
+    return {};
+  }
+
+  const series: AreaSeries[] = cfg.series && cfg.series.length > 0
+    ? [...cfg.series]
+    : cfg.data
+      ? [{ name: cfg.name ?? '数值', data: cfg.data }]
+      : [];
+
+  if (series.length === 0) {
     return {};
   }
 
@@ -34,13 +48,13 @@ export const area: ChartFactory<AreaOptions> = (h, cfg) => {
   const unit = cfg.unit ?? '';
 
   return {
-    legend: h.legend({ data: cfg.series.map((s) => s.name) }),
+    legend: series.length > 1 ? h.legend({ data: series.map((s) => s.name) }) : undefined,
     tooltip: h.tooltip({
       trigger: 'axis',
       axisPointer: h.axisPointer(),
       valueFormatter: (value: unknown) => (typeof value === 'number' ? `${value}${unit}` : String(value))
     }),
-    grid: h.grid({ top: 30 }),
+    grid: h.grid({ top: series.length > 1 ? 30 : 12 }),
     xAxis: {
       type: 'category',
       boundaryGap: false,
@@ -56,19 +70,19 @@ export const area: ChartFactory<AreaOptions> = (h, cfg) => {
       axisLabel: h.axisLabel({ fontSize: 10 }),
       splitLine: h.splitLine()
     },
-    series: cfg.series.map((series, index) => {
-      const color = series.color ?? pal[index % pal.length];
+    series: series.map((item, index) => {
+      const color = item.color ?? pal[index % pal.length];
       return {
-        name: series.name,
+        name: item.name,
         type: 'line',
-        data: [...series.data],
-        smooth: !series.step,
-        step: series.step ? 'start' : undefined,
+        data: [...item.data],
+        smooth: !item.step,
+        step: item.step ? 'start' : undefined,
         symbol: 'none',
         lineStyle: { width: 1.6, color },
         itemStyle: { color },
         areaStyle:
-          series.fill === false
+          item.fill === false
             ? undefined
             : {
                 color: {

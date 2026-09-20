@@ -1,4 +1,4 @@
-using SA.Application.Abstractions;
+﻿using SA.Application.Abstractions;
 using SA.Application.Common;
 using SA.Contracts.Common;
 using SA.Contracts.Trend;
@@ -25,8 +25,7 @@ public sealed class TrendAnalyzer(
     IDailyHistoryStore daily,
     IIndicatorStore indicators,
     IIndexStore indexStore,
-    IInstrumentStore instruments,
-    IQuoteSnapshotStore quotes)
+    IInstrumentStore instruments)
 {
     /// <summary>K 线上限（详细设计 §9.2：默认展示 120 根，最多 240 根）。</summary>
     public const int MaxCandles = 240;
@@ -70,10 +69,6 @@ public sealed class TrendAnalyzer(
             .ConfigureAwait(false);
 
         var benchmark = await LoadBenchmarkAsync(cancellationToken).ConfigureAwait(false);
-        var quote = (await quotes.GetByCodesAsync([code], cancellationToken).ConfigureAwait(false))
-            .TryGetValue(code, out var snapshot)
-                ? snapshot
-                : null;
 
         var candles = bars.TakeLast(take).ToList();
         var aligned = AlignIndicators(indicatorRows, candles);
@@ -83,7 +78,8 @@ public sealed class TrendAnalyzer(
         {
             "口径：日线为前复权（指标与图形同一口径）；停牌日不产生 K 线。",
             "指标（MA / MACD / KDJ / BOLL / RSI）由服务端批量计算并落库，前端只负责渲染。",
-            "价格分位为当前价在样本分布中小于等于它的占比；样本不足时返回空、界面显示「—」，不做插值。"
+            "价格分位为当前价在样本分布中小于等于它的占比；样本不足时返回空、界面显示「—」，不做插值。",
+            "位置与分位以日线最后一根收盘价为基准（与均线、K 线同一条序列），行情条中的实时快照价不参与这些计算。"
         };
 
         if (indicatorRows.Count == 0)
@@ -109,8 +105,8 @@ public sealed class TrendAnalyzer(
             Kdj: aligned.Kdj,
             Boll: aligned.Boll,
             RelativeStrength: BuildRelativeStrength(candles, benchmark),
-            Levels: BuildLevels(bars, quote?.Price),
-            Insights: BuildInsights(bars, aligned, quote?.Price),
+            Levels: BuildLevels(bars),
+            Insights: BuildInsights(bars, aligned),
             Notes: notes);
 
         return ServiceResult<TrendDto>.Success(dto);
@@ -225,7 +221,15 @@ public sealed class TrendAnalyzer(
         return new RelativeStrengthDto("沪深300", "000300", value, line);
     }
 
-    private static TrendLevelsDto BuildLevels(IReadOnlyList<DailyBar> bars, decimal? current)
+    /// <summary>
+    /// 位置与关键价位。
+    /// </summary>
+    /// <remarks>
+    /// <b>基准价一律取日线最后一根收盘价</b>，而不是实时快照价：位置类指标（距均线幅度、分位）
+    /// 与均线、K 线必须来自同一条序列，否则「现价来自快照、均线来自日线」会在两者口径不一致时
+    /// （复权差异、快照来源切换）算出一个明显错误的幅度。快照价只用于行情条展示。
+    /// </remarks>
+    private static TrendLevelsDto BuildLevels(IReadOnlyList<DailyBar> bars)
     {
         var window = bars.TakeLast(ShortWindow).ToList();
         var closes = window.Select(bar => bar.Close).ToList();
@@ -233,7 +237,7 @@ public sealed class TrendAnalyzer(
         var high250 = window.Count > 0 ? window.Max(bar => bar.High) : (decimal?)null;
         var low250 = window.Count > 0 ? window.Min(bar => bar.Low) : (decimal?)null;
 
-        var price = current ?? closes[^1];
+        var price = bars[^1].Close;
 
         var ma20 = Indicators.Sma(closes, 20)[^1];
         var ma250 = Indicators.Sma(closes, LongWindow)[^1];
@@ -250,15 +254,14 @@ public sealed class TrendAnalyzer(
     }
 
     /// <summary>
-    /// 趋势结论。全部由可复算的规则给出，不含主观判断。
+    /// 趋势结论。全部由可复算的规则给出，不含主观判断；基准价同样是日线最后一根收盘价。
     /// </summary>
     private static List<TrendInsightDto> BuildInsights(
         IReadOnlyList<DailyBar> bars,
-        AlignedIndicators aligned,
-        decimal? current)
+        AlignedIndicators aligned)
     {
         var insights = new List<TrendInsightDto>();
-        var price = current ?? bars[^1].Close;
+        var price = bars[^1].Close;
 
         var ma5 = aligned.Ma.Ma5[^1];
         var ma10 = aligned.Ma.Ma10[^1];

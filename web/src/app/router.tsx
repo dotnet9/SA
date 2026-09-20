@@ -28,6 +28,16 @@ const SearchPage = lazy(() =>
   import('@/features/search/SearchPage').then((module) => ({ default: module.SearchPage }))
 );
 
+/** 个股总览（8 张摘要卡）。 */
+const StockOverviewPage = lazy(() =>
+  import('@/features/stock/StockOverviewPage').then((module) => ({ default: module.StockOverviewPage }))
+);
+
+/** 趋势与价格结构（K 线，分包体积最大）。 */
+const StockTrendPage = lazy(() =>
+  import('@/features/stock/StockTrendPage').then((module) => ({ default: module.StockTrendPage }))
+);
+
 /** 分包加载占位：沿用启动态样式，避免白屏。 */
 function RouteFallback() {
   return <div className="sa-boot">正在载入页面…</div>;
@@ -95,7 +105,7 @@ function StockRedirect() {
   return <Navigate to={`/stock/${code}`} replace />;
 }
 
-/** 个股模块页：本批为占位，第 3–10 批逐域接入数据。 */
+/** 个股模块页：按模块分派到已实现的页面，未实现的仍显示占位并说明批次。 */
 function StockModulePage() {
   const params = useParams();
   const code = params.code ?? DefaultStockCode;
@@ -107,8 +117,6 @@ function StockModulePage() {
   }
 
   const batches: Record<string, string> = {
-    overview: '第 3 批（先接趋势卡，其余卡随各域补齐）',
-    trend: '第 3 批',
     finance: '第 5 批',
     equity: '第 6 批',
     capital: '第 7 批',
@@ -120,7 +128,15 @@ function StockModulePage() {
 
   return (
     <RequireFunctionPoint codes={[StockModuleFunctionPoints[module] ?? 'stock.trend']}>
-      <PlaceholderPage title={`${name} · ${code}`} batch={batches[module] ?? '后续批次'} />
+      <Suspense fallback={<RouteFallback />}>
+        {module === 'overview' ? (
+          <StockOverviewPage />
+        ) : module === 'trend' ? (
+          <StockTrendPage />
+        ) : (
+          <PlaceholderPage title={`${name} · ${code}`} batch={batches[module] ?? '后续批次'} />
+        )}
+      </Suspense>
     </RequireFunctionPoint>
   );
 }

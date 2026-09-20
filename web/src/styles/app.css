@@ -213,7 +213,73 @@ body,
   line-height: 1.6;
 }
 
-/* 8. 占位页：尚未实现的页面用统一形态说明批次与所需权限，避免空屏 */
+/* 8. 个股页的页级样式：逐条照抄原型 `design/web/stock.html` 与 `stock-trend.html`
+      内联 <style> 块里的页面私有规则（原型用行内样式是因为它不引入构建步骤）。
+      `.modcard` 是总览页 8 张摘要卡的网格，`.focus-tabs` / `.trend-toolbar` 是吸顶工具条，
+      `.legend-inline` 是趋势页自绘的均线图例。 */
+.modcard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.modcard .mod-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 8px;
+}
+
+.modcard .mod-thumb {
+  border-left: 1px solid var(--border-soft);
+  padding-left: 16px;
+}
+
+@media (max-width: 1199px) {
+  .modcard {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .modcard .mod-thumb {
+    border-left: none;
+    padding-left: 0;
+    border-top: 1px solid var(--border-soft);
+    padding-top: 12px;
+  }
+}
+
+.focus-tabs,
+.trend-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg-root);
+  padding: 8px 0;
+  margin-bottom: 12px;
+}
+
+.legend-inline {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.legend-inline .li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend-inline .sw {
+  width: 10px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+/* 9. 占位页：尚未实现的页面用统一形态说明批次与所需权限，避免空屏 */
 .placeholder-note {
   display: flex;
   flex-direction: column;
