@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SA.Application.Abstractions;
 using SA.Application.Analysis;
@@ -8,6 +8,7 @@ using SA.Application.Market;
 using SA.Application.Search;
 using SA.Application.Services;
 using SA.Application.Stocks;
+using SA.Application.Watchlist;
 
 namespace SA.Application;
 
@@ -66,6 +67,8 @@ public static class DependencyInjection
         services.AddScoped<TrendAnalyzer>();
         services.AddScoped<OverviewComposer>();
         services.AddScoped<StockService>();
+        services.AddScoped<WatchlistService>();
+        services.AddScoped<DataScopeFilter>();
 
         return services;
     }

@@ -1,8 +1,9 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SA.Domain.Entities.Collect;
 using SA.Domain.Entities.Identity;
 using SA.Domain.Entities.Market;
 using SA.Domain.Entities.System;
+using SA.Domain.Entities.Watchlist;
 using SA.Infrastructure.Persistence.Converters;
 
 namespace SA.Infrastructure.Persistence;
@@ -75,6 +76,12 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
 
     /// <summary>回补断点。</summary>
     public DbSet<SyncCursor> SyncCursors => Set<SyncCursor>();
+
+    /// <summary>自选分组。</summary>
+    public DbSet<WatchGroup> WatchGroups => Set<WatchGroup>();
+
+    /// <summary>自选项。</summary>
+    public DbSet<WatchItem> WatchItems => Set<WatchItem>();
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -374,6 +381,32 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
             entity.Property(e => e.Note).HasMaxLength(256);
             entity.Property(e => e.LastDate).HasConversion(nullableDateConverter);
             entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+        });
+
+        modelBuilder.Entity<WatchGroup>(entity =>
+        {
+            entity.ToTable("WatchGroup");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasMaxLength(64);
+            entity.Property(e => e.UserId).HasMaxLength(64).IsRequired();
+            entity.Property(e => e.Name).HasMaxLength(32).IsRequired();
+            entity.Property(e => e.CreatedAt).HasConversion(timeConverter);
+            entity.HasIndex(e => new { e.UserId, e.SortOrder });
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<WatchItem>(entity =>
+        {
+            entity.ToTable("WatchItem");
+            // 同一账号下同一只股票只出现一次，这也是「添加自选」幂等的基础
+            entity.HasKey(e => new { e.UserId, e.Code });
+            entity.Property(e => e.UserId).HasMaxLength(64);
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.GroupId).HasMaxLength(64);
+            entity.Property(e => e.Note).HasMaxLength(128);
+            entity.Property(e => e.AddedAt).HasConversion(timeConverter);
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<WatchGroup>().WithMany().HasForeignKey(e => e.GroupId).OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

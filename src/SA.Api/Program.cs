@@ -22,6 +22,8 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 
 builder.Services.AddMemoryCache();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<SA.Application.Authorization.IUserContext, SA.Api.Auth.HttpUserContext>();
 builder.Services.AddSaDataPaths(builder.Configuration, builder.Environment.ContentRootPath);
 builder.Services.AddSaApplication(builder.Configuration);
 builder.Services.AddSaMarket(builder.Configuration);
@@ -77,6 +79,7 @@ app.MapMeEndpoints();
 app.MapMarketEndpoints();
 app.MapSearchEndpoints();
 app.MapStockEndpoints();
+app.MapWatchlistEndpoints();
 
 app.Run();
 

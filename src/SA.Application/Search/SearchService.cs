@@ -1,4 +1,5 @@
 using SA.Application.Abstractions;
+using SA.Application.Authorization;
 using SA.Application.Common;
 using SA.Application.Market;
 using SA.Contracts.Search;
@@ -18,7 +19,8 @@ public sealed class SearchService(
     SearchIndexCache index,
     MarketSnapshotCache snapshot,
     IInstrumentStore instruments,
-    IQuoteSnapshotStore quotes)
+    IQuoteSnapshotStore quotes,
+    DataScopeFilter scopeFilter)
 {
     /// <summary>命令面板提示条数。</summary>
     public const int SuggestSize = 8;
@@ -47,6 +49,14 @@ public sealed class SearchService(
         }
 
         var matches = Match(keyword, query.Board, query.Industry);
+
+        // 数据范围受限（仅自选）的角色只搜得到自选内的标的
+        var allowed = await scopeFilter.AllowedAsync(cancellationToken).ConfigureAwait(false);
+        if (allowed is not null)
+        {
+            matches = matches.Where(m => allowed.Contains(m.Instrument.Code)).ToList();
+        }
+
         var total = matches.Count;
         var rows = matches
             .Skip((page - 1) * pageSize)
@@ -55,7 +65,13 @@ public sealed class SearchService(
             .ToList();
 
         return ServiceResult<SearchResultDto>.Success(
-            new SearchResultDto(keyword, total, page, pageSize, rows, null));
+            new SearchResultDto(
+                keyword,
+                total,
+                page,
+                pageSize,
+                rows,
+                allowed is null ? null : "当前账号的数据范围为「仅自选股」，搜索结果已按自选范围过滤。"));
     }
 
     /// <summary>
@@ -74,7 +90,10 @@ public sealed class SearchService(
 
         await EnsureIndexAsync(cancellationToken).ConfigureAwait(false);
 
+        var allowed = await scopeFilter.AllowedAsync(cancellationToken).ConfigureAwait(false);
         var rows = Match(keyword, null, null)
+            // 命令面板同样受限：否则受限角色能在搜索框里看到全市场
+            .Where(m => allowed is null || allowed.Contains(m.Instrument.Code))
             .Take(Math.Clamp(limit, 1, 50))
             .Select(m => MarketService.TrimSearchRow(ToRow(m)))
             .ToList();

@@ -154,6 +154,8 @@ public static class DependencyInjection
         services.AddScoped<ICollectStatusStore, CollectStatusStore>();
         services.AddScoped<ITradingCalendarStore, TradingCalendarStore>();
         services.AddSingleton<IPinyinIndexer, ToolGoodPinyinIndexer>();
+        services.AddScoped<IWatchlistStore, WatchlistStore>();
+        services.AddScoped<IDataScopeService, DataScopeService>();
 
         return services;
     }

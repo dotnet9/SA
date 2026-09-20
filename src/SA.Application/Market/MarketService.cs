@@ -1,4 +1,5 @@
 ﻿using SA.Application.Abstractions;
+using SA.Application.Authorization;
 using SA.Application.Common;
 using SA.Contracts.Common;
 using SA.Contracts.Market;
@@ -32,7 +33,8 @@ public sealed class MarketService(
     ISectorStore sectorStore,
     IMarketStatStore stats,
     ICollectStatusStore collectStatus,
-    ITradingCalendarStore calendar)
+    ITradingCalendarStore calendar,
+    DataScopeFilter scopeFilter)
 {
     /// <summary>榜单默认取前多少名（与原型的 6 行表格兼容，界面可要求更多）。</summary>
     public const int DefaultRankingSize = 8;
@@ -62,7 +64,8 @@ public sealed class MarketService(
         var breadth = await BuildBreadthAsync(cancellationToken).ConfigureAwait(false);
         var fundFlow = await BuildFundFlowAsync(cancellationToken).ConfigureAwait(false);
         var sectors = await BuildSectorsAsync(cancellationToken).ConfigureAwait(false);
-        var rankings = BuildRankings(DefaultRankingSize);
+        var allowed = await scopeFilter.AllowedAsync(cancellationToken).ConfigureAwait(false);
+        var rankings = BuildRankings(DefaultRankingSize, allowed);
 
         return ServiceResult<MarketOverviewDto>.Success(
             new MarketOverviewDto(indices.Value!, breadth.Value!, fundFlow.Value!, sectors.Value!, rankings.Value!, status.Value));
@@ -84,13 +87,16 @@ public sealed class MarketService(
     public async Task<ServiceResult<MarketFundFlowDto>> GetFundFlowAsync(CancellationToken cancellationToken = default) =>
         await BuildFundFlowAsync(cancellationToken).ConfigureAwait(false);
 
-    /// <summary>榜单：成交额 / 涨幅 / 跌幅。</summary>
+    /// <summary>
+    /// 榜单：成交额 / 涨幅 / 跌幅。受限数据范围（仅自选）的角色只看得到自选内的标的。
+    /// </summary>
     public async Task<ServiceResult<MarketRankingsDto>> GetRankingsAsync(
         int take = DefaultRankingSize,
         CancellationToken cancellationToken = default)
     {
         await EnsureSnapshotAsync(cancellationToken).ConfigureAwait(false);
-        return BuildRankings(Math.Clamp(take, 1, 100));
+        var allowed = await scopeFilter.AllowedAsync(cancellationToken).ConfigureAwait(false);
+        return BuildRankings(Math.Clamp(take, 1, 100), allowed);
     }
 
     /// <summary>数据新鲜度与数据源健康状态。</summary>
@@ -226,11 +232,14 @@ public sealed class MarketService(
     /// 榜单。涨跌幅榜剔除 ST、退市风险与新股 / 次新股（原型卡片的说明文案即「剔除新股与 ST」）；
     /// 成交额榜不剔除，成交额是客观规模指标。
     /// </summary>
-    private ServiceResult<MarketRankingsDto> BuildRankings(int take)
+    /// <param name="take">每榜条数。</param>
+    /// <param name="allowed">可见代码集合；null 表示不受限（数据范围为全市场）。</param>
+    private ServiceResult<MarketRankingsDto> BuildRankings(int take, IReadOnlySet<string>? allowed)
     {
         var snapshot = cache.Current;
 
         var annotated = snapshot.Rows
+            .Where(row => DataScopeFilter.IsVisible(allowed, row.Code))
             .Select(row => (Row: row, Instrument: Lookup(snapshot, row.Code)))
             .Where(x => x.Row.Price > 0)
             .ToList();
