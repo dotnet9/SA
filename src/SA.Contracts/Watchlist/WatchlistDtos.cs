@@ -62,14 +62,14 @@ public sealed record WatchlistDto(
     int Quota);
 
 /// <summary>新增自选请求。</summary>
-/// <param name="Codes">证券代码集合（支持批量）。</param>
+/// <param name="Codes">证券代码集合（支持批量）；缺失或为空按参数错误处理。</param>
 /// <param name="GroupId">目标分组；null 为未分组。</param>
 /// <param name="Note">备注。</param>
-public sealed record WatchAddRequest(IReadOnlyList<string> Codes, string? GroupId, string? Note);
+public sealed record WatchAddRequest(IReadOnlyList<string>? Codes, string? GroupId, string? Note);
 
 /// <summary>删除自选请求（批量）。</summary>
-/// <param name="Codes">证券代码集合。</param>
-public sealed record WatchRemoveRequest(IReadOnlyList<string> Codes);
+/// <param name="Codes">证券代码集合；缺失时视为空集合（幂等返回 0）。</param>
+public sealed record WatchRemoveRequest(IReadOnlyList<string>? Codes);
 
 /// <summary>新建分组请求。</summary>
 /// <param name="Name">分组名。</param>
@@ -80,8 +80,8 @@ public sealed record WatchGroupCreateRequest(string Name);
 public sealed record WatchGroupRenameRequest(string Name);
 
 /// <summary>排序/分组请求：按数组顺序写入 <c>SortOrder</c>。</summary>
-/// <param name="Items">按目标顺序排列的条目。</param>
-public sealed record WatchReorderRequest(IReadOnlyList<WatchReorderEntry> Items);
+/// <param name="Items">按目标顺序排列的条目；缺失时按参数错误处理而不是 500。</param>
+public sealed record WatchReorderRequest(IReadOnlyList<WatchReorderEntry>? Items);
 
 /// <summary>排序条目。</summary>
 /// <param name="Code">证券代码。</param>

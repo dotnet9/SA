@@ -139,3 +139,8 @@ export function apiPost<T>(path: string, body?: unknown, options: Omit<ApiReques
 export function apiPut<T>(path: string, body?: unknown, options: Omit<ApiRequestOptions, 'method' | 'body'> = {}) {
   return apiRequest<T>(path, { ...options, method: 'PUT', body });
 }
+
+/** DELETE 便捷方法（批量删除把参数放在请求体里，避免查询串过长）。 */
+export function apiDelete<T>(path: string, body?: unknown, options: Omit<ApiRequestOptions, 'method' | 'body'> = {}) {
+  return apiRequest<T>(path, { ...options, method: 'DELETE', body });
+}

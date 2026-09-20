@@ -14,6 +14,7 @@ import '@/styles/app.css';
 import { router } from '@/app/router';
 import { queryClient } from '@/lib/query';
 import { AuthProvider } from '@/providers/AuthProvider';
+import { RealtimeProvider } from '@/providers/RealtimeProvider';
 import { ThemeProvider } from '@/providers/ThemeProvider';
 import { ToastProvider } from '@/providers/ToastProvider';
 
@@ -28,7 +29,10 @@ createRoot(host).render(
       <ThemeProvider>
         <ToastProvider>
           <AuthProvider>
-            <RouterProvider router={router} />
+            {/* 实时行情是会话级的：放在 AuthProvider 内以便读取登录态，放在路由外以免切页断开 */}
+            <RealtimeProvider>
+              <RouterProvider router={router} />
+            </RealtimeProvider>
           </AuthProvider>
         </ToastProvider>
       </ThemeProvider>

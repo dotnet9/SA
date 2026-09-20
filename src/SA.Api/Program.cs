@@ -24,6 +24,12 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<SA.Application.Authorization.IUserContext, SA.Api.Auth.HttpUserContext>();
+
+// 实时行情：订阅登记、在线跟踪、推送服务（详细设计 §7）
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<SA.Api.Hubs.SubscriptionRegistry>();
+builder.Services.AddSingleton<SA.Api.Hubs.PresenceTracker>();
+builder.Services.AddHostedService<SA.Api.Realtime.QuotePushService>();
 builder.Services.AddSaDataPaths(builder.Configuration, builder.Environment.ContentRootPath);
 builder.Services.AddSaApplication(builder.Configuration);
 builder.Services.AddSaMarket(builder.Configuration);
@@ -45,6 +51,24 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
         options.MapInboundClaims = false;
         options.RequireHttpsMetadata = false;
         options.TokenValidationParameters = SaJwtValidation.Create(auth, signingKey);
+
+        // 浏览器建立 WebSocket 时无法自定义请求头，SignalR 官方做法是把令牌放进
+        // access_token 查询参数。这里仅在 /hubs 路径下接受该来源，避免把整站的令牌
+        // 校验放宽到查询串（查询串会进访问日志）。
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var token = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(token)
+                    && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = token;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
     });
 
 // 默认要求已登录，避免新增端点时忘记声明认证而意外裸奔（需求规格 §7.3）
@@ -80,6 +104,9 @@ app.MapMarketEndpoints();
 app.MapSearchEndpoints();
 app.MapStockEndpoints();
 app.MapWatchlistEndpoints();
+
+// 实时行情只推自选股，按连接节流（详细设计 §7）
+app.MapHub<SA.Api.Hubs.QuoteHub>("/hubs/quotes");
 
 app.Run();
 

@@ -215,7 +215,8 @@ public sealed class WatchlistService(
         WatchReorderRequest request,
         CancellationToken cancellationToken = default)
     {
-        var entries = request.Items
+        // 请求体里 items 缺失时不能直接遍历（会变成 500）；按参数错误返回，让前端能给出可读提示
+        var entries = (request.Items ?? [])
             .Where(entry => !string.IsNullOrWhiteSpace(entry.Code))
             .Select(entry => new WatchOrderEntry(
                 entry.Code.Trim(),

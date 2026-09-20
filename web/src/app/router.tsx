@@ -38,6 +38,11 @@ const StockTrendPage = lazy(() =>
   import('@/features/stock/StockTrendPage').then((module) => ({ default: module.StockTrendPage }))
 );
 
+/** 自选股（含实时推送）。 */
+const WatchlistPage = lazy(() =>
+  import('@/features/watchlist/WatchlistPage').then((module) => ({ default: module.WatchlistPage }))
+);
+
 /** 分包加载占位：沿用启动态样式，避免白屏。 */
 function RouteFallback() {
   return <div className="sa-boot">正在载入页面…</div>;
@@ -207,7 +212,9 @@ export const router = createBrowserRouter([
         path: 'watchlist',
         element: (
           <RequireFunctionPoint codes={['watchlist.view']}>
-            <PlaceholderPage title="自选股盯盘" batch="第 4 批" />
+            <Suspense fallback={<RouteFallback />}>
+              <WatchlistPage />
+            </Suspense>
           </RequireFunctionPoint>
         )
       },

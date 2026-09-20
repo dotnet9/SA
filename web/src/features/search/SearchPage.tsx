@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { EmptyState, ErrorState } from '@/components/ui/States';
+import { errorText } from '@/lib/errorText';
+import { addWatchItems, fetchWatchlist } from '@/features/watchlist/api';
+import { useAuth } from '@/providers/AuthProvider';
+import { useToast } from '@/providers/ToastProvider';
 import { searchStocks, type SearchRow } from './api';
 
 /**
  * 股票搜索。
  *
  * 结构与 `design/web/search-results.html` 对应：快捷筛选 → 结果表 → 搜索技巧。
- * 本批后端已支持「代码 / 名称 / 拼音首字母 / 行业」四种命中与板块过滤；
- * 市值过滤、批量加自选（第 4 批）、导出（第 12 批）、近 30 日走势（第 3 批）尚未接入，
+ * 本批后端已支持「代码 / 名称 / 拼音首字母 / 行业」四种命中与板块过滤，并可直接加入自选；
+ * 市值过滤、导出（第 12 批）、近 30 日走势（第 3 批已完成趋势页，搜索页缩略图待接入）尚未接入，
  * 因此不渲染这些控件，也不给假数据。
  */
 
@@ -81,6 +85,39 @@ export function SearchPage() {
     queryFn: () => searchStocks(filters),
     enabled: query.trim().length > 0
   });
+
+  /* --- 加入自选（需 watchlist.edit；已在自选的不再重复提交） --- */
+  const auth = useAuth();
+  const queryClient = useQueryClient();
+  const toast = useToast();
+  const canEditWatchlist = auth.can('watchlist.edit');
+
+  const { data: watchlist } = useQuery({
+    queryKey: ['watchlist'],
+    queryFn: fetchWatchlist,
+    enabled: canEditWatchlist,
+    staleTime: 30_000
+  });
+
+  const added = useMemo(
+    () => new Set((watchlist?.items ?? []).map((item) => item.code)),
+    [watchlist]
+  );
+
+  const [adding, setAdding] = useState<string | null>(null);
+
+  const addToWatchlist = async (code: string) => {
+    setAdding(code);
+    try {
+      await addWatchItems([code]);
+      toast.toast('已加入自选', 'ok');
+      await queryClient.invalidateQueries({ queryKey: ['watchlist'] });
+    } catch (addError) {
+      toast.toast(errorText(addError), 'error');
+    } finally {
+      setAdding(null);
+    }
+  };
 
   const update = (patch: Record<string, string | undefined>) => {
     const next = new URLSearchParams(params);
@@ -264,9 +301,21 @@ export function SearchPage() {
                         <td className="num">{fmt(row.cap, 2, ' 亿')}</td>
                         <td className="fs-11 t-3">{MatchedByText[row.matchedBy]}</td>
                         <td className="col-actions">
-                          <Link className="btn btn-sm btn-outline" to={`/stock/${row.code}`}>
-                            查看
-                          </Link>
+                          <span className="row gap-2">
+                            <Link className="btn btn-sm btn-outline" to={`/stock/${row.code}`}>
+                              查看
+                            </Link>
+                            {canEditWatchlist ? (
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-ghost"
+                                disabled={added.has(row.code) || adding === row.code}
+                                onClick={() => void addToWatchlist(row.code)}
+                              >
+                                {added.has(row.code) ? '已在自选' : adding === row.code ? '加入中' : '加自选'}
+                              </button>
+                            ) : null}
+                          </span>
                         </td>
                       </tr>
                     ))}

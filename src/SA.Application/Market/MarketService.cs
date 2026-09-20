@@ -385,7 +385,7 @@ public sealed class MarketService(
     /// <summary>
     /// 元转亿元，保留 2 位小数（详细设计 §1.3：金额统一以亿元呈现）。
     /// </summary>
-    internal static decimal ToYi(decimal yuan) => Trim(yuan / 100_000_000m);
+    internal static decimal ToYi(decimal yuan) => Display.ToYi(yuan);
 
     /// <summary>
     /// 收敛到接口约定的精度。
@@ -396,5 +396,5 @@ public sealed class MarketService(
     /// 因此在组装 DTO 时统一收敛到 2 位小数，而不是把浮点尾数透给前端。
     /// 原始精度由上游本身决定（价 2 位、比率 2 位），收敛不会丢失有效信息。
     /// </remarks>
-    internal static decimal Trim(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
+    internal static decimal Trim(decimal value) => Display.Round(value);
 }
