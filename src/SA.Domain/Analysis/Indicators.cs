@@ -263,6 +263,89 @@ public static class Indicators
     }
 
     /// <summary>
+    /// 年化波动率：最近 <paramref name="window"/> 个交易日对数收益率的标准差 × √250（百分数）。
+    /// </summary>
+    /// <param name="closes">收盘价序列（按日期升序）。</param>
+    /// <param name="window">窗口长度（交易日）。</param>
+    /// <param name="tradingDaysPerYear">年化系数，默认 250 个交易日。</param>
+    /// <remarks>
+    /// 用对数收益率而不是简单收益率：对数收益率可加，年化时不会引入偏差。
+    /// 样本不足 <c>window + 1</c> 个点（需要 window 个收益率）时返回 null，不用更短的样本硬算。
+    /// </remarks>
+    public static decimal? AnnualizedVolatility(
+        IReadOnlyList<decimal> closes,
+        int window,
+        int tradingDaysPerYear = 250)
+    {
+        if (window < 2 || closes.Count < window + 1)
+        {
+            return null;
+        }
+
+        var slice = closes.Skip(closes.Count - window - 1).Select(value => (double)value).ToList();
+        var returns = new List<double>(window);
+
+        for (var i = 1; i < slice.Count; i++)
+        {
+            if (slice[i - 1] <= 0 || slice[i] <= 0)
+            {
+                continue;
+            }
+
+            returns.Add(Math.Log(slice[i] / slice[i - 1]));
+        }
+
+        if (returns.Count < 2)
+        {
+            return null;
+        }
+
+        var mean = returns.Average();
+        // 样本标准差（除以 n-1）：波动率估计用样本而非总体，避免系统性低估
+        var variance = returns.Sum(value => (value - mean) * (value - mean)) / (returns.Count - 1);
+        var annualized = Math.Sqrt(variance) * Math.Sqrt(tradingDaysPerYear) * 100d;
+
+        return Math.Round((decimal)annualized, 2, MidpointRounding.AwayFromZero);
+    }
+
+    /// <summary>
+    /// 最大回撤（百分数，正数表示跌幅）：区间内「从历史最高点回落」的最大幅度。
+    /// </summary>
+    /// <remarks>
+    /// 逐点维护历史峰值，只在创新高时更新峰值；因此无论回撤发生在区间哪一段都能取到最大值。
+    /// 样本少于 2 个时返回 null。
+    /// </remarks>
+    public static decimal? MaxDrawdown(IReadOnlyList<decimal> closes)
+    {
+        if (closes.Count < 2)
+        {
+            return null;
+        }
+
+        var peak = closes[0];
+        var maxDrawdown = 0m;
+
+        foreach (var close in closes)
+        {
+            if (close > peak)
+            {
+                peak = close;
+            }
+
+            if (peak > 0)
+            {
+                var drawdown = (peak - close) / peak * 100m;
+                if (drawdown > maxDrawdown)
+                {
+                    maxDrawdown = drawdown;
+                }
+            }
+        }
+
+        return Math.Round(maxDrawdown, 2, MidpointRounding.AwayFromZero);
+    }
+
+    /// <summary>
     /// 价格分位：当前价在样本分布中「小于等于」它的占比（百分数，0–100）。
     /// </summary>
     /// <remarks>

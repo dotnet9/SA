@@ -58,6 +58,16 @@ const StockEventsPage = lazy(() =>
   import('@/features/events/StockEventsPage').then((module) => ({ default: module.StockEventsPage }))
 );
 
+/** 风险与舆情监控。 */
+const StockRiskPage = lazy(() =>
+  import('@/features/risk/StockRiskPage').then((module) => ({ default: module.StockRiskPage }))
+);
+
+/** 机构评级与预测。 */
+const StockRatingPage = lazy(() =>
+  import('@/features/rating/StockRatingPage').then((module) => ({ default: module.StockRatingPage }))
+);
+
 /** 自选股（含实时推送）。 */
 const WatchlistPage = lazy(() =>
   import('@/features/watchlist/WatchlistPage').then((module) => ({ default: module.WatchlistPage }))
@@ -173,6 +183,10 @@ function StockModulePage() {
           <StockIndustryPage />
         ) : module === 'events' ? (
           <StockEventsPage />
+        ) : module === 'risk' ? (
+          <StockRiskPage />
+        ) : module === 'rating' ? (
+          <StockRatingPage />
         ) : (
           <PlaceholderPage title={`${name} · ${code}`} batch={batches[module] ?? '后续批次'} />
         )}

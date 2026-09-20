@@ -302,6 +302,7 @@ public sealed class FinanceApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<ICapitalSource, FakeCapitalSource>();
             services.AddSingleton<IFundFlowSource, FakeFundFlowSource>();
             services.AddSingleton<IEquitySource, FakeEquitySource>();
+            services.AddSingleton<IRatingSource, FakeRatingSource>();
         });
     }
 

@@ -117,6 +117,7 @@ public static class DependencyInjection
         services.AddSingleton<IEquitySource, EastMoneyEquitySource>();
         services.AddSingleton<ICapitalSource, EastMoneyCapitalSource>();
         services.AddSingleton<IFundFlowSource, EastMoneyFundFlowSource>();
+        services.AddSingleton<IRatingSource, EastMoneyRatingSource>();
 
         // 多标的快照源按注册顺序构成降级链：东财主源 → 腾讯备源
         services.AddSingleton<IQuoteSnapshotSource, EastMoneyQuoteSnapshotSource>();
@@ -139,6 +140,7 @@ public static class DependencyInjection
         services.AddScoped<FinanceJob>();
         services.AddScoped<EquityJob>();
         services.AddScoped<CapitalJob>();
+        services.AddScoped<RatingJob>();
 
         services.AddSingleton<IOnDemandQueue, OnDemandQueue>();
 
@@ -167,6 +169,7 @@ public static class DependencyInjection
         services.AddScoped<IEquityStore, EquityStore>();
         services.AddScoped<ICapitalStore, CapitalStore>();
         services.AddScoped<IEventAnnotationStore, EventAnnotationStore>();
+        services.AddScoped<IRatingStore, RatingStore>();
         services.AddScoped<IDataScopeService, DataScopeService>();
 
         return services;

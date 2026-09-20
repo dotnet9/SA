@@ -208,13 +208,15 @@ public class TrendPipelineTests : IClassFixture<TrendApiFactory>
         var events = modules.Single(m => m.GetProperty("key").GetString() == "events");
         Assert.Equal("ready", events.GetProperty("status").GetString());
 
-        // 尚未接入的模块必须显式标注，不允许出现空卡或假数字
+        // 八个模块已全部接入：其中「风险与舆情」由本地数据计算（无需采集源），
+        // 「机构评级」由替身源提供确定性数据，因此这两张卡也应当是就绪状态
         foreach (var key in new[] { "risk", "rating" })
         {
             var module = modules.Single(m => m.GetProperty("key").GetString() == key);
-            Assert.Equal("collecting", module.GetProperty("status").GetString());
-            Assert.Equal(0, module.GetProperty("kpis").GetArrayLength());
+            Assert.Equal("ready", module.GetProperty("status").GetString());
         }
+
+        Assert.All(modules, module => Assert.NotEqual("collecting", module.GetProperty("status").GetString()));
 
         // 行情条来自全市场快照
         var profile = overview.GetProperty("profile");
@@ -281,6 +283,12 @@ public sealed class TrendApiFactory : WebApplicationFactory<Program>
         await provider.GetRequiredService<BenchmarkDailyJob>().RunAsync();
         await provider.GetRequiredService<DailyKlineJob>().RunIncrementalAsync(code);
         await provider.GetRequiredService<IndicatorJob>().RunAsync(code);
+
+        // 总览页的每张卡都有各自的数据来源，采集齐全才能验证「八个模块全部就绪」
+        await provider.GetRequiredService<FinanceJob>().RunAsync(code);
+        await provider.GetRequiredService<EquityJob>().RunAsync(code);
+        await provider.GetRequiredService<CapitalJob>().RunAsync(code);
+        await provider.GetRequiredService<RatingJob>().RunAsync(code);
     }
 
     /// <summary>
@@ -373,6 +381,7 @@ public sealed class TrendApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IEquitySource, FakeEquitySource>();
             services.AddSingleton<ICapitalSource, FakeCapitalSource>();
             services.AddSingleton<IFundFlowSource, FakeFundFlowSource>();
+            services.AddSingleton<IRatingSource, FakeRatingSource>();
         });
     }
 

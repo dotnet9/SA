@@ -4,6 +4,7 @@ using SA.Domain.Entities.Capital;
 using SA.Domain.Entities.Equity;
 using SA.Domain.Entities.Events;
 using SA.Domain.Entities.Finance;
+using SA.Domain.Entities.Rating;
 using SA.Domain.Entities.Identity;
 using SA.Domain.Entities.Market;
 using SA.Domain.Entities.System;
@@ -119,6 +120,9 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
 
     /// <summary>人工事件标注。</summary>
     public DbSet<EventAnnotation> EventAnnotations => Set<EventAnnotation>();
+
+    /// <summary>机构评级共识。</summary>
+    public DbSet<RatingConsensus> RatingConsensuses => Set<RatingConsensus>();
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -656,6 +660,29 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
                 nameof(MarginDetail.LoanVolume), nameof(MarginDetail.TotalBalance),
                 nameof(MarginDetail.FinanceBalanceRatio), nameof(MarginDetail.Close),
                 nameof(MarginDetail.ChangePercent)
+            })
+            {
+                entity.Property(property).HasConversion<double?>();
+            }
+        });
+
+        modelBuilder.Entity<RatingConsensus>(entity =>
+        {
+            entity.ToTable("RatingConsensus");
+            entity.HasKey(e => e.Code);
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.YearMark1).HasMaxLength(4);
+            entity.Property(e => e.YearMark2).HasMaxLength(4);
+            entity.Property(e => e.YearMark3).HasMaxLength(4);
+            entity.Property(e => e.YearMark4).HasMaxLength(4);
+            entity.Property(e => e.IndustryBoard).HasMaxLength(64);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+
+            foreach (var property in new[]
+            {
+                nameof(RatingConsensus.AimPriceMax), nameof(RatingConsensus.AimPriceMin),
+                nameof(RatingConsensus.Eps1), nameof(RatingConsensus.Eps2),
+                nameof(RatingConsensus.Eps3), nameof(RatingConsensus.Eps4)
             })
             {
                 entity.Property(property).HasConversion<double?>();

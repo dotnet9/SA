@@ -10,6 +10,8 @@ using SA.Application.Equity;
 using SA.Application.Events;
 using SA.Application.Finance;
 using SA.Application.Industry;
+using SA.Application.Rating;
+using SA.Application.Risk;
 using SA.Application.Search;
 using SA.Application.Services;
 using SA.Application.Stocks;
@@ -78,6 +80,8 @@ public static class DependencyInjection
         services.AddScoped<CapitalService>();
         services.AddScoped<IndustryService>();
         services.AddScoped<EventTimelineService>();
+        services.AddScoped<RatingService>();
+        services.AddScoped<RiskService>();
         services.AddScoped<DataScopeFilter>();
 
         return services;

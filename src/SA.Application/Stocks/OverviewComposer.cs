@@ -4,6 +4,8 @@ using SA.Application.Capital;
 using SA.Application.Equity;
 using SA.Application.Events;
 using SA.Application.Finance;
+using SA.Application.Rating;
+using SA.Application.Risk;
 using SA.Application.Industry;
 using SA.Application.Common;
 using SA.Application.Market;
@@ -34,7 +36,9 @@ public sealed class OverviewComposer(
     EquityService equity,
     CapitalService capital,
     IndustryService industry,
-    EventTimelineService events)
+    EventTimelineService events,
+    RatingService rating,
+    RiskService risk)
 {
     /// <summary>8 个模块的定义与顺序，与导航和原型矩阵页一致。</summary>
     private static readonly (string Key, string Name)[] Modules =
@@ -80,6 +84,8 @@ public sealed class OverviewComposer(
                 "capital" => await BuildCapitalCardAsync(code, name, cancellationToken).ConfigureAwait(false),
                 "industry" => await BuildIndustryCardAsync(code, name, cancellationToken).ConfigureAwait(false),
                 "events" => await BuildEventCardAsync(code, name, cancellationToken).ConfigureAwait(false),
+                "risk" => await BuildRiskCardAsync(code, name, cancellationToken).ConfigureAwait(false),
+                "rating" => await BuildRatingCardAsync(code, name, cancellationToken).ConfigureAwait(false),
                 _ => PendingCard(key, name)
             });
         }
@@ -99,7 +105,7 @@ public sealed class OverviewComposer(
             [
                 "口径：日线为前复权；行业为东财行业。",
                 "总览卡片的数字与各模块页共用同一数据源，模块页请求更细的序列数据。",
-                "已接入：趋势与价格结构、盈利与财务表现、投资与股权结构、资金与筹码、行业与同业对比、事件与影响；风险与机构评级按批次接入。"
+                "八个模块全部接入：趋势与价格结构、盈利与财务表现、投资与股权结构、资金与筹码、行业与同业对比、事件与影响、风险与舆情监控、机构评级与预测。"
             ]));
     }
 
@@ -521,6 +527,130 @@ public sealed class OverviewComposer(
             Thumb: thumb,
             Summary: dto.Events.Count == 0 ? null : $"最近 {dto.Events[0].Date}",
             Link: $"/stock/{code}/events");
+    }
+
+    /// <summary>
+    /// 风险卡：风险分与高风险项数。
+    /// </summary>
+    private async Task<ModuleCardDto> BuildRiskCardAsync(
+        string code,
+        string name,
+        CancellationToken cancellationToken)
+    {
+        var result = await risk.GetAsync(code, cancellationToken).ConfigureAwait(false);
+        if (!result.Ok || result.Value is null)
+        {
+            return new ModuleCardDto(
+                Key: "risk",
+                Name: name,
+                Status: result.Error == ErrorCode.DataNotReady ? "collecting" : "failed",
+                Tags: [],
+                Kpis: [],
+                Thumb: [],
+                Summary: result.Message,
+                Link: $"/stock/{code}/risk");
+        }
+
+        var dto = result.Value;
+        var high = dto.Items.Count(item => item.Level == "high");
+        var medium = dto.Items.Count(item => item.Level == "medium");
+
+        var kpis = new List<ModuleKpiDto>
+        {
+            new("风险分", $"{dto.Score}/100", dto.Grade == "高" ? "down" : dto.Grade == "中" ? "warn" : "neutral"),
+            new("风险等级", dto.Grade, dto.Grade == "高" ? "down" : dto.Grade == "中" ? "warn" : "neutral"),
+            new("高风险项", high.ToString(), high > 0 ? "down" : "neutral"),
+            new("中风险项", medium.ToString(), medium > 0 ? "warn" : "neutral")
+        };
+
+        // 缩略图：各项风险按权重画成序列（高 3 / 中 2 / 低 1），便于一眼看出集中在哪
+        var thumb = dto.Metrics.Select(metric => metric.Triggered ? 3m : 1m).ToList();
+
+        return new ModuleCardDto(
+            Key: "risk",
+            Name: name,
+            Status: "ready",
+            Tags: dto.Insights.Take(3).Select(text => new ModuleTagDto(text, ToneOf(text))).ToList(),
+            Kpis: kpis,
+            Thumb: thumb,
+            Summary: dto.Items.Count == 0 ? "未触发风险阈值" : $"最高等级：{dto.Grade}",
+            Link: $"/stock/{code}/risk");
+    }
+
+    /// <summary>
+    /// 机构评级卡：机构数、看多占比、目标价空间。
+    /// </summary>
+    private async Task<ModuleCardDto> BuildRatingCardAsync(
+        string code,
+        string name,
+        CancellationToken cancellationToken)
+    {
+        var result = await rating.GetAsync(code, cancellationToken).ConfigureAwait(false);
+        if (!result.Ok || result.Value is null)
+        {
+            return new ModuleCardDto(
+                Key: "rating",
+                Name: name,
+                Status: result.Error == ErrorCode.DataNotReady ? "collecting" : "failed",
+                Tags: [],
+                Kpis: [],
+                Thumb: [],
+                Summary: result.Message,
+                Link: $"/stock/{code}/rating");
+        }
+
+        var dto = result.Value;
+        var kpis = new List<ModuleKpiDto>
+        {
+            new("覆盖机构", dto.OrgNum.ToString(), "neutral")
+        };
+
+        if (dto.BullishRatio is { } ratio)
+        {
+            kpis.Add(new ModuleKpiDto("看多占比", $"{ratio:F1}%", ratio >= 70 ? "up" : ratio >= 50 ? "neutral" : "down"));
+        }
+
+        if (dto.AimPriceMax is { } max)
+        {
+            kpis.Add(new ModuleKpiDto(
+                "目标价上限",
+                $"{max:F2} 元",
+                dto.UpsideMax is >= 0 ? "up" : "down"));
+        }
+
+        if (dto.UpsideMax is { } upside)
+        {
+            kpis.Add(new ModuleKpiDto("相对现价空间", $"{upside:+0.00;-0.00}%", upside >= 0 ? "up" : "down"));
+        }
+
+        // 缩略图：评级分布（买入→卖出），让卡片一眼看出机构倾向
+        var thumb = dto.Buckets.Select(bucket => (decimal)bucket.Count).ToList();
+
+        return new ModuleCardDto(
+            Key: "rating",
+            Name: name,
+            Status: "ready",
+            Tags: dto.Insights.Take(3).Select(text => new ModuleTagDto(text, ToneOfRating(text))).ToList(),
+            Kpis: kpis,
+            Thumb: thumb,
+            Summary: dto.ConsensusLevel,
+            Link: $"/stock/{code}/rating");
+    }
+
+    /// <summary>评级结论的色调。</summary>
+    private static string ToneOfRating(string text)
+    {
+        if (text.Contains("看多", StringComparison.Ordinal) || text.Contains('+', StringComparison.Ordinal))
+        {
+            return "up";
+        }
+
+        if (text.Contains("低于现价", StringComparison.Ordinal) || text.Contains('−', StringComparison.Ordinal))
+        {
+            return "down";
+        }
+
+        return "neutral";
     }
 
     /// <summary>截断长文案（卡片空间有限，完整文案在模块页展示）。</summary>
