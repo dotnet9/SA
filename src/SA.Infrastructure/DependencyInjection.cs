@@ -170,6 +170,7 @@ public static class DependencyInjection
         services.AddScoped<ICapitalStore, CapitalStore>();
         services.AddScoped<IEventAnnotationStore, EventAnnotationStore>();
         services.AddScoped<IRatingStore, RatingStore>();
+        services.AddScoped<IAlertStore, AlertStore>();
         services.AddScoped<IDataScopeService, DataScopeService>();
 
         return services;

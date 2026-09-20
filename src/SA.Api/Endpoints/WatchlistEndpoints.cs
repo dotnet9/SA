@@ -6,6 +6,7 @@ using SA.Application.Watchlist;
 using SA.Contracts.Common;
 using SA.Contracts.Watchlist;
 using SA.Domain.Authorization;
+using SA.Domain.Entities.Identity;
 
 namespace SA.Api.Endpoints;
 
@@ -202,13 +203,4 @@ public static class WatchlistEndpoints
 
     private static int Quota(PermissionService.ResolvedPermissions resolved, string key) =>
         resolved.Quotas.TryGetValue(key, out var value) ? value : 0;
-}
-
-/// <summary>
-/// 操作级权限参数的键名（与详细设计 §3.1 的 <c>RoleQuota.QuotaKey</c> 一致）。
-/// </summary>
-internal static class QuotaKeys
-{
-    /// <summary>自选数量上限。</summary>
-    public const string WatchlistMax = "watchlist.max";
 }

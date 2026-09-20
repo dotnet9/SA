@@ -30,6 +30,8 @@ builder.Services.AddSignalR();
 builder.Services.AddSingleton<SA.Api.Hubs.SubscriptionRegistry>();
 builder.Services.AddSingleton<SA.Api.Hubs.PresenceTracker>();
 builder.Services.AddHostedService<SA.Api.Realtime.QuotePushService>();
+// 提醒评估：按固定节拍评估启用中的规则，触发即写通知并经 SignalR 推送
+builder.Services.AddHostedService<SA.Api.Realtime.AlertEvaluationService>();
 builder.Services.AddSaDataPaths(builder.Configuration, builder.Environment.ContentRootPath);
 builder.Services.AddSaApplication(builder.Configuration);
 builder.Services.AddSaMarket(builder.Configuration);
@@ -110,6 +112,7 @@ app.MapIndustryEndpoints();
 app.MapEventEndpoints();
 app.MapRatingEndpoints();
 app.MapRiskEndpoints();
+app.MapAlertEndpoints();
 app.MapWatchlistEndpoints();
 
 // 实时行情只推自选股，按连接节流（详细设计 §7）

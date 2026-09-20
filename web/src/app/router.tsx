@@ -68,6 +68,16 @@ const StockRatingPage = lazy(() =>
   import('@/features/rating/StockRatingPage').then((module) => ({ default: module.StockRatingPage }))
 );
 
+/** 提醒规则。 */
+const AlertsPage = lazy(() =>
+  import('@/features/alerts/AlertsPage').then((module) => ({ default: module.AlertsPage }))
+);
+
+/** 通知中心。 */
+const NotificationsPage = lazy(() =>
+  import('@/features/alerts/NotificationsPage').then((module) => ({ default: module.NotificationsPage }))
+);
+
 /** 自选股（含实时推送）。 */
 const WatchlistPage = lazy(() =>
   import('@/features/watchlist/WatchlistPage').then((module) => ({ default: module.WatchlistPage }))
@@ -279,7 +289,9 @@ export const router = createBrowserRouter([
         path: 'alerts',
         element: (
           <RequireFunctionPoint codes={['alert.manage']}>
-            <PlaceholderPage title="提醒规则" batch="第 11 批" />
+            <Suspense fallback={<RouteFallback />}>
+              <AlertsPage />
+            </Suspense>
           </RequireFunctionPoint>
         )
       },
@@ -287,7 +299,9 @@ export const router = createBrowserRouter([
         path: 'notifications',
         element: (
           <RequireFunctionPoint codes={['notify.view']}>
-            <PlaceholderPage title="通知中心" batch="第 11 批" />
+            <Suspense fallback={<RouteFallback />}>
+              <NotificationsPage />
+            </Suspense>
           </RequireFunctionPoint>
         )
       },

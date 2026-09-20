@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SA.Domain.Entities.Collect;
+using SA.Domain.Entities.Alerts;
 using SA.Domain.Entities.Capital;
 using SA.Domain.Entities.Equity;
 using SA.Domain.Entities.Events;
@@ -123,6 +124,12 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
 
     /// <summary>机构评级共识。</summary>
     public DbSet<RatingConsensus> RatingConsensuses => Set<RatingConsensus>();
+
+    /// <summary>提醒规则。</summary>
+    public DbSet<AlertRule> AlertRules => Set<AlertRule>();
+
+    /// <summary>站内通知。</summary>
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -664,6 +671,39 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
             {
                 entity.Property(property).HasConversion<double?>();
             }
+        });
+
+        modelBuilder.Entity<AlertRule>(entity =>
+        {
+            entity.ToTable("AlertRule");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasMaxLength(64);
+            entity.Property(e => e.UserId).HasMaxLength(64).IsRequired();
+            entity.Property(e => e.Code).HasMaxLength(16).IsRequired();
+            entity.Property(e => e.RuleType).HasMaxLength(32).IsRequired();
+            entity.Property(e => e.Note).HasMaxLength(128);
+            entity.Property(e => e.Threshold).HasConversion<double?>();
+            entity.Property(e => e.CreatedAt).HasConversion(timeConverter);
+            entity.Property(e => e.LastTriggeredAt).HasConversion(nullableTimeConverter);
+            entity.HasIndex(e => new { e.UserId, e.Code });
+            entity.HasIndex(e => e.Enabled);
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.ToTable("Notification");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).HasMaxLength(64).IsRequired();
+            entity.Property(e => e.Title).HasMaxLength(160).IsRequired();
+            entity.Property(e => e.Body).HasMaxLength(1024).IsRequired();
+            entity.Property(e => e.Level).HasMaxLength(8).IsRequired();
+            entity.Property(e => e.Code).HasMaxLength(16);
+            // 规则删除后通知保留（历史可回溯），因此这里不建外键约束
+            entity.Property(e => e.RuleId).HasMaxLength(64);
+            entity.Property(e => e.CreatedAt).HasConversion(timeConverter);
+            entity.HasIndex(e => new { e.UserId, e.IsRead });
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<RatingConsensus>(entity =>

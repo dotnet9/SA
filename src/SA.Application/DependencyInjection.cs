@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using SA.Application.Abstractions;
 using SA.Application.Analysis;
+using SA.Application.Alerts;
 using SA.Application.Auth;
 using SA.Application.Authorization;
 using SA.Application.Market;
@@ -82,6 +83,7 @@ public static class DependencyInjection
         services.AddScoped<EventTimelineService>();
         services.AddScoped<RatingService>();
         services.AddScoped<RiskService>();
+        services.AddScoped<AlertService>();
         services.AddScoped<DataScopeFilter>();
 
         return services;
