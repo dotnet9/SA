@@ -53,6 +53,25 @@ public static class MarketCodes
     public static string SecId(string code) => $"{MarketOf(code)}.{code.Trim()}";
 
     /// <summary>
+    /// 拼出带市场后缀的 <c>SECUCODE</c>，形如 <c>300750.SZ</c>。
+    /// </summary>
+    /// <remarks>
+    /// 十大股东等 F10 报表只认这种形式：用纯代码过滤会静默返回空（实测）。
+    /// 后缀按交易所（北交所为 <c>.BJ</c>），而不是按「深市/沪市板块」。
+    /// </remarks>
+    public static string SecUCode(string code)
+    {
+        var trimmed = code.Trim();
+
+        if (HasPrefix(trimmed, BeijingPrefixes))
+        {
+            return $"{trimmed}.BJ";
+        }
+
+        return MarketOf(trimmed) == 1 ? $"{trimmed}.SH" : $"{trimmed}.SZ";
+    }
+
+    /// <summary>
     /// 由代码推导板块名（与需求规格 §5.3 的 Board 枚举一致）。
     /// </summary>
     public static string BoardOf(string code)

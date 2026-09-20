@@ -89,7 +89,8 @@ export const donut: ChartFactory<readonly DonutSlice[], DonutOptions> = (h, data
           name: slice.name,
           value: slice.value,
           itemStyle: {
-            color: slice.color ?? (slice.tone ? h.tone(slice.tone) : pal[index % pal.length])
+            // 颜色可能来自数据（如 'var(--chart-1)'）：必须解析成具体色值，ECharts 不认 CSS 变量
+            color: h.resolveColor(slice.color, slice.tone ? h.tone(slice.tone) : pal[index % pal.length])
           }
         }))
       }

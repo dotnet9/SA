@@ -61,13 +61,13 @@ export const combo: ChartFactory<ComboOptions> = (h, cfg) => {
     data: bar.color
       ? [...bar.data]
       : bar.data.map((value) => ({ value, itemStyle: { color: value >= 0 ? h.up() : h.down(), opacity: 0.85 } })),
-    itemStyle: bar.color ? { color: bar.color, opacity: 0.85 } : undefined,
+    itemStyle: bar.color ? { color: h.resolveColor(bar.color), opacity: 0.85 } : undefined,
     ...(index === 0 && !bar.color ? {} : {})
   }));
 
   series.push(
     ...lines.map((line, index) => {
-      const color = line.color ?? pal[index % pal.length];
+      const color = h.resolveColor(line.color, pal[index % pal.length]);
       return {
         name: line.name,
         type: 'line',

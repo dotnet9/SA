@@ -38,6 +38,11 @@ const StockTrendPage = lazy(() =>
   import('@/features/stock/StockTrendPage').then((module) => ({ default: module.StockTrendPage }))
 );
 
+/** 投资与股权结构。 */
+const StockEquityPage = lazy(() =>
+  import('@/features/equity/StockEquityPage').then((module) => ({ default: module.StockEquityPage }))
+);
+
 /** 自选股（含实时推送）。 */
 const WatchlistPage = lazy(() =>
   import('@/features/watchlist/WatchlistPage').then((module) => ({ default: module.WatchlistPage }))
@@ -145,6 +150,8 @@ function StockModulePage() {
           <StockTrendPage />
         ) : module === 'finance' ? (
           <StockFinancePage />
+        ) : module === 'equity' ? (
+          <StockEquityPage />
         ) : (
           <PlaceholderPage title={`${name} · ${code}`} batch={batches[module] ?? '后续批次'} />
         )}

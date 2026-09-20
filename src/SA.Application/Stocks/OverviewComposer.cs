@@ -1,5 +1,6 @@
 using SA.Application.Abstractions;
 using SA.Application.Analysis;
+using SA.Application.Equity;
 using SA.Application.Finance;
 using SA.Application.Common;
 using SA.Application.Market;
@@ -26,7 +27,8 @@ public sealed class OverviewComposer(
     IInstrumentStore instruments,
     IQuoteSnapshotStore quotes,
     TrendAnalyzer trend,
-    FinanceService finance)
+    FinanceService finance,
+    EquityService equity)
 {
     /// <summary>8 个模块的定义与顺序，与导航和原型矩阵页一致。</summary>
     private static readonly (string Key, string Name)[] Modules =
@@ -68,6 +70,7 @@ public sealed class OverviewComposer(
             {
                 "trend" => await BuildTrendCardAsync(code, name, cancellationToken).ConfigureAwait(false),
                 "finance" => await BuildFinanceCardAsync(code, name, cancellationToken).ConfigureAwait(false),
+                "equity" => await BuildEquityCardAsync(code, name, cancellationToken).ConfigureAwait(false),
                 _ => PendingCard(key, name)
             });
         }
@@ -87,7 +90,7 @@ public sealed class OverviewComposer(
             [
                 "口径：日线为前复权；行业为东财行业。",
                 "总览卡片的数字与各模块页共用同一数据源，模块页请求更细的序列数据。",
-                "已接入：趋势与价格结构、盈利与财务表现；其余模块按批次接入，卡片会明确标注采集中。"
+                "已接入：趋势与价格结构、盈利与财务表现、投资与股权结构；其余模块按批次接入，卡片会明确标注采集中。"
             ]));
     }
 
@@ -246,6 +249,70 @@ public sealed class OverviewComposer(
                 ? null
                 : $"{dto.Latest.ReportType ?? dto.Latest.ReportDate}（{dto.Latest.ReportDate}）",
             Link: $"/stock/{code}/finance");
+    }
+
+    /// <summary>
+    /// 股权卡：股东集中度 / 股东户数 / 质押比例。
+    /// </summary>
+    private async Task<ModuleCardDto> BuildEquityCardAsync(
+        string code,
+        string name,
+        CancellationToken cancellationToken)
+    {
+        var result = await equity.GetAsync(code, cancellationToken).ConfigureAwait(false);
+        if (!result.Ok || result.Value is null)
+        {
+            return new ModuleCardDto(
+                Key: "equity",
+                Name: name,
+                Status: result.Error == ErrorCode.DataNotReady ? "collecting" : "failed",
+                Tags: [],
+                Kpis: [],
+                Thumb: [],
+                Summary: result.Message,
+                Link: $"/stock/{code}/equity");
+        }
+
+        var dto = result.Value;
+        var kpis = new List<ModuleKpiDto>();
+
+        if (dto.Latest?.TotalRatio is { } total)
+        {
+            kpis.Add(new ModuleKpiDto("前十大合计", $"{total:F2}%", total >= 50 ? "up" : "neutral"));
+        }
+
+        if (dto.HolderCounts.Count > 0)
+        {
+            var latestCount = dto.HolderCounts[^1];
+            kpis.Add(new ModuleKpiDto("股东户数", latestCount.HolderNum.ToString("N0"), "neutral"));
+
+            // 户数下降 = 筹码集中，用与涨跌无关的中性色调，仅在标签里说明方向
+            if (latestCount.Change is { } change)
+            {
+                kpis.Add(new ModuleKpiDto(
+                    "户数变化",
+                    $"{(change >= 0 ? "+" : string.Empty)}{change:N0}",
+                    change < 0 ? "up" : "down"));
+            }
+        }
+
+        if (dto.Pledge?.PledgeRatio is { } pledgeRatio)
+        {
+            kpis.Add(new ModuleKpiDto("质押比例", $"{pledgeRatio:F2}%", pledgeRatio >= 30 ? "down" : "neutral"));
+        }
+
+        // 缩略图用股东户数序列：户数趋势是这一页最直观的一条线
+        var thumb = dto.HolderCounts.Select(count => (decimal)count.HolderNum).ToList();
+
+        return new ModuleCardDto(
+            Key: "equity",
+            Name: name,
+            Status: "ready",
+            Tags: dto.Insights.Take(3).Select(text => new ModuleTagDto(text, ToneOf(text))).ToList(),
+            Kpis: kpis,
+            Thumb: thumb,
+            Summary: dto.Latest is null ? null : $"报告期 {dto.Latest.EndDate}",
+            Link: $"/stock/{code}/equity");
     }
 
     /// <summary>把结论文案映射到色调：含「下滑/负/不增利」为跌，含「增长/上升」为涨。</summary>

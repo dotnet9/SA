@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SA.Domain.Entities.Collect;
+using SA.Domain.Entities.Equity;
 using SA.Domain.Entities.Finance;
 using SA.Domain.Entities.Identity;
 using SA.Domain.Entities.Market;
@@ -89,6 +90,15 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
 
     /// <summary>业绩预告。</summary>
     public DbSet<EarningsForecast> EarningsForecasts => Set<EarningsForecast>();
+
+    /// <summary>十大股东（含流通口径）。</summary>
+    public DbSet<TopHolder> TopHolders => Set<TopHolder>();
+
+    /// <summary>股东户数。</summary>
+    public DbSet<HolderCount> HolderCounts => Set<HolderCount>();
+
+    /// <summary>股权质押。</summary>
+    public DbSet<PledgeStat> PledgeStats => Set<PledgeStat>();
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -469,6 +479,71 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
             {
                 nameof(EarningsForecast.NetProfitMin), nameof(EarningsForecast.NetProfitMax),
                 nameof(EarningsForecast.ChangeMin), nameof(EarningsForecast.ChangeMax)
+            })
+            {
+                entity.Property(property).HasConversion<double?>();
+            }
+        });
+
+        modelBuilder.Entity<TopHolder>(entity =>
+        {
+            entity.ToTable("TopHolder");
+            // 同一报告期下，全量口径与流通口径各自有排名
+            entity.HasKey(e => new { e.Code, e.EndDate, e.IsFreeFloat, e.Rank });
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.HolderName).HasMaxLength(128).IsRequired();
+            entity.Property(e => e.HoldChange).HasMaxLength(32);
+            entity.Property(e => e.HolderType).HasMaxLength(32);
+            entity.Property(e => e.SharesType).HasMaxLength(32);
+            entity.Property(e => e.EndDate).HasConversion(dateConverter);
+            entity.Property(e => e.NoticeDate).HasConversion(nullableDateConverter);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+
+            foreach (var property in new[]
+            {
+                nameof(TopHolder.HoldNum), nameof(TopHolder.HoldRatio),
+                nameof(TopHolder.FreeHoldRatio), nameof(TopHolder.MarketCap)
+            })
+            {
+                entity.Property(property).HasConversion<double?>();
+            }
+        });
+
+        modelBuilder.Entity<HolderCount>(entity =>
+        {
+            entity.ToTable("HolderCount");
+            entity.HasKey(e => new { e.Code, e.EndDate });
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.ChangeReason).HasMaxLength(128);
+            entity.Property(e => e.ReportName).HasMaxLength(32);
+            entity.Property(e => e.EndDate).HasConversion(dateConverter);
+            entity.Property(e => e.NoticeDate).HasConversion(nullableDateConverter);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+
+            foreach (var property in new[]
+            {
+                nameof(HolderCount.HolderNumRatio), nameof(HolderCount.AvgHoldNum),
+                nameof(HolderCount.AvgMarketCap), nameof(HolderCount.TotalMarketCap),
+                nameof(HolderCount.TotalShares)
+            })
+            {
+                entity.Property(property).HasConversion<double?>();
+            }
+        });
+
+        modelBuilder.Entity<PledgeStat>(entity =>
+        {
+            entity.ToTable("PledgeStat");
+            entity.HasKey(e => new { e.Code, e.TradeDate });
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.Industry).HasMaxLength(64);
+            entity.Property(e => e.TradeDate).HasConversion(dateConverter);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+
+            foreach (var property in new[]
+            {
+                nameof(PledgeStat.PledgeRatio), nameof(PledgeStat.PledgeSharesWan),
+                nameof(PledgeStat.PledgeMarketCapWan), nameof(PledgeStat.Year1ChangePercent)
             })
             {
                 entity.Property(property).HasConversion<double?>();

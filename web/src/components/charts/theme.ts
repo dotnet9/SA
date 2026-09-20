@@ -69,6 +69,22 @@ export function toneColor(tone: 'up' | 'down' | 'flat' | undefined): string {
   return flatColor();
 }
 
+/**
+ * 把 `var(--token)` 形式的颜色解析成具体色值。
+ *
+ * <b>ECharts 不认 CSS 变量引用</b>：传 `'var(--chart-1)'` 时它无法解析，会退回默认色
+ * （实测表现是环形图几乎整圈都是默认深色）。因此凡是颜色可能来自数据的地方都必须经过这里解析；
+ * 已经是 `#rrggbb` / `rgb()` / 具名颜色的直接原样返回。
+ */
+export function resolveColor(color: string | undefined, fallback?: string): string {
+  if (!color || color.trim().length === 0) {
+    return fallback ?? palette()[0];
+  }
+
+  const match = /^var\(\s*(--[A-Za-z0-9-]+)\s*\)$/.exec(color.trim());
+  return match ? cv(match[1]) : color;
+}
+
 /* ------------------------------------------------------------------
    通用片段
    ------------------------------------------------------------------ */
@@ -156,6 +172,7 @@ export interface ChartHelpers {
   down: typeof downColor;
   flat: typeof flatColor;
   tone: typeof toneColor;
+  resolveColor: typeof resolveColor;
   withAlpha: typeof withAlpha;
   tooltip: typeof tooltip;
   axisLine: typeof axisLine;
@@ -176,6 +193,7 @@ export function helpers(): ChartHelpers {
     down: downColor,
     flat: flatColor,
     tone: toneColor,
+    resolveColor,
     withAlpha,
     tooltip,
     axisLine,

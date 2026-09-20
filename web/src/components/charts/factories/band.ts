@@ -28,7 +28,7 @@ export const band: ChartFactory<BandOptions> = (h, cfg) => {
   }
 
   const unit = cfg.unit ?? '';
-  const lineColor = cfg.lineColor ?? h.palette()[0];
+  const lineColor = h.resolveColor(cfg.lineColor, h.palette()[0]);
 
   return {
     tooltip: h.tooltip({

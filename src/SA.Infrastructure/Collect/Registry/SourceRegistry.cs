@@ -26,6 +26,7 @@ public sealed class SourceRegistry
         ITradingCalendarSource calendar,
         IKlineSource kline,
         IFinanceSource finance,
+        IEquitySource equity,
         IEnumerable<IQuoteSnapshotSource> quoteSnapshots,
         IEnumerable<IProbeable> allSources)
     {
@@ -38,6 +39,7 @@ public sealed class SourceRegistry
         Calendar = calendar;
         Kline = kline;
         Finance = finance;
+        Equity = equity;
 
         // 注册顺序即降级顺序：主源在前
         QuoteSnapshots = quoteSnapshots.ToList();
@@ -70,6 +72,9 @@ public sealed class SourceRegistry
 
     /// <summary>财务报表源。</summary>
     public IFinanceSource Finance { get; }
+
+    /// <summary>股权结构源。</summary>
+    public IEquitySource Equity { get; }
 
     /// <summary>多标的快照源，按降级顺序排列（主源在前）。</summary>
     public IReadOnlyList<IQuoteSnapshotSource> QuoteSnapshots { get; }

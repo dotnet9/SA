@@ -91,6 +91,7 @@ public sealed class OnDemandHostedService(
         var dailyJob = provider.GetRequiredService<DailyKlineJob>();
         var indicatorJob = provider.GetRequiredService<IndicatorJob>();
         var financeJob = provider.GetRequiredService<FinanceJob>();
+        var equityJob = provider.GetRequiredService<EquityJob>();
 
         var succeeded = 0;
         foreach (var code in codes)
@@ -100,6 +101,7 @@ public sealed class OnDemandHostedService(
             await RunStepAsync(code, "日线", () => dailyJob.RunIncrementalAsync(code, cancellationToken)).ConfigureAwait(false);
             await RunStepAsync(code, "指标", () => indicatorJob.RunAsync(code, cancellationToken)).ConfigureAwait(false);
             await RunStepAsync(code, "财务", () => financeJob.RunAsync(code, cancellationToken)).ConfigureAwait(false);
+            await RunStepAsync(code, "股权", () => equityJob.RunAsync(code, cancellationToken)).ConfigureAwait(false);
             succeeded++;
         }
 

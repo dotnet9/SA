@@ -71,7 +71,7 @@ export const area: ChartFactory<AreaOptions> = (h, cfg) => {
       splitLine: h.splitLine()
     },
     series: series.map((item, index) => {
-      const color = item.color ?? pal[index % pal.length];
+      const color = h.resolveColor(item.color, pal[index % pal.length]);
       return {
         name: item.name,
         type: 'line',

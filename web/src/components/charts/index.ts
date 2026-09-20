@@ -19,4 +19,4 @@ export { gauge, type GaugeOptions } from './factories/gauge';
 
 export { useChart, type ChartFactory, type ChartOptions, type UseChartResult } from './useChart';
 export { default as echarts } from './echarts';
-export { cv, palette, upColor, downColor, flatColor, withAlpha, toneColor } from './theme';
+export { cv, palette, upColor, downColor, flatColor, withAlpha, toneColor, resolveColor } from './theme';
