@@ -9,33 +9,26 @@ using SA.Infrastructure.Collect.Http;
 namespace SA.Infrastructure.Collect.Adapters;
 
 /// <summary>
-/// 东方财富资金面数据（行情侧资金流 + 数据中心报表）。
+/// 东方财富个股资金流（行情侧 <c>push2his</c> 的 <c>stock/fflow/daykline</c>）。
 /// </summary>
 /// <remarks>
 /// <para>
-/// 个股资金流走 <c>push2</c> 的 <c>stock/fflow/daykline</c>，返回 <c>klines</c> 字符串数组，
 /// 字段序已在实体注释里用算术自洽核对（主力 = 大单 + 超大单，五档合计为 0）。
 /// </para>
 /// <para>
-/// 龙虎榜、大宗交易、两融、陆股通走数据中心报表，各自按代码过滤。
-/// 其中<b>陆股通是季频</b>，页面会明确标注，避免被当成逐日北向数据。
+/// 必须用 <c>push2his</c>（历史）主机：<c>push2</c> 上同名端点<b>只返回最新一天</b>
+/// （实测 <c>lmt=60</c> 仍只有 1 行），那样资金流趋势图就退化成一根柱子。
 /// </para>
 /// </remarks>
-public sealed class EastMoneyCapitalSource(CollectHttpClient http) : ICapitalSource
+public sealed class EastMoneyFundFlowSource(CollectHttpClient http) : IFundFlowSource
 {
-    private const string DataCenter = "https://datacenter-web.eastmoney.com/api/data/v1/get";
+    /// <summary>资金流字段序（与解析逻辑一一对应）。</summary>
+    private const string Fields = "fields1=f1,f2,f3,f7&fields2=f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61,f62,f63";
 
-    /// <summary>
-    /// 历史行情主机。<c>push2his</c> 提供序列数据，<c>push2</c> 只提供最新一天；
-    /// 资金流趋势必须走前者（与 K 线、指数日线同一主机）。
-    /// </summary>
-    private const string Push2HisBase = "https://push2his.eastmoney.com";
-
-    /// <summary>资金流字段序（与解析逻辑一一对应，改字段名时这里与解析同时改）。</summary>
-    private const string FundFlowFields = "fields1=f1,f2,f3,f7&fields2=f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61,f62,f63";
+    private const string BaseUrl = "https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get";
 
     /// <inheritdoc />
-    public string Name => "东方财富 · 资金面";
+    public string Name => "东方财富 · 个股资金流";
 
     /// <inheritdoc />
     public string Domains => "资金,筹码";
@@ -47,11 +40,7 @@ public sealed class EastMoneyCapitalSource(CollectHttpClient http) : ICapitalSou
         CancellationToken cancellationToken = default)
     {
         var take = Math.Clamp(days, 5, 250);
-
-        // 必须用 push2his（历史）主机：push2 上同名端点<b>只返回最新一天</b>（实测 lmt=60 仍只有 1 行），
-        // 那样资金流趋势图就退化成一根柱子。
-        var url = $"{Push2HisBase.TrimEnd('/')}/api/qt/stock/fflow/daykline/get" +
-                  $"?lmt={take}&klt=101&secid={MarketCodes.SecId(code)}&{FundFlowFields}";
+        var url = $"{BaseUrl}?lmt={take}&klt=101&secid={MarketCodes.SecId(code)}&{Fields}";
 
         using var document = await http.GetJsonAsync(url, Name, cancellationToken: cancellationToken).ConfigureAwait(false);
 
@@ -64,12 +53,50 @@ public sealed class EastMoneyCapitalSource(CollectHttpClient http) : ICapitalSou
             return [];
         }
 
-        return ParseFundFlow(code, klines.EnumerateArray()
-            .Select(element => element.GetString())
-            .Where(line => !string.IsNullOrWhiteSpace(line))
-            .Select(line => line!)
-            .ToList()).ToList();
+        return EastMoneyCapitalSource.ParseFundFlow(
+            code,
+            klines.EnumerateArray()
+                .Select(element => element.GetString())
+                .Where(line => !string.IsNullOrWhiteSpace(line))
+                .Select(line => line!)
+                .ToList()).ToList();
     }
+
+    /// <inheritdoc />
+    public async Task<SourceProbeResult> ProbeAsync(CancellationToken cancellationToken = default)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        try
+        {
+            var rows = await GetFundFlowAsync("300750", 5, cancellationToken).ConfigureAwait(false);
+            stopwatch.Stop();
+            return rows.Count > 0
+                ? SourceProbeResult.Success(stopwatch.ElapsedMilliseconds, 200, rows.Count)
+                : SourceProbeResult.Failure(stopwatch.ElapsedMilliseconds, 200, "未返回资金流");
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            return SourceProbeResult.Failure(stopwatch.ElapsedMilliseconds, (ex as CollectHttpException)?.StatusCode, ex.Message);
+        }
+    }
+}
+
+/// <summary>
+/// 东方财富资金面报表（数据中心主机：龙虎榜 / 大宗交易 / 两融明细 / 陆股通持股）。
+/// </summary>
+/// <remarks>
+/// 与个股资金流分成两个数据源（两台主机），因此其中一台不可用不会冷却掉另一台的数据。
+/// </remarks>
+public sealed class EastMoneyCapitalSource(CollectHttpClient http) : ICapitalSource
+{
+    private const string DataCenter = "https://datacenter-web.eastmoney.com/api/data/v1/get";
+
+    /// <inheritdoc />
+    public string Name => "东方财富 · 资金面报表";
+
+    /// <inheritdoc />
+    public string Domains => "资金,筹码";
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<BillboardRecord>> GetBillboardsAsync(
@@ -137,11 +164,11 @@ public sealed class EastMoneyCapitalSource(CollectHttpClient http) : ICapitalSou
         var stopwatch = Stopwatch.StartNew();
         try
         {
-            var rows = await GetFundFlowAsync("300750", 5, cancellationToken).ConfigureAwait(false);
+            var rows = await GetMarginDetailsAsync("300750", 5, cancellationToken).ConfigureAwait(false);
             stopwatch.Stop();
             return rows.Count > 0
                 ? SourceProbeResult.Success(stopwatch.ElapsedMilliseconds, 200, rows.Count)
-                : SourceProbeResult.Failure(stopwatch.ElapsedMilliseconds, 200, "未返回资金流");
+                : SourceProbeResult.Failure(stopwatch.ElapsedMilliseconds, 200, "未返回两融明细");
         }
         catch (Exception ex)
         {

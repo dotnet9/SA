@@ -2,6 +2,7 @@ using SA.Application.Abstractions;
 using SA.Application.Analysis;
 using SA.Application.Capital;
 using SA.Application.Equity;
+using SA.Application.Events;
 using SA.Application.Finance;
 using SA.Application.Industry;
 using SA.Application.Common;
@@ -32,7 +33,8 @@ public sealed class OverviewComposer(
     FinanceService finance,
     EquityService equity,
     CapitalService capital,
-    IndustryService industry)
+    IndustryService industry,
+    EventTimelineService events)
 {
     /// <summary>8 个模块的定义与顺序，与导航和原型矩阵页一致。</summary>
     private static readonly (string Key, string Name)[] Modules =
@@ -77,6 +79,7 @@ public sealed class OverviewComposer(
                 "equity" => await BuildEquityCardAsync(code, name, cancellationToken).ConfigureAwait(false),
                 "capital" => await BuildCapitalCardAsync(code, name, cancellationToken).ConfigureAwait(false),
                 "industry" => await BuildIndustryCardAsync(code, name, cancellationToken).ConfigureAwait(false),
+                "events" => await BuildEventCardAsync(code, name, cancellationToken).ConfigureAwait(false),
                 _ => PendingCard(key, name)
             });
         }
@@ -96,7 +99,7 @@ public sealed class OverviewComposer(
             [
                 "口径：日线为前复权；行业为东财行业。",
                 "总览卡片的数字与各模块页共用同一数据源，模块页请求更细的序列数据。",
-                "已接入：趋势与价格结构、盈利与财务表现、投资与股权结构、资金与筹码、行业与同业对比；其余模块按批次接入，卡片会明确标注采集中。"
+                "已接入：趋势与价格结构、盈利与财务表现、投资与股权结构、资金与筹码、行业与同业对比、事件与影响；风险与机构评级按批次接入。"
             ]));
     }
 
@@ -462,6 +465,67 @@ public sealed class OverviewComposer(
 
         return "neutral";
     }
+
+    /// <summary>
+    /// 事件与影响卡：事件条数、近期高影响事件。
+    /// </summary>
+    private async Task<ModuleCardDto> BuildEventCardAsync(
+        string code,
+        string name,
+        CancellationToken cancellationToken)
+    {
+        var result = await events.GetAsync(code, canAnnotate: false, cancellationToken).ConfigureAwait(false);
+        if (!result.Ok || result.Value is null)
+        {
+            return new ModuleCardDto(
+                Key: "events",
+                Name: name,
+                Status: result.Error == ErrorCode.DataNotReady ? "collecting" : "failed",
+                Tags: [],
+                Kpis: [],
+                Thumb: [],
+                Summary: result.Message,
+                Link: $"/stock/{code}/events");
+        }
+
+        var dto = result.Value;
+        var up = dto.Events.Count(item => item.Tone == "up");
+        var down = dto.Events.Count(item => item.Tone == "down");
+
+        var kpis = new List<ModuleKpiDto>
+        {
+            new("事件总数", dto.Events.Count.ToString(), "neutral"),
+            new("偏积极", up.ToString(), "up"),
+            new("偏消极", down.ToString(), "down")
+        };
+
+        if (dto.Events.Count > 0)
+        {
+            kpis.Add(new ModuleKpiDto("最近事件", Shorten(dto.Events[0].Title, 12), dto.Events[0].Tone));
+        }
+
+        // 缩略图：按时间顺序把事件影响强度画成序列（正为积极、负为消极）
+        var thumb = dto.Events
+            .OrderBy(item => item.Date, StringComparer.Ordinal)
+            .TakeLast(30)
+            .Select(item => item.Tone == "down" ? -item.Impact : item.Tone == "up" ? item.Impact : 0)
+            .Select(value => (decimal)value)
+            .ToList();
+
+        return new ModuleCardDto(
+            Key: "events",
+            Name: name,
+            Status: "ready",
+            Tags: dto.Insights.Take(3).Select(text => new ModuleTagDto(text, ToneOf(text))).ToList(),
+            Kpis: kpis,
+            Thumb: thumb,
+            Summary: dto.Events.Count == 0 ? null : $"最近 {dto.Events[0].Date}",
+            Link: $"/stock/{code}/events");
+    }
+
+    /// <summary>截断长文案（卡片空间有限，完整文案在模块页展示）。</summary>
+    private static string Shorten(string value, int max) =>
+        value.Length <= max ? value : $"{value[..max]}…";
 
     /// <summary>把结论文案映射到色调：含「下滑/负/不增利」为跌，含「增长/上升」为涨。</summary>
     private static string ToneOf(string text) =>

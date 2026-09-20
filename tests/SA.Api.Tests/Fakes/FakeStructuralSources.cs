@@ -92,11 +92,11 @@ internal sealed class FakeEquitySource : IEquitySource
 }
 
 /// <summary>
-/// 资金面源的测试替身：返回确定性样本。
+/// 个股资金流源的测试替身（行情侧主机，与报表分开）。
 /// </summary>
-internal sealed class FakeCapitalSource : ICapitalSource
+internal sealed class FakeFundFlowSource : IFundFlowSource
 {
-    public string Name => "测试源 · 资金面";
+    public string Name => "测试源 · 个股资金流";
 
     public string Domains => "资金,筹码";
 
@@ -125,6 +125,19 @@ internal sealed class FakeCapitalSource : ICapitalSource
 
         return Task.FromResult<IReadOnlyList<FundFlowDaily>>(rows);
     }
+
+    public Task<SourceProbeResult> ProbeAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(SourceProbeResult.Success(1, 200, 20));
+}
+
+/// <summary>
+/// 资金面报表源的测试替身：返回确定性样本。
+/// </summary>
+internal sealed class FakeCapitalSource : ICapitalSource
+{
+    public string Name => "测试源 · 资金面";
+
+    public string Domains => "资金,筹码";
 
     public Task<IReadOnlyList<BillboardRecord>> GetBillboardsAsync(
         string code,

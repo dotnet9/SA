@@ -8,6 +8,7 @@ import * as echarts from 'echarts/core';
 import {
   BarChart,
   CandlestickChart,
+  GraphChart,
   HeatmapChart,
   LineChart,
   PieChart,
@@ -32,6 +33,7 @@ echarts.use([
   TreemapChart,
   HeatmapChart,
   CandlestickChart,
+  GraphChart,
   GridComponent,
   TooltipComponent,
   LegendComponent,

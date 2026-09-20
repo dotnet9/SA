@@ -16,6 +16,7 @@ export { kline, type Candle, type KlineData, type KlineOptions } from './factori
 export { posneg, type PosNegOptions } from './factories/posneg';
 export { band, type BandOptions } from './factories/band';
 export { gauge, type GaugeOptions } from './factories/gauge';
+export { graph, type GraphNode, type GraphEdge, type GraphOptions } from './factories/graph';
 
 export { useChart, type ChartFactory, type ChartOptions, type UseChartResult } from './useChart';
 export { default as echarts } from './echarts';

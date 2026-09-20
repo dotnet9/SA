@@ -53,6 +53,11 @@ const StockIndustryPage = lazy(() =>
   import('@/features/industry/StockIndustryPage').then((module) => ({ default: module.StockIndustryPage }))
 );
 
+/** 事件与影响（含四种拓扑图）。 */
+const StockEventsPage = lazy(() =>
+  import('@/features/events/StockEventsPage').then((module) => ({ default: module.StockEventsPage }))
+);
+
 /** 自选股（含实时推送）。 */
 const WatchlistPage = lazy(() =>
   import('@/features/watchlist/WatchlistPage').then((module) => ({ default: module.WatchlistPage }))
@@ -166,6 +171,8 @@ function StockModulePage() {
           <StockCapitalPage />
         ) : module === 'industry' ? (
           <StockIndustryPage />
+        ) : module === 'events' ? (
+          <StockEventsPage />
         ) : (
           <PlaceholderPage title={`${name} · ${code}`} batch={batches[module] ?? '后续批次'} />
         )}

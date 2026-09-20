@@ -28,6 +28,7 @@ public sealed class SourceRegistry
         IFinanceSource finance,
         IEquitySource equity,
         ICapitalSource capital,
+        IFundFlowSource fundFlow,
         IEnumerable<IQuoteSnapshotSource> quoteSnapshots,
         IEnumerable<IProbeable> allSources)
     {
@@ -42,6 +43,7 @@ public sealed class SourceRegistry
         Finance = finance;
         Equity = equity;
         Capital = capital;
+        FundFlow = fundFlow;
 
         // 注册顺序即降级顺序：主源在前
         QuoteSnapshots = quoteSnapshots.ToList();
@@ -78,8 +80,11 @@ public sealed class SourceRegistry
     /// <summary>股权结构源。</summary>
     public IEquitySource Equity { get; }
 
-    /// <summary>资金面源。</summary>
+    /// <summary>资金面报表源（数据中心主机）。</summary>
     public ICapitalSource Capital { get; }
+
+    /// <summary>个股资金流源（行情侧主机）。</summary>
+    public IFundFlowSource FundFlow { get; }
 
     /// <summary>多标的快照源，按降级顺序排列（主源在前）。</summary>
     public IReadOnlyList<IQuoteSnapshotSource> QuoteSnapshots { get; }

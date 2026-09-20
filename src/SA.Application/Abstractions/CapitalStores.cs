@@ -3,13 +3,16 @@ using SA.Domain.Entities.Capital;
 namespace SA.Application.Abstractions;
 
 /// <summary>
-/// 资金面与筹码数据源：个股资金流、龙虎榜、大宗交易、两融明细、陆股通持股。
+/// 个股资金流源（行情侧主机，逐日序列）。
 /// </summary>
 /// <remarks>
-/// 五个数据集来自两类端点（行情侧 <c>push2</c> 与数据中心报表），披露频率从逐日到季度不等，
-/// 因此各自独立取数、独立失败：某一路不可用时页面按区块降级，而不是整页没有数据。
+/// <b>与 <see cref="ICapitalSource"/> 分开的原因</b>：两者走的是完全不同的上游主机
+/// （资金流在 <c>push2his</c>，报表在 <c>datacenter-web</c>）。
+/// 数据源状态与冷却窗口是按「数据源」生效的，若把两者合成一个源，
+/// 一旦行情侧主机不可用，报表侧的请求也会被一起冷却掉——表现为「资金面页只显示一半数据」。
+/// 拆开之后，一条链路出问题只影响它自己。
 /// </remarks>
-public interface ICapitalSource : IProbeable
+public interface IFundFlowSource : IProbeable
 {
     /// <summary>取个股逐日资金流（按日期升序）。</summary>
     /// <param name="code">证券代码。</param>
@@ -19,7 +22,17 @@ public interface ICapitalSource : IProbeable
         string code,
         int days = 60,
         CancellationToken cancellationToken = default);
+}
 
+/// <summary>
+/// 资金面与筹码报表源（数据中心主机：龙虎榜、大宗交易、两融明细、陆股通持股）。
+/// </summary>
+/// <remarks>
+/// 四个数据集来自同一主机的四张报表，披露频率从逐日到季度不等，
+/// 因此各自独立取数、独立失败：某一路不可用时页面按区块降级，而不是整页没有数据。
+/// </remarks>
+public interface ICapitalSource : IProbeable
+{
     /// <summary>取龙虎榜上榜记录（按日期倒序）。</summary>
     Task<IReadOnlyList<BillboardRecord>> GetBillboardsAsync(
         string code,

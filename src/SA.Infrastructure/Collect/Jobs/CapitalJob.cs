@@ -33,13 +33,15 @@ public sealed class CapitalJob(
     /// <returns>写入的数据项数；失败或无数据返回 0。</returns>
     public async Task<int> RunAsync(string code, CancellationToken cancellationToken = default)
     {
+        // 资金流走的是行情侧主机，与报表不是同一个源，因此单独执行：
+        // 行情侧不可用时不会把报表侧的冷却窗口一起触发
         var flows = await executor.ExecuteAsync(
             $"{TaskName}-flow:{code}",
-            registry.Capital,
+            registry.FundFlow,
             "主源",
             async ct =>
             {
-                var rows = await registry.Capital.GetFundFlowAsync(code, FundFlowDays, ct).ConfigureAwait(false);
+                var rows = await registry.FundFlow.GetFundFlowAsync(code, FundFlowDays, ct).ConfigureAwait(false);
                 return rows.Count == 0 ? (0, 0) : (await store.UpsertFundFlowAsync(rows, ct).ConfigureAwait(false), rows.Count);
             },
             cancellationToken).ConfigureAwait(false);

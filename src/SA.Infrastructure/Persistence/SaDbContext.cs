@@ -2,6 +2,7 @@
 using SA.Domain.Entities.Collect;
 using SA.Domain.Entities.Capital;
 using SA.Domain.Entities.Equity;
+using SA.Domain.Entities.Events;
 using SA.Domain.Entities.Finance;
 using SA.Domain.Entities.Identity;
 using SA.Domain.Entities.Market;
@@ -115,6 +116,9 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
 
     /// <summary>陆股通持股。</summary>
     public DbSet<NorthboundHolding> NorthboundHoldings => Set<NorthboundHolding>();
+
+    /// <summary>人工事件标注。</summary>
+    public DbSet<EventAnnotation> EventAnnotations => Set<EventAnnotation>();
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -656,6 +660,19 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
             {
                 entity.Property(property).HasConversion<double?>();
             }
+        });
+
+        modelBuilder.Entity<EventAnnotation>(entity =>
+        {
+            entity.ToTable("EventAnnotation");
+            entity.HasKey(e => new { e.Code, e.EventKey });
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.EventKey).HasMaxLength(160);
+            entity.Property(e => e.Tone).HasMaxLength(8).IsRequired();
+            entity.Property(e => e.Note).HasMaxLength(256);
+            entity.Property(e => e.UserId).HasMaxLength(64).IsRequired();
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+            entity.HasIndex(e => e.UpdatedAt);
         });
 
         modelBuilder.Entity<NorthboundHolding>(entity =>

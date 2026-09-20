@@ -299,6 +299,9 @@ public sealed class FinanceApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IMarketFundFlowSource, FakeMarketFundFlowSource>();
             services.AddSingleton<ITradingCalendarSource, FakeTradingCalendarSource>();
             services.AddSingleton<IFinanceSource, FakeFinanceSource>();
+            services.AddSingleton<ICapitalSource, FakeCapitalSource>();
+            services.AddSingleton<IFundFlowSource, FakeFundFlowSource>();
+            services.AddSingleton<IEquitySource, FakeEquitySource>();
         });
     }
 

@@ -204,8 +204,12 @@ public class TrendPipelineTests : IClassFixture<TrendApiFactory>
         var industry = modules.Single(m => m.GetProperty("key").GetString() == "industry");
         Assert.Equal("ready", industry.GetProperty("status").GetString());
 
+        // 「事件与影响」同样由本地已落地的数据派生，因此也应就绪
+        var events = modules.Single(m => m.GetProperty("key").GetString() == "events");
+        Assert.Equal("ready", events.GetProperty("status").GetString());
+
         // 尚未接入的模块必须显式标注，不允许出现空卡或假数字
-        foreach (var key in new[] { "events", "risk", "rating" })
+        foreach (var key in new[] { "risk", "rating" })
         {
             var module = modules.Single(m => m.GetProperty("key").GetString() == key);
             Assert.Equal("collecting", module.GetProperty("status").GetString());
@@ -368,6 +372,7 @@ public sealed class TrendApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IFinanceSource, FakeFinanceSource>();
             services.AddSingleton<IEquitySource, FakeEquitySource>();
             services.AddSingleton<ICapitalSource, FakeCapitalSource>();
+            services.AddSingleton<IFundFlowSource, FakeFundFlowSource>();
         });
     }
 
