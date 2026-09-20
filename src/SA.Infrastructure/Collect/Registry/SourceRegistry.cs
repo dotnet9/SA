@@ -24,6 +24,7 @@ public sealed class SourceRegistry
         IMarginMarketSource margin,
         IMarketFundFlowSource marketFundFlow,
         ITradingCalendarSource calendar,
+        IKlineSource kline,
         IEnumerable<IQuoteSnapshotSource> quoteSnapshots,
         IEnumerable<IProbeable> allSources)
     {
@@ -34,6 +35,7 @@ public sealed class SourceRegistry
         Margin = margin;
         MarketFundFlow = marketFundFlow;
         Calendar = calendar;
+        Kline = kline;
 
         // 注册顺序即降级顺序：主源在前
         QuoteSnapshots = quoteSnapshots.ToList();
@@ -60,6 +62,9 @@ public sealed class SourceRegistry
 
     /// <summary>交易日历源。</summary>
     public ITradingCalendarSource Calendar { get; }
+
+    /// <summary>K 线源（日 / 周 / 月，指定复权口径）。</summary>
+    public IKlineSource Kline { get; }
 
     /// <summary>多标的快照源，按降级顺序排列（主源在前）。</summary>
     public IReadOnlyList<IQuoteSnapshotSource> QuoteSnapshots { get; }

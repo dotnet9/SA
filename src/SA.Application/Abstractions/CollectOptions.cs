@@ -58,6 +58,27 @@ public sealed class CollectOptions
     /// </summary>
     public int CooldownMinutes { get; set; } = 5;
 
+    /// <summary>
+    /// 历史回补的回看天数（默认 1 年，实施计划 §2 决策 5）。
+    /// </summary>
+    public int BackfillLookbackDays { get; set; } = 365;
+
+    /// <summary>
+    /// 单轮回补的标的上限。
+    /// </summary>
+    /// <remarks>
+    /// 全市场 1 年日线约 5,900 个请求，按 4 req/s 需要约 25 分钟，不可能也不该在
+    /// 一次调度周期内跑完。因此每轮只处理固定数量，其余由游标在后续轮次继续，
+    /// 节奏由 <see cref="BackfillIntervalMinutes"/> 控制。
+    /// </remarks>
+    public int BackfillCodesPerRun { get; set; } = 400;
+
+    /// <summary>回补轮的间隔（分钟）。</summary>
+    public int BackfillIntervalMinutes { get; set; } = 10;
+
+    /// <summary>回补优先级：成交额前多少名排在全市场之前（指数始终最优先）。</summary>
+    public int BackfillPriorityCodes { get; set; } = 300;
+
     /// <summary>是否启用采集宿主服务。测试与纯排查场景可关闭。</summary>
     public bool Enabled { get; set; } = true;
 

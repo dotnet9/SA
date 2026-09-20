@@ -1,4 +1,4 @@
-using SA.Application.Abstractions;
+﻿using SA.Application.Abstractions;
 using SA.Application.Common;
 using SA.Contracts.Common;
 using SA.Contracts.Market;
@@ -32,8 +32,7 @@ public sealed class MarketService(
     ISectorStore sectorStore,
     IMarketStatStore stats,
     ICollectStatusStore collectStatus,
-    ITradingCalendarStore calendar,
-    CollectOptions options)
+    ITradingCalendarStore calendar)
 {
     /// <summary>榜单默认取前多少名（与原型的 6 行表格兼容，界面可要求更多）。</summary>
     public const int DefaultRankingSize = 8;

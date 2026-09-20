@@ -37,6 +37,9 @@ public sealed class SchedulerHostedService(
     /// <summary>非交易日的轮询间隔（只需偶尔确认是否进入新的交易日）。</summary>
     private static readonly TimeSpan IdleInterval = TimeSpan.FromMinutes(30);
 
+    /// <summary>单轮按需采集处理的标的数上限。</summary>
+    private const int MaxOnDemandPerCycle = 3;
+
     private DateTimeOffset _lastMarketStatAt = DateTimeOffset.MinValue;
     private DateTimeOffset _lastUniverseAt = DateTimeOffset.MinValue;
     private DateTimeOffset _lastCalendarAt = DateTimeOffset.MinValue;
@@ -168,6 +171,51 @@ public sealed class SchedulerHostedService(
         {
             await RunAsync("交易日历", () => provider.GetRequiredService<TradingCalendarJob>().RunAsync(cancellationToken)).ConfigureAwait(false);
             _lastCalendarAt = now;
+        }
+
+        // 按需采集放在最后：它服务的是「用户正在等的那一只」，但不能挤掉全市场数据的刷新
+        await RunOnDemandAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// 处理按需采集队列：用户正在看的标的必须优先补，否则「首次打开个股页」会一直停在采集中。
+    /// </summary>
+    /// <remarks>
+    /// 每轮最多处理 <see cref="MaxOnDemandPerCycle"/> 只，避免一次点开很多标的把一轮调度拖住；
+    /// 未处理完的留在队列里，下一轮继续。
+    /// </remarks>
+    private async Task RunOnDemandAsync(CancellationToken cancellationToken)
+    {
+        using var scope = scopeFactory.CreateScope();
+        var provider = scope.ServiceProvider;
+
+        var queue = provider.GetRequiredService<IOnDemandQueue>();
+        var codes = queue.Drain(MaxOnDemandPerCycle);
+        if (codes.Count == 0)
+        {
+            return;
+        }
+
+        logger.LogInformation("按需采集：本轮处理 {Count} 只（排队 {Pending} 只）", codes.Count, queue.PendingCount);
+
+        var dailyJob = provider.GetRequiredService<DailyKlineJob>();
+        var indicatorJob = provider.GetRequiredService<IndicatorJob>();
+
+        foreach (var code in codes)
+        {
+            try
+            {
+                await dailyJob.RunIncrementalAsync(code, cancellationToken).ConfigureAwait(false);
+                await indicatorJob.RunAsync(code, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "按需采集 {Code} 失败，留待下一轮", code);
+            }
         }
     }
 

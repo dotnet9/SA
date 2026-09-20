@@ -1,11 +1,13 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SA.Application.Abstractions;
+using SA.Application.Analysis;
 using SA.Application.Auth;
 using SA.Application.Authorization;
 using SA.Application.Market;
 using SA.Application.Search;
 using SA.Application.Services;
+using SA.Application.Stocks;
 
 namespace SA.Application;
 
@@ -59,6 +61,11 @@ public static class DependencyInjection
 
         services.AddScoped<MarketService>();
         services.AddScoped<SearchService>();
+
+        // 个股用例：分析器与总览组装器都是无状态用例，按请求解析
+        services.AddScoped<TrendAnalyzer>();
+        services.AddScoped<OverviewComposer>();
+        services.AddScoped<StockService>();
 
         return services;
     }

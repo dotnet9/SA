@@ -215,8 +215,7 @@ public class MarketServiceTests
             new FakeSectorStore(sectors ?? []),
             new FakeMarketStatStore(stat),
             new FakeCollectStatusStore(),
-            new FakeCalendarStore(),
-            new CollectOptions());
+            new FakeCalendarStore());
     }
 
     private static QuoteSnapshot Quote(string code, decimal price, decimal pct, decimal amount, decimal cap) =>

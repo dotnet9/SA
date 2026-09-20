@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -27,6 +27,7 @@ builder.Services.AddSaApplication(builder.Configuration);
 builder.Services.AddSaMarket(builder.Configuration);
 builder.Services.AddSaPersistence();
 builder.Services.AddSaMarketStores();
+builder.Services.AddSaHistory();
 // 采集适配器、任务与调度宿主服务（实施计划 §5.4：单进程是默认形态）
 builder.Services.AddSaCollect();
 builder.Services.AddSaSecurity();
@@ -75,6 +76,7 @@ app.MapAuthEndpoints();
 app.MapMeEndpoints();
 app.MapMarketEndpoints();
 app.MapSearchEndpoints();
+app.MapStockEndpoints();
 
 app.Run();
 

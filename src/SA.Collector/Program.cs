@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SA.Application;
@@ -81,6 +81,7 @@ static async Task<int> RunSchedulerAsync(string[] args)
     builder.Services.AddSaMarket(builder.Configuration);
     builder.Services.AddSaPersistence();
     builder.Services.AddSaMarketStores();
+builder.Services.AddSaHistory();
     builder.Services.AddSaCollect();
     // 与 API 宿主一致：PersistenceInitializer 需要签名密钥与敏感字段保护
     builder.Services.AddSaSecurity();
