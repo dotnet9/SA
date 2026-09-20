@@ -10,6 +10,7 @@ using SA.Infrastructure.Collect.Hosting;
 using SA.Infrastructure.Collect.Http;
 using SA.Infrastructure.Collect.Jobs;
 using SA.Infrastructure.Collect.Registry;
+using SA.Infrastructure.History;
 using SA.Infrastructure.Persistence;
 using SA.Infrastructure.Persistence.Seed;
 using SA.Infrastructure.Persistence.Stores;
@@ -146,6 +147,24 @@ public static class DependencyInjection
         services.AddScoped<ICollectStatusStore, CollectStatusStore>();
         services.AddScoped<ITradingCalendarStore, TradingCalendarStore>();
         services.AddSingleton<IPinyinIndexer, ToolGoodPinyinIndexer>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 注册时序历史：Parquet 分片路径、日线与指标存储、回补游标。
+    /// </summary>
+    /// <remarks>
+    /// 三个存储都是单例：它们不持有 DbContext，只按标的读写 Parquet 文件
+    /// （DuckDB 连接在每次操作内创建并释放），因此没有作用域生命周期问题；
+    /// 回补游标走 SQLite，依赖 Scoped 的 DbContext，故为 Scoped。
+    /// </remarks>
+    public static IServiceCollection AddSaHistory(this IServiceCollection services)
+    {
+        services.AddSingleton<ParquetPaths>();
+        services.AddSingleton<IDailyHistoryStore, DuckDbHistoryStore>();
+        services.AddSingleton<IIndicatorStore, DuckDbIndicatorStore>();
+        services.AddScoped<ISyncCursorStore, SyncCursorStore>();
 
         return services;
     }

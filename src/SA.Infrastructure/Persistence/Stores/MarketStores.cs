@@ -455,3 +455,65 @@ public sealed class MarketStatStore(SaDbContext db) : IMarketStatStore
         await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 }
+
+/// <summary>
+/// 回补断点存储。按「数据集 + 标的」记录进度，供回补任务断点续跑（实施计划 §5.3）。
+/// </summary>
+public sealed class SyncCursorStore(SaDbContext db) : ISyncCursorStore
+{
+    private readonly SaDbContext _db = db;
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<SyncCursor>> GetByDatasetAsync(
+        string dataset,
+        CancellationToken cancellationToken = default) =>
+        await _db.SyncCursors
+            .AsNoTracking()
+            .Where(c => c.Dataset == dataset)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public Task<SyncCursor?> FindAsync(string dataset, string code, CancellationToken cancellationToken = default) =>
+        _db.SyncCursors.FirstOrDefaultAsync(c => c.Dataset == dataset && c.Code == code, cancellationToken);
+
+    /// <inheritdoc />
+    public Task UpsertAsync(SyncCursor cursor, CancellationToken cancellationToken = default) =>
+        UpsertManyAsync([cursor], cancellationToken);
+
+    /// <inheritdoc />
+    public async Task UpsertManyAsync(
+        IReadOnlyList<SyncCursor> cursors,
+        CancellationToken cancellationToken = default)
+    {
+        if (cursors.Count == 0)
+        {
+            return;
+        }
+
+        var datasets = cursors.Select(c => c.Dataset).Distinct().ToList();
+        var codes = cursors.Select(c => c.Code).Distinct().ToList();
+
+        var existing = await _db.SyncCursors
+            .Where(c => datasets.Contains(c.Dataset) && codes.Contains(c.Code))
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        var map = existing.ToDictionary(c => (c.Dataset, c.Code));
+
+        foreach (var cursor in cursors)
+        {
+            if (map.TryGetValue((cursor.Dataset, cursor.Code), out var row))
+            {
+                row.LastDate = cursor.LastDate;
+                row.Status = cursor.Status;
+                row.Note = cursor.Note;
+                row.UpdatedAt = cursor.UpdatedAt;
+            }
+            else
+            {
+                await _db.SyncCursors.AddAsync(cursor, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+}

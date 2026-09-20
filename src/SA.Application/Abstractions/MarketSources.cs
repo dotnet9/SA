@@ -332,3 +332,26 @@ public interface ITradingCalendarSource : IProbeable
         DateOnly to,
         CancellationToken cancellationToken = default);
 }
+
+/// <summary>
+/// K 线源（日 / 周 / 月，可指定复权口径）。
+/// </summary>
+public interface IKlineSource : IProbeable
+{
+    /// <summary>
+    /// 取 K 线序列。
+    /// </summary>
+    /// <param name="code">证券代码。</param>
+    /// <param name="from">起始日期（含）。</param>
+    /// <param name="to">结束日期（含）。</param>
+    /// <param name="adjust">复权口径，取值见实现里的 <c>Adjust*</c> 常量。</param>
+    /// <param name="period">周期，取值见实现里的 <c>Period*</c> 常量（101 日 / 102 周 / 103 月）。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    Task<IReadOnlyList<Domain.History.DailyBar>> GetDailyAsync(
+        string code,
+        DateOnly from,
+        DateOnly to,
+        int adjust,
+        int period = 101,
+        CancellationToken cancellationToken = default);
+}

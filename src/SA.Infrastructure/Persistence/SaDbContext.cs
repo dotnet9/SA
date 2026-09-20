@@ -73,6 +73,9 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
     /// <summary>市场级日度统计。</summary>
     public DbSet<MarketStat> MarketStats => Set<MarketStat>();
 
+    /// <summary>回补断点。</summary>
+    public DbSet<SyncCursor> SyncCursors => Set<SyncCursor>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -358,6 +361,18 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
                 entity.Property(property).HasConversion<double>();
             }
 
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+        });
+
+        modelBuilder.Entity<SyncCursor>(entity =>
+        {
+            entity.ToTable("SyncCursor");
+            entity.HasKey(e => new { e.Dataset, e.Code });
+            entity.Property(e => e.Dataset).HasMaxLength(32);
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.Status).HasMaxLength(8).IsRequired();
+            entity.Property(e => e.Note).HasMaxLength(256);
+            entity.Property(e => e.LastDate).HasConversion(nullableDateConverter);
             entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
         });
     }
