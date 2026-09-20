@@ -5,6 +5,7 @@ using SA.Application.Analysis;
 using SA.Application.Auth;
 using SA.Application.Authorization;
 using SA.Application.Market;
+using SA.Application.Capital;
 using SA.Application.Equity;
 using SA.Application.Finance;
 using SA.Application.Search;
@@ -72,6 +73,7 @@ public static class DependencyInjection
         services.AddScoped<WatchlistService>();
         services.AddScoped<FinanceService>();
         services.AddScoped<EquityService>();
+        services.AddScoped<CapitalService>();
         services.AddScoped<DataScopeFilter>();
 
         return services;

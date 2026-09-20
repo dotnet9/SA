@@ -43,6 +43,11 @@ const StockEquityPage = lazy(() =>
   import('@/features/equity/StockEquityPage').then((module) => ({ default: module.StockEquityPage }))
 );
 
+/** 资金面与筹码。 */
+const StockCapitalPage = lazy(() =>
+  import('@/features/capital/StockCapitalPage').then((module) => ({ default: module.StockCapitalPage }))
+);
+
 /** 自选股（含实时推送）。 */
 const WatchlistPage = lazy(() =>
   import('@/features/watchlist/WatchlistPage').then((module) => ({ default: module.WatchlistPage }))
@@ -152,6 +157,8 @@ function StockModulePage() {
           <StockFinancePage />
         ) : module === 'equity' ? (
           <StockEquityPage />
+        ) : module === 'capital' ? (
+          <StockCapitalPage />
         ) : (
           <PlaceholderPage title={`${name} · ${code}`} batch={batches[module] ?? '后续批次'} />
         )}

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SA.Domain.Entities.Collect;
+using SA.Domain.Entities.Capital;
 using SA.Domain.Entities.Equity;
 using SA.Domain.Entities.Finance;
 using SA.Domain.Entities.Identity;
@@ -99,6 +100,21 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
 
     /// <summary>股权质押。</summary>
     public DbSet<PledgeStat> PledgeStats => Set<PledgeStat>();
+
+    /// <summary>个股逐日资金流。</summary>
+    public DbSet<FundFlowDaily> FundFlows => Set<FundFlowDaily>();
+
+    /// <summary>龙虎榜记录。</summary>
+    public DbSet<BillboardRecord> Billboards => Set<BillboardRecord>();
+
+    /// <summary>大宗交易。</summary>
+    public DbSet<BlockTrade> BlockTrades => Set<BlockTrade>();
+
+    /// <summary>个股两融明细。</summary>
+    public DbSet<MarginDetail> MarginDetails => Set<MarginDetail>();
+
+    /// <summary>陆股通持股。</summary>
+    public DbSet<NorthboundHolding> NorthboundHoldings => Set<NorthboundHolding>();
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -544,6 +560,120 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
             {
                 nameof(PledgeStat.PledgeRatio), nameof(PledgeStat.PledgeSharesWan),
                 nameof(PledgeStat.PledgeMarketCapWan), nameof(PledgeStat.Year1ChangePercent)
+            })
+            {
+                entity.Property(property).HasConversion<double?>();
+            }
+        });
+
+        modelBuilder.Entity<FundFlowDaily>(entity =>
+        {
+            entity.ToTable("FundFlowDaily");
+            entity.HasKey(e => new { e.Code, e.Date });
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.Date).HasConversion(dateConverter);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+
+            foreach (var property in new[]
+            {
+                nameof(FundFlowDaily.MainNet), nameof(FundFlowDaily.SuperLargeNet), nameof(FundFlowDaily.LargeNet),
+                nameof(FundFlowDaily.MediumNet), nameof(FundFlowDaily.SmallNet)
+            })
+            {
+                entity.Property(property).HasConversion<double>();
+            }
+
+            foreach (var property in new[]
+            {
+                nameof(FundFlowDaily.MainRatio), nameof(FundFlowDaily.Close), nameof(FundFlowDaily.ChangePercent)
+            })
+            {
+                entity.Property(property).HasConversion<double?>();
+            }
+        });
+
+        modelBuilder.Entity<BillboardRecord>(entity =>
+        {
+            entity.ToTable("BillboardRecord");
+            // 同一天可能因不同原因多次上榜，因此主键带上原因
+            entity.HasKey(e => new { e.Code, e.TradeDate, e.Reason });
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.Reason).HasMaxLength(128);
+            entity.Property(e => e.Explain).HasMaxLength(128);
+            entity.Property(e => e.TradeDate).HasConversion(dateConverter);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+
+            foreach (var property in new[]
+            {
+                nameof(BillboardRecord.Close), nameof(BillboardRecord.ChangePercent),
+                nameof(BillboardRecord.TurnoverRate), nameof(BillboardRecord.NetAmount),
+                nameof(BillboardRecord.BuyAmount), nameof(BillboardRecord.SellAmount),
+                nameof(BillboardRecord.DealAmount), nameof(BillboardRecord.Next1Change),
+                nameof(BillboardRecord.Next5Change), nameof(BillboardRecord.Next10Change)
+            })
+            {
+                entity.Property(property).HasConversion<double?>();
+            }
+        });
+
+        modelBuilder.Entity<BlockTrade>(entity =>
+        {
+            entity.ToTable("BlockTrade");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.BuyerName).HasMaxLength(128);
+            entity.Property(e => e.SellerName).HasMaxLength(128);
+            entity.Property(e => e.TradeDate).HasConversion(dateConverter);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+            entity.HasIndex(e => new { e.Code, e.TradeDate });
+
+            foreach (var property in new[]
+            {
+                nameof(BlockTrade.DealPrice), nameof(BlockTrade.PremiumRatio),
+                nameof(BlockTrade.DealVolume), nameof(BlockTrade.DealAmount), nameof(BlockTrade.Close)
+            })
+            {
+                entity.Property(property).HasConversion<double?>();
+            }
+        });
+
+        modelBuilder.Entity<MarginDetail>(entity =>
+        {
+            entity.ToTable("MarginDetail");
+            entity.HasKey(e => new { e.Code, e.Date });
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.Date).HasConversion(dateConverter);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+
+            foreach (var property in new[]
+            {
+                nameof(MarginDetail.FinanceBalance), nameof(MarginDetail.FinanceBuy),
+                nameof(MarginDetail.FinanceNetBuy), nameof(MarginDetail.LoanBalance),
+                nameof(MarginDetail.LoanVolume), nameof(MarginDetail.TotalBalance),
+                nameof(MarginDetail.FinanceBalanceRatio), nameof(MarginDetail.Close),
+                nameof(MarginDetail.ChangePercent)
+            })
+            {
+                entity.Property(property).HasConversion<double?>();
+            }
+        });
+
+        modelBuilder.Entity<NorthboundHolding>(entity =>
+        {
+            entity.ToTable("NorthboundHolding");
+            entity.HasKey(e => new { e.Code, e.HoldDate });
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.DateType).HasMaxLength(32);
+            entity.Property(e => e.Industry).HasMaxLength(64);
+            entity.Property(e => e.HoldDate).HasConversion(dateConverter);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+
+            foreach (var property in new[]
+            {
+                nameof(NorthboundHolding.HoldShares), nameof(NorthboundHolding.PreviousHoldShares),
+                nameof(NorthboundHolding.AddShares), nameof(NorthboundHolding.AddSharesAmp),
+                nameof(NorthboundHolding.HoldMarketCap), nameof(NorthboundHolding.FreeSharesRatio),
+                nameof(NorthboundHolding.TotalSharesRatio)
             })
             {
                 entity.Property(property).HasConversion<double?>();

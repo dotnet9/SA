@@ -1,5 +1,6 @@
 using SA.Application.Abstractions;
 using SA.Application.Analysis;
+using SA.Application.Capital;
 using SA.Application.Equity;
 using SA.Application.Finance;
 using SA.Application.Common;
@@ -28,7 +29,8 @@ public sealed class OverviewComposer(
     IQuoteSnapshotStore quotes,
     TrendAnalyzer trend,
     FinanceService finance,
-    EquityService equity)
+    EquityService equity,
+    CapitalService capital)
 {
     /// <summary>8 个模块的定义与顺序，与导航和原型矩阵页一致。</summary>
     private static readonly (string Key, string Name)[] Modules =
@@ -71,6 +73,7 @@ public sealed class OverviewComposer(
                 "trend" => await BuildTrendCardAsync(code, name, cancellationToken).ConfigureAwait(false),
                 "finance" => await BuildFinanceCardAsync(code, name, cancellationToken).ConfigureAwait(false),
                 "equity" => await BuildEquityCardAsync(code, name, cancellationToken).ConfigureAwait(false),
+                "capital" => await BuildCapitalCardAsync(code, name, cancellationToken).ConfigureAwait(false),
                 _ => PendingCard(key, name)
             });
         }
@@ -313,6 +316,67 @@ public sealed class OverviewComposer(
             Thumb: thumb,
             Summary: dto.Latest is null ? null : $"报告期 {dto.Latest.EndDate}",
             Link: $"/stock/{code}/equity");
+    }
+
+    /// <summary>
+    /// 资金面卡：近 5 日主力净额、两融余额、陆股通增减。
+    /// </summary>
+    private async Task<ModuleCardDto> BuildCapitalCardAsync(
+        string code,
+        string name,
+        CancellationToken cancellationToken)
+    {
+        var result = await capital.GetAsync(code, cancellationToken).ConfigureAwait(false);
+        if (!result.Ok || result.Value is null)
+        {
+            return new ModuleCardDto(
+                Key: "capital",
+                Name: name,
+                Status: result.Error == ErrorCode.DataNotReady ? "collecting" : "failed",
+                Tags: [],
+                Kpis: [],
+                Thumb: [],
+                Summary: result.Message,
+                Link: $"/stock/{code}/capital");
+        }
+
+        var dto = result.Value;
+        var kpis = new List<ModuleKpiDto>();
+
+        if (dto.Summary is { } summary)
+        {
+            kpis.Add(new ModuleKpiDto(
+                "近 5 日主力",
+                $"{(summary.MainNet >= 0 ? "+" : string.Empty)}{summary.MainNet:F2} 亿",
+                summary.MainNet >= 0 ? "up" : "down"));
+            kpis.Add(new ModuleKpiDto("流入天数", $"{summary.InflowDays}/5", summary.InflowDays >= 3 ? "up" : "down"));
+        }
+
+        if (dto.Margins.Count > 0 && dto.Margins[^1].FinanceBalance is { } finance)
+        {
+            kpis.Add(new ModuleKpiDto("融资余额", $"{finance:F2} 亿", "neutral"));
+        }
+
+        if (dto.Northbound.Count > 0 && dto.Northbound[0].AddShares is { } addShares)
+        {
+            kpis.Add(new ModuleKpiDto(
+                "陆股通增减",
+                $"{(addShares >= 0 ? "+" : string.Empty)}{addShares:F2} 万股",
+                addShares >= 0 ? "up" : "down"));
+        }
+
+        // 缩略图用主力净额序列：这一页最直观的一条线
+        var thumb = dto.FundFlow.Select(point => point.MainNet).ToList();
+
+        return new ModuleCardDto(
+            Key: "capital",
+            Name: name,
+            Status: "ready",
+            Tags: dto.Insights.Take(3).Select(text => new ModuleTagDto(text, ToneOf(text))).ToList(),
+            Kpis: kpis,
+            Thumb: thumb,
+            Summary: dto.FundFlow.Count == 0 ? null : $"资金流至 {dto.FundFlow[^1].Date}",
+            Link: $"/stock/{code}/capital");
     }
 
     /// <summary>把结论文案映射到色调：含「下滑/负/不增利」为跌，含「增长/上升」为涨。</summary>

@@ -27,6 +27,7 @@ public sealed class SourceRegistry
         IKlineSource kline,
         IFinanceSource finance,
         IEquitySource equity,
+        ICapitalSource capital,
         IEnumerable<IQuoteSnapshotSource> quoteSnapshots,
         IEnumerable<IProbeable> allSources)
     {
@@ -40,6 +41,7 @@ public sealed class SourceRegistry
         Kline = kline;
         Finance = finance;
         Equity = equity;
+        Capital = capital;
 
         // 注册顺序即降级顺序：主源在前
         QuoteSnapshots = quoteSnapshots.ToList();
@@ -75,6 +77,9 @@ public sealed class SourceRegistry
 
     /// <summary>股权结构源。</summary>
     public IEquitySource Equity { get; }
+
+    /// <summary>资金面源。</summary>
+    public ICapitalSource Capital { get; }
 
     /// <summary>多标的快照源，按降级顺序排列（主源在前）。</summary>
     public IReadOnlyList<IQuoteSnapshotSource> QuoteSnapshots { get; }

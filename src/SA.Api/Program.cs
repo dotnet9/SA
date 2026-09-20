@@ -105,6 +105,7 @@ app.MapSearchEndpoints();
 app.MapStockEndpoints();
 app.MapFinanceEndpoints();
 app.MapEquityEndpoints();
+app.MapCapitalEndpoints();
 app.MapWatchlistEndpoints();
 
 // 实时行情只推自选股，按连接节流（详细设计 §7）
