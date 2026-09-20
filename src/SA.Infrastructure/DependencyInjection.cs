@@ -171,6 +171,11 @@ public static class DependencyInjection
         services.AddScoped<IEventAnnotationStore, EventAnnotationStore>();
         services.AddScoped<IRatingStore, RatingStore>();
         services.AddScoped<IAlertStore, AlertStore>();
+        services.AddScoped<IUserAdminStore, UserAdminStore>();
+        services.AddScoped<IRoleAdminStore, RoleAdminStore>();
+        services.AddScoped<ISessionAdminStore, SessionAdminStore>();
+        services.AddScoped<IAuditStore, AuditStore>();
+        services.AddSingleton<SA.Application.Abstractions.IDataPaths>(provider => provider.GetRequiredService<SA.Infrastructure.Storage.DataPaths>());
         services.AddScoped<IDataScopeService, DataScopeService>();
 
         return services;

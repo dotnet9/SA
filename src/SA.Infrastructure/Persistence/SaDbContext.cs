@@ -131,6 +131,9 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
     /// <summary>站内通知。</summary>
     public DbSet<Notification> Notifications => Set<Notification>();
 
+    /// <summary>后台操作审计日志。</summary>
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -671,6 +674,21 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
             {
                 entity.Property(property).HasConversion<double?>();
             }
+        });
+
+        modelBuilder.Entity<AuditLog>(entity =>
+        {
+            entity.ToTable("AuditLog");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).HasMaxLength(64).IsRequired();
+            entity.Property(e => e.Username).HasMaxLength(64);
+            entity.Property(e => e.Action).HasMaxLength(64).IsRequired();
+            entity.Property(e => e.Target).HasMaxLength(128);
+            entity.Property(e => e.Detail).HasMaxLength(1024);
+            entity.Property(e => e.Ip).HasMaxLength(64);
+            entity.Property(e => e.CreatedAt).HasConversion(timeConverter);
+            entity.HasIndex(e => e.CreatedAt);
+            entity.HasIndex(e => e.UserId);
         });
 
         modelBuilder.Entity<AlertRule>(entity =>

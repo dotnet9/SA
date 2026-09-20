@@ -78,6 +78,26 @@ const NotificationsPage = lazy(() =>
   import('@/features/alerts/NotificationsPage').then((module) => ({ default: module.NotificationsPage }))
 );
 
+/** 条件选股器。 */
+const ScreenerPage = lazy(() =>
+  import('@/features/screener/ScreenerPage').then((module) => ({ default: module.ScreenerPage }))
+);
+
+/** 后台：数据源监控。 */
+const AdminDataSourcesPage = lazy(() =>
+  import('@/features/admin/AdminDataSourcesPage').then((module) => ({ default: module.AdminDataSourcesPage }))
+);
+
+/** 后台：用户与权限。 */
+const AdminUsersPage = lazy(() =>
+  import('@/features/admin/AdminUsersPage').then((module) => ({ default: module.AdminUsersPage }))
+);
+
+/** 后台：登录与安全。 */
+const AdminSecurityPage = lazy(() =>
+  import('@/features/admin/AdminSecurityPage').then((module) => ({ default: module.AdminSecurityPage }))
+);
+
 /** 自选股（含实时推送）。 */
 const WatchlistPage = lazy(() =>
   import('@/features/watchlist/WatchlistPage').then((module) => ({ default: module.WatchlistPage }))
@@ -281,7 +301,9 @@ export const router = createBrowserRouter([
         path: 'screener',
         element: (
           <RequireFunctionPoint codes={['screener.use']}>
-            <PlaceholderPage title="条件选股器" batch="第 12 批" />
+            <Suspense fallback={<RouteFallback />}>
+              <ScreenerPage />
+            </Suspense>
           </RequireFunctionPoint>
         )
       },
@@ -333,7 +355,9 @@ export const router = createBrowserRouter([
         path: 'admin/users',
         element: (
           <RequireFunctionPoint codes={['admin.users']}>
-            <PlaceholderPage title="用户管理" batch="第 12 批" />
+            <Suspense fallback={<RouteFallback />}>
+              <AdminUsersPage />
+            </Suspense>
           </RequireFunctionPoint>
         )
       },
@@ -341,7 +365,9 @@ export const router = createBrowserRouter([
         path: 'admin/permissions',
         element: (
           <RequireFunctionPoint codes={['admin.permissions']}>
-            <PlaceholderPage title="角色与权限" batch="第 12 批" />
+            <Suspense fallback={<RouteFallback />}>
+              <AdminUsersPage />
+            </Suspense>
           </RequireFunctionPoint>
         )
       },
@@ -349,7 +375,9 @@ export const router = createBrowserRouter([
         path: 'admin/datasource',
         element: (
           <RequireFunctionPoint codes={['admin.datasource']}>
-            <PlaceholderPage title="数据源监控" batch="第 12 批" />
+            <Suspense fallback={<RouteFallback />}>
+              <AdminDataSourcesPage />
+            </Suspense>
           </RequireFunctionPoint>
         )
       },
@@ -357,7 +385,9 @@ export const router = createBrowserRouter([
         path: 'admin/security',
         element: (
           <RequireFunctionPoint codes={['admin.security']}>
-            <PlaceholderPage title="登录与安全" batch="第 12 批" />
+            <Suspense fallback={<RouteFallback />}>
+              <AdminSecurityPage />
+            </Suspense>
           </RequireFunctionPoint>
         )
       },

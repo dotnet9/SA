@@ -4,7 +4,7 @@ namespace SA.Infrastructure.Storage;
 /// 数据目录布局。删除 <see cref="Root"/> 后重启可完整重建（唯一例外是密码与自选等元数据，
 /// 见实施计划 §9），因此不提供数据迁移脚本。
 /// </summary>
-public sealed class DataPaths
+public sealed class DataPaths : SA.Application.Abstractions.IDataPaths
 {
     /// <summary>
     /// 建立数据目录布局。

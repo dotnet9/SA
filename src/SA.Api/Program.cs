@@ -113,6 +113,8 @@ app.MapEventEndpoints();
 app.MapRatingEndpoints();
 app.MapRiskEndpoints();
 app.MapAlertEndpoints();
+app.MapScreenerEndpoints();
+app.MapAdminEndpoints();
 app.MapWatchlistEndpoints();
 
 // 实时行情只推自选股，按连接节流（详细设计 §7）

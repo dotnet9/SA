@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using SA.Application.Abstractions;
 using SA.Application.Analysis;
+using SA.Application.Admin;
 using SA.Application.Alerts;
 using SA.Application.Auth;
 using SA.Application.Authorization;
@@ -13,6 +14,7 @@ using SA.Application.Finance;
 using SA.Application.Industry;
 using SA.Application.Rating;
 using SA.Application.Risk;
+using SA.Application.Screener;
 using SA.Application.Search;
 using SA.Application.Services;
 using SA.Application.Stocks;
@@ -84,6 +86,8 @@ public static class DependencyInjection
         services.AddScoped<RatingService>();
         services.AddScoped<RiskService>();
         services.AddScoped<AlertService>();
+        services.AddScoped<AdminService>();
+        services.AddScoped<ScreenerService>();
         services.AddScoped<DataScopeFilter>();
 
         return services;

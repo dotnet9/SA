@@ -67,4 +67,43 @@ public sealed class PasswordPolicy(AuthOptions options, IPasswordHasher hasher)
 
     /// <summary>历史保留深度，供调用方决定读取条数。</summary>
     public int HistoryRetention => HistoryDepth;
+
+    /// <summary>
+    /// 生成一个满足策略的随机密码，供管理员重置密码时使用。
+    /// </summary>
+    /// <remarks>
+    /// 刻意排除易混淆字符（<c>0/O</c>、<c>1/l/I</c>）：管理员需要把这个密码口头或书面转交给用户，
+    /// 混淆字符会显著提高转述出错率。字符集仍覆盖大小写字母、数字与符号，满足复杂度策略。
+    /// </remarks>
+    public static string Generate()
+    {
+        const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+        const string lower = "abcdefghijkmnopqrstuvwxyz";
+        const string digits = "23456789";
+        const string symbols = "!@#$%^&*-_=+";
+
+        // 每类至少一个，保证必然满足「必须包含大小写字母与数字」的策略
+        var chars = new List<char>
+        {
+            upper[Random.Shared.Next(upper.Length)],
+            lower[Random.Shared.Next(lower.Length)],
+            digits[Random.Shared.Next(digits.Length)],
+            symbols[Random.Shared.Next(symbols.Length)]
+        };
+
+        var pool = upper + lower + digits + symbols;
+        while (chars.Count < 16)
+        {
+            chars.Add(pool[Random.Shared.Next(pool.Length)]);
+        }
+
+        // 打乱位置：否则前四位的规律会泄露生成方式
+        for (var i = chars.Count - 1; i > 0; i--)
+        {
+            var j = Random.Shared.Next(i + 1);
+            (chars[i], chars[j]) = (chars[j], chars[i]);
+        }
+
+        return new string([.. chars]);
+    }
 }
