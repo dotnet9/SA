@@ -243,6 +243,26 @@ public static class Indicators
     }
 
     /// <summary>
+    /// 中位数；样本为偶数时取中间两个的平均值（标准定义）。
+    /// </summary>
+    /// <param name="sorted">已升序排列的样本。</param>
+    /// <remarks>
+    /// 横截面统计算中位数而不是均值：行业内常有极端值（次新股、ST、亏损股），均值会被拉偏。
+    /// </remarks>
+    public static decimal? Median(IReadOnlyList<decimal> sorted)
+    {
+        if (sorted.Count == 0)
+        {
+            return null;
+        }
+
+        var middle = sorted.Count / 2;
+        return sorted.Count % 2 == 1
+            ? sorted[middle]
+            : (sorted[middle - 1] + sorted[middle]) / 2m;
+    }
+
+    /// <summary>
     /// 价格分位：当前价在样本分布中「小于等于」它的占比（百分数，0–100）。
     /// </summary>
     /// <remarks>

@@ -48,6 +48,11 @@ const StockCapitalPage = lazy(() =>
   import('@/features/capital/StockCapitalPage').then((module) => ({ default: module.StockCapitalPage }))
 );
 
+/** 行业与同业对比。 */
+const StockIndustryPage = lazy(() =>
+  import('@/features/industry/StockIndustryPage').then((module) => ({ default: module.StockIndustryPage }))
+);
+
 /** 自选股（含实时推送）。 */
 const WatchlistPage = lazy(() =>
   import('@/features/watchlist/WatchlistPage').then((module) => ({ default: module.WatchlistPage }))
@@ -159,6 +164,8 @@ function StockModulePage() {
           <StockEquityPage />
         ) : module === 'capital' ? (
           <StockCapitalPage />
+        ) : module === 'industry' ? (
+          <StockIndustryPage />
         ) : (
           <PlaceholderPage title={`${name} · ${code}`} batch={batches[module] ?? '后续批次'} />
         )}

@@ -3,6 +3,7 @@ using SA.Application.Analysis;
 using SA.Application.Capital;
 using SA.Application.Equity;
 using SA.Application.Finance;
+using SA.Application.Industry;
 using SA.Application.Common;
 using SA.Application.Market;
 using SA.Contracts.Common;
@@ -30,7 +31,8 @@ public sealed class OverviewComposer(
     TrendAnalyzer trend,
     FinanceService finance,
     EquityService equity,
-    CapitalService capital)
+    CapitalService capital,
+    IndustryService industry)
 {
     /// <summary>8 个模块的定义与顺序，与导航和原型矩阵页一致。</summary>
     private static readonly (string Key, string Name)[] Modules =
@@ -74,6 +76,7 @@ public sealed class OverviewComposer(
                 "finance" => await BuildFinanceCardAsync(code, name, cancellationToken).ConfigureAwait(false),
                 "equity" => await BuildEquityCardAsync(code, name, cancellationToken).ConfigureAwait(false),
                 "capital" => await BuildCapitalCardAsync(code, name, cancellationToken).ConfigureAwait(false),
+                "industry" => await BuildIndustryCardAsync(code, name, cancellationToken).ConfigureAwait(false),
                 _ => PendingCard(key, name)
             });
         }
@@ -93,7 +96,7 @@ public sealed class OverviewComposer(
             [
                 "口径：日线为前复权；行业为东财行业。",
                 "总览卡片的数字与各模块页共用同一数据源，模块页请求更细的序列数据。",
-                "已接入：趋势与价格结构、盈利与财务表现、投资与股权结构；其余模块按批次接入，卡片会明确标注采集中。"
+                "已接入：趋势与价格结构、盈利与财务表现、投资与股权结构、资金与筹码、行业与同业对比；其余模块按批次接入，卡片会明确标注采集中。"
             ]));
     }
 
@@ -377,6 +380,87 @@ public sealed class OverviewComposer(
             Thumb: thumb,
             Summary: dto.FundFlow.Count == 0 ? null : $"资金流至 {dto.FundFlow[^1].Date}",
             Link: $"/stock/{code}/capital");
+    }
+
+    /// <summary>
+    /// 行业与同业卡：行业涨跌幅与排名、行业内位置、估值对比。
+    /// </summary>
+    private async Task<ModuleCardDto> BuildIndustryCardAsync(
+        string code,
+        string name,
+        CancellationToken cancellationToken)
+    {
+        var result = await industry.GetAsync(code, cancellationToken).ConfigureAwait(false);
+        if (!result.Ok || result.Value is null)
+        {
+            return new ModuleCardDto(
+                Key: "industry",
+                Name: name,
+                Status: result.Error == ErrorCode.DataNotReady ? "collecting" : "failed",
+                Tags: [],
+                Kpis: [],
+                Thumb: [],
+                Summary: result.Message,
+                Link: $"/stock/{code}/industry");
+        }
+
+        var dto = result.Value;
+        var kpis = new List<ModuleKpiDto>();
+
+        if (dto.Overview is { } overview)
+        {
+            kpis.Add(new ModuleKpiDto(
+                "行业涨跌",
+                $"{overview.Pct:+0.00;-0.00}%",
+                overview.Pct >= 0 ? "up" : "down"));
+
+            if (overview.Rank is { } rank)
+            {
+                kpis.Add(new ModuleKpiDto("行业排名", $"{rank}/{overview.TotalIndustries}", rank <= 10 ? "up" : "neutral"));
+            }
+        }
+
+        if (dto.Position.PctVsMedian is { } vsMedian)
+        {
+            kpis.Add(new ModuleKpiDto(
+                "相对行业中位",
+                $"{vsMedian:+0.00;-0.00} pt",
+                vsMedian >= 0 ? "up" : "down"));
+        }
+
+        if (dto.Position.CapPercentile is { } capPercentile)
+        {
+            kpis.Add(new ModuleKpiDto("市值分位", $"{capPercentile:F1}%", capPercentile >= 80 ? "up" : "neutral"));
+        }
+
+        // 缩略图用同业市值前若干家的涨跌幅：一眼看出该股在同行里是强还是弱
+        var thumb = dto.Peers.Take(20).Select(peer => peer.Pct).ToList();
+
+        return new ModuleCardDto(
+            Key: "industry",
+            Name: name,
+            Status: "ready",
+            Tags: dto.Insights.Take(3).Select(text => new ModuleTagDto(text, ToneOfIndustry(text))).ToList(),
+            Kpis: kpis,
+            Thumb: thumb,
+            Summary: dto.Overview is null ? dto.Industry : $"行业「{dto.Overview.Name}」",
+            Link: $"/stock/{code}/industry");
+    }
+
+    /// <summary>行业结论的色调：强于/排名靠前为涨，弱于为跌。</summary>
+    private static string ToneOfIndustry(string text)
+    {
+        if (text.Contains("强于", StringComparison.Ordinal) || text.Contains("前 ", StringComparison.Ordinal))
+        {
+            return "up";
+        }
+
+        if (text.Contains("弱于", StringComparison.Ordinal))
+        {
+            return "down";
+        }
+
+        return "neutral";
     }
 
     /// <summary>把结论文案映射到色调：含「下滑/负/不增利」为跌，含「增长/上升」为涨。</summary>

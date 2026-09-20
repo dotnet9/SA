@@ -184,7 +184,7 @@ public class TrendPipelineTests : IClassFixture<TrendApiFactory>
     }
 
     [Fact]
-    public async Task 总览页只有趋势卡有真实数据其余明确标注采集中()
+    public async Task 总览页已接入模块返回真实数据未接入模块标注采集中()
     {
         await _factory.CollectAsync(TrendApiFactory.ReadyCode);
         using var client = await _factory.CreateAdminClientAsync();
@@ -199,9 +199,15 @@ public class TrendPipelineTests : IClassFixture<TrendApiFactory>
         Assert.True(trend.GetProperty("tags").GetArrayLength() > 0);
         Assert.True(trend.GetProperty("kpis").GetArrayLength() > 0);
 
-        // 其余 7 个模块必须显式标注「采集中」，不允许出现空卡或假数字
-        foreach (var module in modules.Where(m => m.GetProperty("key").GetString() != "trend"))
+        // 「行业与同业对比」不需要新的采集源（全部由全市场快照横截面算出），
+        // 因此在任何已采集到快照的环境里都应当就绪
+        var industry = modules.Single(m => m.GetProperty("key").GetString() == "industry");
+        Assert.Equal("ready", industry.GetProperty("status").GetString());
+
+        // 尚未接入的模块必须显式标注，不允许出现空卡或假数字
+        foreach (var key in new[] { "events", "risk", "rating" })
         {
+            var module = modules.Single(m => m.GetProperty("key").GetString() == key);
             Assert.Equal("collecting", module.GetProperty("status").GetString());
             Assert.Equal(0, module.GetProperty("kpis").GetArrayLength());
         }
@@ -356,6 +362,12 @@ public sealed class TrendApiFactory : WebApplicationFactory<Program>
             services.AddSingleton<IMarketFundFlowSource, FakeMarketFundFlowSource>();
             services.AddSingleton<ITradingCalendarSource, FakeTradingCalendarSource>();
             services.AddSingleton<IKlineSource>(_kline);
+
+            // 财务/股权/资金面：本测试不关心，但必须换成替身，
+            // 否则总览页会去打真实上游（测试就不再是离线可重复的）
+            services.AddSingleton<IFinanceSource, FakeFinanceSource>();
+            services.AddSingleton<IEquitySource, FakeEquitySource>();
+            services.AddSingleton<ICapitalSource, FakeCapitalSource>();
         });
     }
 

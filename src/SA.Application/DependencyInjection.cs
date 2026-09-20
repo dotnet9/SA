@@ -8,6 +8,7 @@ using SA.Application.Market;
 using SA.Application.Capital;
 using SA.Application.Equity;
 using SA.Application.Finance;
+using SA.Application.Industry;
 using SA.Application.Search;
 using SA.Application.Services;
 using SA.Application.Stocks;
@@ -74,6 +75,7 @@ public static class DependencyInjection
         services.AddScoped<FinanceService>();
         services.AddScoped<EquityService>();
         services.AddScoped<CapitalService>();
+        services.AddScoped<IndustryService>();
         services.AddScoped<DataScopeFilter>();
 
         return services;
