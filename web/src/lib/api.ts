@@ -24,6 +24,32 @@ export interface ApiRequestOptions {
   headers?: Record<string, string>;
   /** 外部取消信号。 */
   signal?: AbortSignal;
+  /** 置为 true 时不附带访问令牌（登录、刷新、健康检查）。 */
+  anonymous?: boolean;
+}
+
+/* ------------------------------------------------------------------
+   访问令牌与刷新协调
+   访问令牌只放内存：刷新页面即失效，靠 HttpOnly Cookie 换新，
+   避免 XSS 读到长期凭证（详细设计 §8「JWT + 刷新令牌」）。
+   ------------------------------------------------------------------ */
+
+let accessToken: string | null = null;
+let refreshHandler: (() => Promise<string | null>) | null = null;
+
+/** 设置当前访问令牌。 */
+export function setAccessToken(token: string | null): void {
+  accessToken = token;
+}
+
+/** 取当前访问令牌（SignalR 握手等场景需要）。 */
+export function getAccessToken(): string | null {
+  return accessToken;
+}
+
+/** 注册「令牌失效时如何换新」的回调，由 AuthProvider 注入。 */
+export function setRefreshHandler(handler: (() => Promise<string | null>) | null): void {
+  refreshHandler = handler;
 }
 
 /** 构建带查询串的 URL。 */
@@ -38,38 +64,53 @@ function buildUrl(path: string, query?: ApiRequestOptions['query']): string {
   return qs ? `${path}${path.includes('?') ? '&' : '?'}${qs}` : path;
 }
 
-/**
- * 调用后端接口并解包统一响应包。
- *
- * 成功时直接返回 `data`；失败时抛出 {@link ApiError}，其中保留业务错误码与 traceId。
- * 业务错误码由 HTTP 状态码承载（见 ErrorCode.ToHttpStatus），因此非 2xx 也必须解析响应体。
- */
-export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
-  const { method = 'GET', body, query, headers, signal } = options;
+function send(path: string, options: ApiRequestOptions): Promise<Response> {
+  const { method = 'GET', body, query, headers, signal, anonymous } = options;
 
-  const response = await fetch(buildUrl(path, query), {
+  return fetch(buildUrl(path, query), {
     method,
     credentials: 'same-origin',
     headers: {
       Accept: 'application/json',
       ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+      ...(!anonymous && accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...headers
     },
     body: body === undefined ? undefined : JSON.stringify(body),
     signal
   });
+}
 
-  let envelope: ApiEnvelope<T> | null = null;
+async function readEnvelope<T>(response: Response): Promise<ApiEnvelope<T>> {
   try {
-    envelope = (await response.json()) as ApiEnvelope<T>;
+    return (await response.json()) as ApiEnvelope<T>;
   } catch {
-    // 非 JSON 响应（网关错误页、连接中断等）走统一兜底
     throw new ApiError(
       ErrorCode.Unexpected,
       `服务响应无法解析（HTTP ${response.status}）`,
       response.headers.get('X-Trace-Id') ?? '',
       response.status
     );
+  }
+}
+
+/**
+ * 调用后端接口并解包统一响应包。
+ *
+ * - 成功返回 `data`；失败抛 {@link ApiError}，保留业务错误码与 traceId。
+ * - 遇到 2001（令牌失效）自动尝试刷新一次并重放请求；再失败则抛错，由上层跳登录页。
+ */
+export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
+  let response = await send(path, options);
+  let envelope = await readEnvelope<T>(response);
+
+  const unauthorized = response.status === 401 || envelope.code === ErrorCode.Unauthenticated;
+  if (unauthorized && !options.anonymous && refreshHandler) {
+    const token = await refreshHandler();
+    if (token) {
+      response = await send(path, options);
+      envelope = await readEnvelope<T>(response);
+    }
   }
 
   if (!response.ok || envelope.code !== ErrorCode.Success) {
@@ -87,4 +128,14 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 /** GET 便捷方法。 */
 export function apiGet<T>(path: string, options: Omit<ApiRequestOptions, 'method' | 'body'> = {}) {
   return apiRequest<T>(path, { ...options, method: 'GET' });
+}
+
+/** POST 便捷方法。 */
+export function apiPost<T>(path: string, body?: unknown, options: Omit<ApiRequestOptions, 'method' | 'body'> = {}) {
+  return apiRequest<T>(path, { ...options, method: 'POST', body });
+}
+
+/** PUT 便捷方法。 */
+export function apiPut<T>(path: string, body?: unknown, options: Omit<ApiRequestOptions, 'method' | 'body'> = {}) {
+  return apiRequest<T>(path, { ...options, method: 'PUT', body });
 }

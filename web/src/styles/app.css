@@ -44,3 +44,182 @@ body,
   color: var(--text-3);
   font-size: 12px;
 }
+
+/* 3. 侧栏脚注（「已隐藏 N 个无权限菜单」「数据范围：仅自选股」）。
+      原型把这两句写在 renderNav() 的行内样式里，实现版抽成类以复用。 */
+.sa-navnote {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.7;
+}
+
+/* 4. 响应式外壳：原型 design/app 的底部 Tab 是靠手机外框（mock-frame.js）的网格区域
+      `grid-area: tabbar` 定位的；真实浏览器里没有外框，因此 ≤767px 时必须固到底部，
+      并给内容区留出等高内边距，否则最后一行会被挡住。 */
+@media (max-width: 767px) {
+  .app-tabbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    height: 56px;
+    border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .sa-main {
+    padding-bottom: calc(56px + 16px);
+  }
+}
+
+/* 5. 登录页：以下规则逐条照抄原型 `design/web/index.html` 的内联 <style> 块
+      （.login-stage / .login-hero / .hero-* / .login-panel / .login-box）。
+      原型用行内样式是因为它不引入构建步骤；实现版放进样式文件避免散落。 */
+.login-stage {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(420px, 0.85fr);
+  background: var(--bg-root);
+}
+
+.login-hero {
+  position: relative;
+  padding: 56px 64px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  border-right: 1px solid var(--border-soft);
+  background:
+    radial-gradient(900px 520px at 12% 8%, rgba(91, 141, 239, 0.07), transparent 62%),
+    var(--bg-root);
+}
+
+.login-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-soft) 1px, transparent 1px);
+  background-size: 44px 44px;
+  opacity: 0.35;
+  mask-image: radial-gradient(circle at 30% 40%, #000 20%, transparent 78%);
+  -webkit-mask-image: radial-gradient(circle at 30% 40%, #000 20%, transparent 78%);
+  pointer-events: none;
+}
+
+.login-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-title {
+  font-size: 42px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.hero-title em {
+  font-style: normal;
+  color: var(--brand);
+}
+
+.hero-sub {
+  color: var(--text-2);
+  font-size: var(--fs-14);
+  max-width: 520px;
+  line-height: 1.9;
+  margin-top: 16px;
+}
+
+.hero-matrix {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 34px;
+  max-width: 560px;
+}
+
+.hero-matrix .hm {
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: var(--bg-panel);
+}
+
+.hm .hm-k {
+  font-size: var(--fs-11);
+  color: var(--text-3);
+}
+
+.hm .hm-v {
+  font-family: var(--font-num);
+  font-size: var(--fs-14);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.hero-foot {
+  color: var(--text-3);
+  font-size: var(--fs-11);
+  line-height: 1.9;
+}
+
+.login-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 40px;
+  background: var(--bg-panel);
+}
+
+[data-theme="light"] .login-panel {
+  box-shadow: 0 1px 3px rgba(20, 22, 26, 0.05);
+}
+
+.login-box {
+  width: min(380px, 100%);
+}
+
+@media (max-width: 1024px) {
+  .login-stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .login-hero {
+    display: none;
+  }
+}
+
+/* 6. 表单错误提示：原型的 .field/.label/.input 未覆盖错误态，这里补一行文案样式 */
+.field-error {
+  margin-top: 6px;
+  font-size: var(--fs-12);
+  color: var(--danger);
+  line-height: 1.6;
+}
+
+/* 7. 占位页：尚未实现的页面用统一形态说明批次与所需权限，避免空屏 */
+.placeholder-note {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 22px 24px;
+  border-radius: var(--r-card);
+  background: var(--bg-panel);
+  color: var(--text-2);
+  line-height: 1.9;
+}
+
+.placeholder-note strong {
+  color: var(--text-1);
+  font-weight: 600;
+}
+
+.placeholder-note code {
+  font-family: var(--font-num);
+  color: var(--text-1);
+}

@@ -1,5 +1,13 @@
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SA.Application.Abstractions;
+using SA.Application.Auth;
+using SA.Infrastructure.Persistence;
+using SA.Infrastructure.Persistence.Seed;
+using SA.Infrastructure.Persistence.Stores;
+using SA.Infrastructure.Security;
 using SA.Infrastructure.Storage;
 
 namespace SA.Infrastructure;
@@ -25,5 +33,61 @@ public static class DependencyInjection
         var root = DataPaths.ResolveRoot(configuration["Sa:DataDirectory"], contentRoot);
         services.AddSingleton(new DataPaths(root));
         return services;
+    }
+
+    /// <summary>
+    /// 注册元数据持久化：DbContext、存储实现、播种器与启动初始化器。
+    /// </summary>
+    public static IServiceCollection AddSaPersistence(this IServiceCollection services)
+    {
+        services.AddDbContext<SaDbContext>((provider, builder) =>
+        {
+            var paths = provider.GetRequiredService<DataPaths>();
+            paths.EnsureCreated();
+            builder.UseSqlite($"Data Source={paths.DatabaseFile};Foreign Keys=True");
+        });
+
+        services.AddScoped<IUserStore, UserStore>();
+        services.AddScoped<IRoleStore, RoleStore>();
+        services.AddScoped<ISessionStore, SessionStore>();
+        services.AddScoped<ISettingsStore, SettingsStore>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IdentitySeeder>();
+        services.AddScoped<PersistenceInitializer>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 注册安全组件：令牌哈希、敏感字段保护、签名密钥与访问令牌签发。
+    /// </summary>
+    public static IServiceCollection AddSaSecurity(this IServiceCollection services)
+    {
+        services.AddDataProtection()
+            .SetApplicationName("SA")
+            .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(DataRootOf(services), "keys")));
+
+        services.AddSingleton<ISigningKeyProvider, SigningKeyProvider>();
+        services.AddSingleton<ITokenHasher, Sha256TokenHasher>();
+        services.AddSingleton<ISecretProtector>(provider =>
+            new DataProtectionSecretProtector(provider.GetRequiredService<Microsoft.AspNetCore.DataProtection.IDataProtectionProvider>()));
+        services.AddSingleton<IAccessTokenIssuer, JwtAccessTokenIssuer>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 从已注册的 <see cref="DataPaths"/> 取数据根目录。DataProtection 的密钥环需要真实路径，
+    /// 而此处无法注入实例（注册阶段），只能读取服务描述。
+    /// </summary>
+    private static string DataRootOf(IServiceCollection services)
+    {
+        var descriptor = services.FirstOrDefault(d => d.ServiceType == typeof(DataPaths));
+        if (descriptor?.ImplementationInstance is DataPaths paths)
+        {
+            return paths.Root;
+        }
+
+        throw new InvalidOperationException("请先调用 AddSaDataPaths 再调用 AddSaSecurity");
     }
 }

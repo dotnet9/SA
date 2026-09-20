@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text.Json;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace SA.Api.Tests;
 
@@ -8,8 +7,8 @@ namespace SA.Api.Tests;
 /// 统一响应包与 traceId 的契约测试。所有端点都依赖这两点，
 /// 因此这里锁定的是「前端能否稳定解包」的前提（实施计划 §5.1）。
 /// </summary>
-public class HealthEndpointTests(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+public class HealthEndpointTests(ApiFactory factory)
+    : IClassFixture<ApiFactory>
 {
     [Fact]
     public async Task 健康检查返回统一响应包与追踪标识()
@@ -52,5 +51,20 @@ public class HealthEndpointTests(WebApplicationFactory<Program> factory)
 
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal("probe-1234", document.RootElement.GetProperty("traceId").GetString());
+    }
+
+    [Fact]
+    public async Task 未登录访问受保护接口返回两千零一错误码()
+    {
+        using var client = factory.CreateClient();
+
+        using var response = await client.GetAsync("/api/me");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(2001, document.RootElement.GetProperty("code").GetInt32());
+        Assert.False(string.IsNullOrWhiteSpace(document.RootElement.GetProperty("traceId").GetString()));
+        Assert.Equal(JsonValueKind.Null, document.RootElement.GetProperty("data").ValueKind);
     }
 }

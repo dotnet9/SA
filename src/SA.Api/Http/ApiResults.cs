@@ -1,4 +1,5 @@
 using SA.Api.Middleware;
+using SA.Application.Common;
 using SA.Contracts.Common;
 
 namespace SA.Api.Http;
@@ -21,6 +22,14 @@ public static class ApiResults
         Results.Json(
             ApiResponse.Fail<object>(code, message, TraceId(context)),
             statusCode: code.ToHttpStatus());
+
+    /// <summary>
+    /// 把用例结果直接写成响应：成功返回 <c>data</c>，失败按错误码映射 HTTP 状态码。
+    /// </summary>
+    public static IResult From<T>(HttpContext context, ServiceResult<T> result) =>
+        result.Ok
+            ? Ok(context, result.Value)
+            : Fail(context, result.Error, result.Message ?? "请求失败");
 
     private static string TraceId(HttpContext context) =>
         context.Items[TraceIdMiddleware.ItemsKey] as string ?? context.TraceIdentifier;

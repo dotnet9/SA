@@ -22,6 +22,12 @@
     <PackageVersion Include="ToolGood.Words.Pinyin" Version="3.1.0.4" />
   </ItemGroup>
 
+  <ItemGroup Label="鉴权">
+    <!-- 走稳定 10.x 线，避免把鉴权链拖进 RC；net10.0 资产可在 net11.0 下引用（实施计划 §3.3） -->
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.23.0" />
+  </ItemGroup>
+
   <ItemGroup Label="测试">
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />

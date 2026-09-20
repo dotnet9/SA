@@ -19,15 +19,20 @@ public enum DataScope
 public static class DataScopes
 {
     /// <summary>
-    /// 由功能点集合派生数据范围。同时具备或都不具备时按保守口径处理：
-    /// 只有明确拥有 <c>data.scope.all</c> 且不具备 <c>data.scope.watchlist</c> 才视为全市场。
+    /// 由功能点集合派生数据范围。
     /// </summary>
+    /// <remarks>
+    /// 需求规格把这两个功能点定义为「互斥」，但内置管理员预设取的是完整目录
+    /// （原型 <c>data.js</c> 的 <c>allFpCodes</c>），因此实际上会同时具备两者。
+    /// 判定规则取「<c>data.scope.all</c> 优先」：
+    /// <list type="bullet">
+    /// <item>具备 <c>data.scope.all</c> → 全市场（该功能点本身就是全市场授权，不构成越权）；</item>
+    /// <item>否则一律仅自选，包含两者都不具备的异常配置，按最小权限处理。</item>
+    /// </list>
+    /// </remarks>
     public static DataScope FromFunctionPoints(IEnumerable<string> codes)
     {
         var set = codes as ICollection<string> ?? codes.ToList();
-        var hasAll = set.Contains(FunctionPointCatalog.DataScopeAll);
-        var hasWatchlist = set.Contains(FunctionPointCatalog.DataScopeWatchlist);
-
-        return hasAll && !hasWatchlist ? DataScope.All : DataScope.Watchlist;
+        return set.Contains(FunctionPointCatalog.DataScopeAll) ? DataScope.All : DataScope.Watchlist;
     }
 }

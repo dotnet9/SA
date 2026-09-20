@@ -17,12 +17,14 @@ public static class SystemEndpoints
     {
         var group = app.MapGroup("/api").WithTags("system");
 
+        // 健康检查必须匿名：反代探活与启动自检都在无凭证场景下调用
         group.MapGet("/health", (HttpContext context, IHostEnvironment environment) =>
             ApiResults.Ok(context, new HealthDto(
                 "ok",
                 Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0",
                 environment.EnvironmentName,
-                SaTime.Format(SaTime.Now))));
+                SaTime.Format(SaTime.Now))))
+            .AllowAnonymous();
 
         return app;
     }

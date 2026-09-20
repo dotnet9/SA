@@ -78,11 +78,22 @@ public class BuiltInRolesTests
     {
         Assert.Equal(DataScope.All, DataScopes.FromFunctionPoints(new[] { FunctionPointCatalog.DataScopeAll }));
         Assert.Equal(DataScope.Watchlist, DataScopes.FromFunctionPoints(new[] { FunctionPointCatalog.DataScopeWatchlist }));
+
+        // 两者都不具备属于异常配置，按最小权限处理
         Assert.Equal(DataScope.Watchlist, DataScopes.FromFunctionPoints(Array.Empty<string>()));
 
-        // 两者同时具备属于脏数据，按「仅自选」保守处理，避免越权读到全市场
+        // 两者同时具备是管理员预设的实际形态（完整目录），以 data.scope.all 为准
         Assert.Equal(
-            DataScope.Watchlist,
+            DataScope.All,
             DataScopes.FromFunctionPoints(new[] { FunctionPointCatalog.DataScopeAll, FunctionPointCatalog.DataScopeWatchlist }));
+    }
+
+    [Fact]
+    public void 管理员预设的完整目录派生为全市场数据范围()
+    {
+        var admin = BuiltInRoles.Find(BuiltInRoleIds.Admin);
+        Assert.NotNull(admin);
+
+        Assert.Equal(DataScope.All, DataScopes.FromFunctionPoints(admin.FunctionPoints));
     }
 }
