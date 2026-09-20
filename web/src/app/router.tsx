@@ -98,6 +98,21 @@ const AdminSecurityPage = lazy(() =>
   import('@/features/admin/AdminSecurityPage').then((module) => ({ default: module.AdminSecurityPage }))
 );
 
+/** 个人设置。 */
+const SettingsPage = lazy(() =>
+  import('@/features/settings/SettingsPage').then((module) => ({ default: module.SettingsPage }))
+);
+
+/** 四种拓扑图总览。 */
+const TopologyPage = lazy(() =>
+  import('@/features/topology/TopologyPage').then((module) => ({ default: module.TopologyPage }))
+);
+
+/** 提醒形态预览。 */
+const NotifyPreviewPage = lazy(() =>
+  import('@/features/alerts/NotifyPreviewPage').then((module) => ({ default: module.NotifyPreviewPage }))
+);
+
 /** 自选股（含实时推送）。 */
 const WatchlistPage = lazy(() =>
   import('@/features/watchlist/WatchlistPage').then((module) => ({ default: module.WatchlistPage }))
@@ -331,11 +346,20 @@ export const router = createBrowserRouter([
         path: 'notify-preview',
         element: (
           <RequireFunctionPoint codes={['alert.manage']}>
-            <PlaceholderPage title="提醒形态预览" batch="第 11 批" />
+            <Suspense fallback={<RouteFallback />}>
+              <NotifyPreviewPage />
+            </Suspense>
           </RequireFunctionPoint>
         )
       },
-      { path: 'settings', element: <PlaceholderPage title="个人设置" batch="第 11 批" /> },
+      {
+        path: 'settings',
+        element: (
+          <Suspense fallback={<RouteFallback />}>
+            <SettingsPage />
+          </Suspense>
+        )
+      },
       { path: 'stock', element: <StockRedirect /> },
       { path: 'stock/:code', element: <StockModulePage /> },
       { path: 'stock/:code/:module', element: <StockModulePage /> },
@@ -347,7 +371,9 @@ export const router = createBrowserRouter([
         path: 'topology/:code',
         element: (
           <RequireFunctionPoint codes={['topology.view']}>
-            <PlaceholderPage title="四种拓扑图总览" batch="第 9 批" />
+            <Suspense fallback={<RouteFallback />}>
+              <TopologyPage />
+            </Suspense>
           </RequireFunctionPoint>
         )
       },

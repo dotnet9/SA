@@ -76,8 +76,12 @@ public sealed class ScreenerService(
     /// <summary>
     /// 取选股器元数据（字段、预设、板块、导出额度）。
     /// </summary>
+    /// <param name="exportQuota">今日剩余导出次数；<c>-1</c> 表示未配置上限（不限）。</param>
+    /// <param name="exportRowLimit">单次导出行数上限。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
     public async Task<ServiceResult<ScreenerMetaDto>> GetMetaAsync(
         int exportQuota,
+        int exportRowLimit,
         CancellationToken cancellationToken = default)
     {
         await EnsureLoadedAsync(cancellationToken).ConfigureAwait(false);
@@ -92,7 +96,8 @@ public sealed class ScreenerService(
             Fields: Fields,
             Presets: Presets.Select(preset => new ScreenerPresetDto(preset.Key, preset.Name, preset.Description)).ToList(),
             Boards: boards,
-            ExportQuota: exportQuota));
+            ExportQuota: exportQuota,
+            ExportRowLimit: exportRowLimit));
     }
 
     /// <summary>

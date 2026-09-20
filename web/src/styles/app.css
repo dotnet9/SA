@@ -213,7 +213,168 @@ body,
   line-height: 1.6;
 }
 
-/* 8. 个股页的页级样式：逐条照抄原型 `design/web/stock.html` 与 `stock-trend.html`
+/* 8. 全局公告横幅（后台「系统设置」里的 site.notice 生效于此）。
+      样式沿用卡片体系：品牌色左边框 + 玻璃底，不抢页面内容的注意力。 */
+.sa-notice {
+  margin: 0 0 var(--sp-4);
+  padding: 8px 12px;
+  border-radius: var(--r-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--brand);
+  background: var(--bg-glass);
+  color: var(--text-2);
+  font-size: var(--fs-12);
+  line-height: 1.7;
+  white-space: pre-line;
+}
+
+/* 9. 个人设置里的「数字字体」：
+      默认用 tokens 的 --font-num（等宽，便于小数点竖直对齐）；选择「跟随界面字体」时
+      只把该变量换成界面字体栈，所有 .mono 与数值单元格会自动跟随，无需改任何组件。 */
+html[data-numfont='ui'] {
+  --font-num: var(--font-ui);
+}
+
+/* 10. 提醒形态预览的三种手机样式：逐条照抄原型 `design/app/notify-preview.html`
+      内联 <style> 块（站内通知卡、浏览器通知栏、锁屏通知、震动示意）。 */
+.mock-banner {
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: var(--bg-glass);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-2);
+  display: flex;
+  gap: 10px;
+}
+
+.mock-lock {
+  border-radius: 18px;
+  padding: 14px;
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-2);
+}
+
+.app-ico {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  flex: 0 0 auto;
+  background: var(--brand);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-family: var(--font-num);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.vibrate-demo {
+  display: inline-flex;
+  gap: 3px;
+  align-items: flex-end;
+  height: 18px;
+}
+
+.vibrate-demo > i {
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  animation: sa-vb 900ms ease-in-out infinite;
+}
+
+.vibrate-demo > i:nth-child(2) { animation-delay: 120ms; }
+.vibrate-demo > i:nth-child(3) { animation-delay: 240ms; }
+.vibrate-demo > i:nth-child(4) { animation-delay: 360ms; }
+.vibrate-demo > i:nth-child(5) { animation-delay: 480ms; }
+
+@keyframes sa-vb {
+  0%, 100% { height: 5px; }
+  50% { height: 18px; }
+}
+
+/* 11. 拓扑总览页的四图切换卡：同样照抄原型 `design/web/topology.html` 的内联样式 */
+.topo-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 1100px) {
+  .topo-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.topo-tab {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  background: var(--bg-panel);
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.topo-tab:hover {
+  border-color: var(--brand);
+}
+
+.topo-tab.is-active {
+  border-color: var(--brand);
+  background: var(--bg-glass);
+}
+
+.topo-tab .tt-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  background: var(--bg-sunken);
+  font-family: var(--font-num);
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.topo-tab.is-active .tt-num {
+  background: var(--brand);
+  color: #fff;
+}
+
+.topo-tab .tt-name {
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.topo-tab .tt-desc {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 4px;
+  line-height: 1.7;
+}
+
+.topo-tab .tt-meta {
+  font-size: 11px;
+  color: var(--text-2);
+  margin-top: 6px;
+  font-family: var(--font-num);
+}
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 1100px) {
+  .compare-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 12. 个股页的页级样式：逐条照抄原型 `design/web/stock.html` 与 `stock-trend.html`
       内联 <style> 块里的页面私有规则（原型用行内样式是因为它不引入构建步骤）。
       `.modcard` 是总览页 8 张摘要卡的网格，`.focus-tabs` / `.trend-toolbar` 是吸顶工具条，
       `.legend-inline` 是趋势页自绘的均线图例。 */
@@ -279,7 +440,7 @@ body,
   border-radius: 2px;
 }
 
-/* 9. 占位页：尚未实现的页面用统一形态说明批次与所需权限，避免空屏 */
+/* 13. 占位页：尚未实现的页面用统一形态说明批次与所需权限，避免空屏 */
 .placeholder-note {
   display: flex;
   flex-direction: column;

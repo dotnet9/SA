@@ -119,12 +119,14 @@ public sealed record ScreenerFieldDto(string Field, string Name, string Unit, de
 /// <param name="Fields">可用字段。</param>
 /// <param name="Presets">预设条件。</param>
 /// <param name="Boards">可选板块。</param>
-/// <param name="ExportQuota">当日导出剩余次数。</param>
+/// <param name="ExportQuota">今日剩余导出次数；<c>-1</c> 表示未配置上限（不限）。</param>
+/// <param name="ExportRowLimit">单次导出的行数上限。</param>
 public sealed record ScreenerMetaDto(
     IReadOnlyList<ScreenerFieldDto> Fields,
     IReadOnlyList<ScreenerPresetDto> Presets,
     IReadOnlyList<string> Boards,
-    int ExportQuota);
+    int ExportQuota,
+    int ExportRowLimit);
 
 /// <summary>
 /// 选股器字段名常量。与前端、服务端共用同一份定义。

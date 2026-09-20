@@ -61,5 +61,25 @@ export const StorageKeys = {
   UpDown: 'updown',
   Density: 'density',
   CardOrder: 'cardorder.',
-  SettingsCache: 'settings'
+  SettingsCache: 'settings',
+  /** 数字字体：mono（等宽）或 ui（跟随界面字体）。 */
+  NumFont: 'numfont',
+  /** 默认首页路径。 */
+  HomePath: 'home',
+  /** 推送到达时高亮数字。 */
+  FlashOnPush: 'flash',
+  /** 顶栏常驻显示行情时间戳。 */
+  ShowMarketTime: 'markettime',
+  /** 均线周期（逗号分隔）。 */
+  MaPeriods: 'ma',
+  /** 复权方式：qfq / hfq / none。 */
+  Adjust: 'adjust',
+  /** MACD 参数（逗号分隔的三段）。 */
+  MacdParams: 'macd',
+  /** 主力资金口径。 */
+  FundFlowCaliber: 'fundflow',
+  /** 通知渠道开关（JSON）。 */
+  NotifyChannels: 'notifychannels',
+  /** 免打扰时段（JSON）。 */
+  DoNotDisturb: 'dnd'
 } as const;

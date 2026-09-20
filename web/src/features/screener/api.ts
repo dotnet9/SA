@@ -20,8 +20,10 @@ export interface ScreenerMeta {
   fields: ScreenerField[];
   presets: ScreenerPreset[];
   boards: string[];
-  /** 当日剩余导出次数；0 表示无导出权限或已用完。 */
+  /** 今日剩余导出次数；-1 表示未配置上限（不限）。 */
   exportQuota: number;
+  /** 单次导出的行数上限。 */
+  exportRowLimit: number;
 }
 
 export interface ScreenerRow {

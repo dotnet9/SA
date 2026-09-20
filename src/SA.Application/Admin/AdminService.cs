@@ -520,23 +520,39 @@ public sealed class AdminService(
     /// 可修改的系统设置项白名单。
     /// </summary>
     /// <remarks>
+    /// <para>
     /// 只暴露「运行期可以安全调整」的键：密钥类与数据目录类不在此列
     /// （它们改了会导致数据找不到或会话失效，必须改配置文件并重启）。
+    /// </para>
+    /// <para>
+    /// <b>只列真正被读取的键</b>：早期版本列了「默认主题 / 默认 K 线根数 / 推送间隔默认值 / 导出每日上限」
+    /// 四项，但代码里没有任何地方读它们——那不是设置项，而是四个改了没反应的假开关。
+    /// 其中主题与推送间隔属于用户偏好（在「个人设置」里按账号生效），
+    /// 导出上限属于角色配额（在权限矩阵里按角色配置），都不该在这里再放一个入口。
+    /// </para>
     /// </remarks>
     private static readonly (string Key, string Name, string Description)[] SettingCatalog =
     [
-        ("site.name", "站点名称", "显示在页头与登录页"),
-        ("site.notice", "全局公告", "显示在所有页面顶部，留空则不显示"),
-        ("display.defaultTheme", "默认主题", "dark 或 light"),
-        ("display.trendWindow", "默认 K 线根数", "趋势页默认展示的 K 线数量（60/120/240）"),
-        ("collector.pushInterval", "推送间隔（秒）", "实时推送的默认间隔，取值 3/5/10"),
-        ("export.dailyLimit", "导出每日上限", "每个账号每天可导出的次数上限")
+        (SiteSettings.NameKey, "站点名称", "显示在页头与登录页；留空则用默认名称「股析 SA」"),
+        (SiteSettings.NoticeKey, "全局公告", "显示在所有页面顶部的横幅；留空则不显示")
     ];
 
-    /// <summary>可配置的配额键（与角色配额表一致）。</summary>
+    /// <summary>
+    /// 可配置的配额键。
+    /// </summary>
+    /// <remarks>
+    /// 直接引用 <c>QuotaKeys</c> 常量，不在这里另抄一份字面量：
+    /// 早期实现自行写了 <c>export.daily</c> 这个键，而应用实际用的是 <c>quota.daily</c> 与 <c>export.rows</c>，
+    /// 结果权限矩阵里显示了一列「改了没用」的配额，真正生效的配额反而看不到（实测现象）。
+    /// </remarks>
     private static readonly string[] QuotaKeys =
     [
-        "watchlist.max", "alert.max", "export.daily"
+        SA.Domain.Entities.Identity.QuotaKeys.HistoryYears,
+        SA.Domain.Entities.Identity.QuotaKeys.DailyQueries,
+        SA.Domain.Entities.Identity.QuotaKeys.ExportRows,
+        SA.Domain.Entities.Identity.QuotaKeys.WatchlistMax,
+        SA.Domain.Entities.Identity.QuotaKeys.AlertMax,
+        SA.Domain.Entities.Identity.QuotaKeys.StrategyMax
     ];
 
     /// <summary>数据范围选项。</summary>

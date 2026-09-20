@@ -115,6 +115,8 @@ app.MapRiskEndpoints();
 app.MapAlertEndpoints();
 app.MapScreenerEndpoints();
 app.MapAdminEndpoints();
+// 站点信息（页头名称与全局公告）：只要求登录，页头在每个页面都要用
+app.MapSiteEndpoints();
 app.MapWatchlistEndpoints();
 
 // 实时行情只推自选股，按连接节流（详细设计 §7）

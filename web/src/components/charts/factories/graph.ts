@@ -88,8 +88,20 @@ export const graph: ChartFactory<GraphOptions> = (h, cfg) => {
         roam: true,
         draggable: true,
         categories,
-        // 节点名本身就是信息（股东名、行业名），必须显示
-        label: { show: true, fontSize: 11, color: h.cv('--text-1') },
+        // 节点名本身就是信息（股东名、行业名），必须显示。
+        // 位置放在节点<b>右侧</b>而不是默认的居中：节点符号只有 16–30px，
+        // 长名称（「中国工商银行股份有限公司-易方达…」）居中时会有一半压在圆点上、读不清。
+        // 加文字描边与浅底，保证压在连线上时仍然可读。
+        label: {
+          show: true,
+          position: 'right',
+          distance: 6,
+          fontSize: 11,
+          color: h.cv('--text-1'),
+          textBorderColor: h.cv('--bg-root'),
+          textBorderWidth: 2
+        },
+        labelLayout: { hideOverlap: true },
         edgeSymbol: ['none', 'arrow'],
         edgeSymbolSize: 7,
         edgeLabel: {

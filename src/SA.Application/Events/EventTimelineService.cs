@@ -531,7 +531,7 @@ public sealed class EventTimelineService(
         string code,
         string name,
         string? industry,
-        IReadOnlyList<Domain.Entities.Market.QuoteSnapshot> peers,
+        IReadOnlyList<PeerInfo> peers,
         IReadOnlyList<Domain.Entities.Market.Sector> sectors)
     {
         if (industry is null)
@@ -558,7 +558,13 @@ public sealed class EventTimelineService(
 
         foreach (var peer in peers.Where(peer => peer.Code != code).Take(MaxTopologyNodes - 2))
         {
-            nodes.Add(new TopologyNodeDto($"peer:{peer.Code}", peer.Code, 2, peer.Pct, false, $"涨跌 {peer.Pct:+0.00;-0.00}%"));
+            nodes.Add(new TopologyNodeDto(
+                $"peer:{peer.Code}",
+                Truncate(peer.Name, 10),
+                2,
+                peer.Pct,
+                false,
+                $"{peer.Code} · 涨跌 {peer.Pct:+0.00;-0.00}%"));
             edges.Add(new TopologyEdgeDto(
                 $"industry:{industry}",
                 $"peer:{peer.Code}",
@@ -695,8 +701,20 @@ public sealed class EventTimelineService(
        工具
        ------------------------------------------------------------------ */
 
-    /// <summary>加载该标的的同业快照（按市值倒序取前若干家）。</summary>
-    private async Task<IReadOnlyList<Domain.Entities.Market.QuoteSnapshot>> LoadIndustryPeersAsync(
+    /// <summary>
+    /// 同业（按市值倒序取前若干家）。
+    /// </summary>
+    /// <param name="Code">证券代码。</param>
+    /// <param name="Name">证券名称。</param>
+    /// <param name="Pct">当日涨跌幅（百分数）。</param>
+    private readonly record struct PeerInfo(string Code, string Name, decimal Pct);
+
+    /// <summary>加载该标的的同业（按市值倒序取前若干家）。</summary>
+    /// <remarks>
+    /// 节点标签用<b>证券名称</b>而不是代码：图上的可读性来自名字，代码只作为悬浮补充
+    /// （实测按代码画图时 19 个节点全是 6 位数字，无法辨认）。
+    /// </remarks>
+    private async Task<IReadOnlyList<PeerInfo>> LoadIndustryPeersAsync(
         Domain.Entities.Market.Instrument instrument,
         CancellationToken cancellationToken)
     {
@@ -719,9 +737,15 @@ public sealed class EventTimelineService(
             peers.Select(item => item.Code).ToList(),
             cancellationToken).ConfigureAwait(false);
 
+        var nameByCode = peers.ToDictionary(item => item.Code, item => item.Name, StringComparer.Ordinal);
+
         return quotesByCode.Values
             .OrderByDescending(quote => quote.MarketCap)
             .Take(18)
+            .Select(quote => new PeerInfo(
+                quote.Code,
+                nameByCode.TryGetValue(quote.Code, out var name) ? name : quote.Code,
+                quote.Pct))
             .ToList();
     }
 

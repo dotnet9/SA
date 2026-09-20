@@ -159,11 +159,17 @@ public sealed class RoleAdminStore(SaDbContext db) : IRoleAdminStore
     private readonly SaDbContext _db = db;
 
     /// <inheritdoc />
+    /// <remarks>
+    /// <b>不要在 EF 查询里给 OrderBy/ThenBy 传 StringComparer</b>：EF Core 无法翻译它，
+    /// 会抛「The LINQ expression could not be translated」并让整个接口 500
+    /// （实测过的故障：/api/admin/users 与 /api/admin/permissions 同时挂掉）。
+    /// 排序用数据库自身的排序规则即可；确需自定义比较时应在 <c>ToListAsync</c> 之后用内存排序。
+    /// </remarks>
     public async Task<IReadOnlyList<Role>> ListAsync(CancellationToken cancellationToken = default) =>
         await _db.Roles
             .AsNoTracking()
             .OrderByDescending(role => role.IsBuiltin)
-            .ThenBy(role => role.Id, StringComparer.Ordinal)
+            .ThenBy(role => role.Id)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />

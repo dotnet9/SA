@@ -259,8 +259,12 @@ public class EventTimelineServiceTests
         Assert.True(topology.Available);
 
         // 只含同行业：比亚迪在内，隆基绿能不在
-        Assert.Contains(topology.Nodes, node => node.Name == "002594");
-        Assert.DoesNotContain(topology.Nodes, node => node.Name == "601012");
+        // 节点标签用证券名称（图上的可读性来自名字），代码放在悬浮说明里
+        var peer = topology.Nodes.Single(node => node.Id == "peer:002594");
+        Assert.Equal("比亚迪", peer.Name);
+        Assert.Contains("002594", peer.Note!, StringComparison.Ordinal);
+
+        Assert.DoesNotContain(topology.Nodes, node => node.Id == "peer:601012");
 
         // 同业涨跌映射到边的颜色
         Assert.Contains(topology.Edges, edge => edge.Tone == "up");

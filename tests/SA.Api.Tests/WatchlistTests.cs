@@ -196,6 +196,108 @@ public class WatchlistTests : IClassFixture<WatchlistApiFactory>
         Assert.Equal(JsonValueKind.Null, result.GetProperty("scopeNote").ValueKind);
     }
 
+    /* --- 后台管理端点 --------------------------------------------------- */
+
+    /// <summary>
+    /// 后台的用户与权限端点必须能正常返回。
+    /// </summary>
+    /// <remarks>
+    /// 这是一条<b>回归测试</b>：早期实现里 <c>RoleAdminStore.ListAsync</c> 在 EF 查询中给
+    /// <c>ThenBy</c> 传了 <c>StringComparer.Ordinal</c>，EF Core 无法翻译，导致
+    /// <c>/api/admin/users</c> 与 <c>/api/admin/permissions</c> 同时返回 500。
+    /// 这类错误只在运行时暴露（编译期完全合法），因此必须有端到端的断言守住。
+    /// </remarks>
+    [Fact]
+    public async Task 后台用户与权限端点可正常返回()
+    {
+        var client = await _factory.CreateAdminClientAsync();
+
+        var users = await GetAsync(client, "/api/admin/users");
+
+        // 工厂里种了 9 个测试账号 + 内置管理员
+        Assert.True(users.GetProperty("total").GetInt32() >= 9);
+        Assert.True(users.GetProperty("activeCount").GetInt32() >= 9);
+
+        var first = users.GetProperty("items").EnumerateArray().First();
+        Assert.False(string.IsNullOrWhiteSpace(first.GetProperty("username").GetString()));
+        // 角色名必须解析出来（而不是回退成角色 Id）
+        Assert.False(string.IsNullOrWhiteSpace(first.GetProperty("roleName").GetString()));
+
+        var matrix = await GetAsync(client, "/api/admin/permissions");
+
+        // 功能点目录与角色都要在，且总量与需求规格一致（28 项）
+        Assert.Equal(28, matrix.GetProperty("functionPoints").GetArrayLength());
+
+        var roles = matrix.GetProperty("roles").EnumerateArray().ToList();
+        Assert.True(roles.Count >= 3);
+
+        // 每个角色都应带出功能点与配额字段（权限矩阵的勾选状态依赖它们）
+        foreach (var role in roles)
+        {
+            Assert.NotEqual(JsonValueKind.Undefined, role.GetProperty("functionPoints").ValueKind);
+            Assert.NotEqual(JsonValueKind.Undefined, role.GetProperty("quotas").ValueKind);
+        }
+
+        // 内置管理员必须有全部功能点：否则会把系统锁死
+        var admin = roles.Single(role => role.GetProperty("id").GetString() == "admin");
+        Assert.True(admin.GetProperty("isBuiltin").GetBoolean());
+        Assert.Equal(28, admin.GetProperty("functionPoints").GetArrayLength());
+    }
+
+    /// <summary>后台的数据源、会话与系统状态端点同样必须可用。</summary>
+    [Fact]
+    public async Task 后台监控与会话端点可正常返回()
+    {
+        var client = await _factory.CreateAdminClientAsync();
+
+        var sources = await GetAsync(client, "/api/admin/datasources");
+        Assert.NotEqual(JsonValueKind.Undefined, sources.GetProperty("sources").ValueKind);
+        Assert.NotEqual(JsonValueKind.Undefined, sources.GetProperty("tasks").ValueKind);
+
+        var sessions = await GetAsync(client, "/api/admin/security/sessions");
+        Assert.NotEqual(JsonValueKind.Undefined, sessions.GetProperty("logs").ValueKind);
+
+        var state = await GetAsync(client, "/api/admin/system/state");
+        // 存储路径必须给全，后台「系统设置与存储」要展示它们
+        Assert.False(string.IsNullOrWhiteSpace(state.GetProperty("databasePath").GetString()));
+        Assert.False(string.IsNullOrWhiteSpace(state.GetProperty("dataRoot").GetString()));
+        Assert.True(state.GetProperty("settings").GetArrayLength() > 0);
+    }
+
+    /// <summary>管理动作必须写审计日志（改设置是最容易验证的一条）。</summary>
+    [Fact]
+    public async Task 管理操作写入审计日志()
+    {
+        var client = await _factory.CreateAdminClientAsync();
+
+        await PutAsync(client, "/api/admin/system/settings", new
+        {
+            values = new Dictionary<string, string> { ["site.notice"] = "回归测试写入" }
+        });
+
+        var audit = await GetAsync(client, "/api/admin/security/audit");
+        var rows = audit.EnumerateArray().ToList();
+
+        Assert.Contains(rows, row =>
+            row.GetProperty("action").GetString() == "settings.update"
+            && (row.GetProperty("detail").GetString() ?? string.Empty).Contains("site.notice", StringComparison.Ordinal));
+    }
+
+    /// <summary>未开放修改的设置项必须被拒绝，而不是静默写库。</summary>
+    [Fact]
+    public async Task 未开放的设置项被拒绝()
+    {
+        var client = await _factory.CreateAdminClientAsync();
+
+        using var response = await client.PutAsJsonAsync(
+            "/api/admin/system/settings",
+            new { values = new Dictionary<string, string> { ["auth.signingKey"] = "hacked" } });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(1001, document.RootElement.GetProperty("code").GetInt32());
+    }
+
     /* ------------------------------------------------------------------ */
 
     /// <summary>发请求并解包响应包，返回 <c>data</c> 部分（与其余测试文件一致）。</summary>

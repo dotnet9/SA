@@ -116,7 +116,9 @@ function Content({ meta }: { meta: Awaited<ReturnType<typeof fetchScreenerMeta>>
           </div>
           <h1>条件选股器</h1>
           <div className="sub">
-            横截面筛选（同一时点全市场）· 导出剩余 {meta.exportQuota} 次
+            横截面筛选（同一时点全市场）·
+            {meta.exportQuota < 0 ? ' 导出不限次数' : ` 导出剩余 ${meta.exportQuota} 次`}
+            {` · 单次最多 ${meta.exportRowLimit} 行`}
             {result?.asOf ? ` · 行情时间 ${result.asOf}` : ''}
           </div>
         </div>
@@ -248,10 +250,15 @@ function Content({ meta }: { meta: Awaited<ReturnType<typeof fetchScreenerMeta>>
               <button
                 type="button"
                 className="btn btn-sm btn-outline"
-                disabled={exportMutation.isPending || meta.exportQuota <= 0}
+                // exportQuota 为 -1 表示未配置上限（不限），只有明确为 0 才是「今日已用完」
+                disabled={exportMutation.isPending || meta.exportQuota === 0}
                 onClick={() => exportMutation.mutate()}
               >
-                {meta.exportQuota > 0 ? `导出 CSV（剩 ${meta.exportQuota} 次）` : '导出额度已用完'}
+                {meta.exportQuota === 0
+                  ? '今日导出次数已用完'
+                  : meta.exportQuota < 0
+                    ? '导出 CSV'
+                    : `导出 CSV（剩 ${meta.exportQuota} 次）`}
               </button>
             </span>
           </div>
