@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SA.Domain.Entities.Collect;
+using SA.Domain.Entities.Finance;
 using SA.Domain.Entities.Identity;
 using SA.Domain.Entities.Market;
 using SA.Domain.Entities.System;
@@ -82,6 +83,12 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
 
     /// <summary>自选项。</summary>
     public DbSet<WatchItem> WatchItems => Set<WatchItem>();
+
+    /// <summary>业绩报表。</summary>
+    public DbSet<FinancialReport> FinancialReports => Set<FinancialReport>();
+
+    /// <summary>业绩预告。</summary>
+    public DbSet<EarningsForecast> EarningsForecasts => Set<EarningsForecast>();
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -407,6 +414,65 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
             entity.Property(e => e.AddedAt).HasConversion(timeConverter);
             entity.HasOne<User>().WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne<WatchGroup>().WithMany().HasForeignKey(e => e.GroupId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<FinancialReport>(entity =>
+        {
+            entity.ToTable("FinancialReport");
+            entity.HasKey(e => new { e.Code, e.ReportDate });
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.ReportType).HasMaxLength(32);
+            entity.Property(e => e.Quarter).HasMaxLength(16);
+            entity.Property(e => e.DividendPlan).HasMaxLength(128);
+            entity.Property(e => e.Industry).HasMaxLength(64);
+            entity.Property(e => e.ReportDate).HasConversion(dateConverter);
+            entity.Property(e => e.NoticeDate).HasConversion(nullableDateConverter);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+
+            foreach (var property in new[]
+            {
+                nameof(FinancialReport.Revenue), nameof(FinancialReport.NetProfit),
+                nameof(FinancialReport.Eps), nameof(FinancialReport.DeductedEps),
+                nameof(FinancialReport.Bps), nameof(FinancialReport.OperatingCashFlowPerShare)
+            })
+            {
+                // 营收与净利是「元」级别的大数，用 double 承载足够（有效位数远超金额需要）
+                entity.Property(property).HasConversion<double?>();
+            }
+
+            foreach (var property in new[]
+            {
+                nameof(FinancialReport.RevenueYoy), nameof(FinancialReport.NetProfitYoy),
+                nameof(FinancialReport.Roe), nameof(FinancialReport.GrossMargin),
+                nameof(FinancialReport.RevenueQoq), nameof(FinancialReport.NetProfitQoq),
+                nameof(FinancialReport.DividendYield)
+            })
+            {
+                entity.Property(property).HasConversion<double?>();
+            }
+        });
+
+        modelBuilder.Entity<EarningsForecast>(entity =>
+        {
+            entity.ToTable("EarningsForecast");
+            // 同一报告期只保留最新一条披露（上游同一期会返回多条，详见实体的说明）
+            entity.HasKey(e => new { e.Code, e.ReportDate });
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.Caliber).HasMaxLength(64);
+            entity.Property(e => e.ForecastType).HasMaxLength(32);
+            entity.Property(e => e.Summary).HasMaxLength(1024);
+            entity.Property(e => e.ReportDate).HasConversion(dateConverter);
+            entity.Property(e => e.NoticeDate).HasConversion(nullableDateConverter);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+
+            foreach (var property in new[]
+            {
+                nameof(EarningsForecast.NetProfitMin), nameof(EarningsForecast.NetProfitMax),
+                nameof(EarningsForecast.ChangeMin), nameof(EarningsForecast.ChangeMax)
+            })
+            {
+                entity.Property(property).HasConversion<double?>();
+            }
         });
     }
 }

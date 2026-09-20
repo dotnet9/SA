@@ -91,6 +91,7 @@ public sealed class BackfillHostedService(
 
         var dailyJob = provider.GetRequiredService<DailyKlineJob>();
         var indicatorJob = provider.GetRequiredService<IndicatorJob>();
+        var financeJob = provider.GetRequiredService<FinanceJob>();
         var cursors = provider.GetRequiredService<ISyncCursorStore>();
         var instruments = provider.GetRequiredService<IInstrumentStore>();
 
@@ -142,6 +143,9 @@ public sealed class BackfillHostedService(
                 if (bars > 0)
                 {
                     await indicatorJob.RunAsync(code, cancellationToken).ConfigureAwait(false);
+
+                    // 财务数据季频且体量小，顺带补齐，省一次独立的回补轮次
+                    await financeJob.RunAsync(code, cancellationToken).ConfigureAwait(false);
                     succeeded++;
                 }
                 else

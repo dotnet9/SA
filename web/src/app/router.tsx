@@ -43,6 +43,11 @@ const WatchlistPage = lazy(() =>
   import('@/features/watchlist/WatchlistPage').then((module) => ({ default: module.WatchlistPage }))
 );
 
+/** 盈利与财务表现。 */
+const StockFinancePage = lazy(() =>
+  import('@/features/finance/StockFinancePage').then((module) => ({ default: module.StockFinancePage }))
+);
+
 /** 分包加载占位：沿用启动态样式，避免白屏。 */
 function RouteFallback() {
   return <div className="sa-boot">正在载入页面…</div>;
@@ -138,6 +143,8 @@ function StockModulePage() {
           <StockOverviewPage />
         ) : module === 'trend' ? (
           <StockTrendPage />
+        ) : module === 'finance' ? (
+          <StockFinancePage />
         ) : (
           <PlaceholderPage title={`${name} · ${code}`} batch={batches[module] ?? '后续批次'} />
         )}

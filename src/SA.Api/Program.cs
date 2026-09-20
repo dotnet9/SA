@@ -103,6 +103,7 @@ app.MapMeEndpoints();
 app.MapMarketEndpoints();
 app.MapSearchEndpoints();
 app.MapStockEndpoints();
+app.MapFinanceEndpoints();
 app.MapWatchlistEndpoints();
 
 // 实时行情只推自选股，按连接节流（详细设计 §7）

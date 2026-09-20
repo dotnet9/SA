@@ -1,5 +1,6 @@
 using SA.Application.Abstractions;
 using SA.Application.Analysis;
+using SA.Application.Finance;
 using SA.Application.Common;
 using SA.Application.Market;
 using SA.Contracts.Common;
@@ -24,7 +25,8 @@ namespace SA.Application.Stocks;
 public sealed class OverviewComposer(
     IInstrumentStore instruments,
     IQuoteSnapshotStore quotes,
-    TrendAnalyzer trend)
+    TrendAnalyzer trend,
+    FinanceService finance)
 {
     /// <summary>8 个模块的定义与顺序，与导航和原型矩阵页一致。</summary>
     private static readonly (string Key, string Name)[] Modules =
@@ -62,9 +64,12 @@ public sealed class OverviewComposer(
         var cards = new List<ModuleCardDto>(Modules.Length);
         foreach (var (key, name) in Modules)
         {
-            cards.Add(key == "trend"
-                ? await BuildTrendCardAsync(code, name, cancellationToken).ConfigureAwait(false)
-                : PendingCard(key, name));
+            cards.Add(key switch
+            {
+                "trend" => await BuildTrendCardAsync(code, name, cancellationToken).ConfigureAwait(false),
+                "finance" => await BuildFinanceCardAsync(code, name, cancellationToken).ConfigureAwait(false),
+                _ => PendingCard(key, name)
+            });
         }
 
         var trendCard = cards[0];
@@ -82,7 +87,7 @@ public sealed class OverviewComposer(
             [
                 "口径：日线为前复权；行业为东财行业。",
                 "总览卡片的数字与各模块页共用同一数据源，模块页请求更细的序列数据。",
-                "本批仅「趋势与价格结构」接真；其余模块按批次接入，卡片会明确标注采集中。"
+                "已接入：趋势与价格结构、盈利与财务表现；其余模块按批次接入，卡片会明确标注采集中。"
             ]));
     }
 
@@ -167,6 +172,89 @@ public sealed class OverviewComposer(
         var text = string.Join(" · ", insights.Take(3).Select(i => i.Text));
         return close is null ? text : $"{text}（收 {close:F2}）";
     }
+
+    /// <summary>
+    /// 财务卡：最新一期营收/净利/ROE + 缩略图（近 20 期营收）。
+    /// </summary>
+    private async Task<ModuleCardDto> BuildFinanceCardAsync(
+        string code,
+        string name,
+        CancellationToken cancellationToken)
+    {
+        var result = await finance.GetAsync(code, cancellationToken).ConfigureAwait(false);
+        if (!result.Ok || result.Value is null)
+        {
+            return new ModuleCardDto(
+                Key: "finance",
+                Name: name,
+                Status: result.Error == ErrorCode.DataNotReady ? "collecting" : "failed",
+                Tags: [],
+                Kpis: [],
+                Thumb: [],
+                Summary: result.Message,
+                Link: $"/stock/{code}/finance");
+        }
+
+        var dto = result.Value;
+        var kpis = new List<ModuleKpiDto>();
+
+        if (dto.Latest?.Revenue is { } revenue)
+        {
+            kpis.Add(new ModuleKpiDto("营业收入", $"{revenue:F2} 亿", "neutral"));
+        }
+
+        if (dto.Latest?.RevenueYoy is { } revenueYoy)
+        {
+            kpis.Add(new ModuleKpiDto("营收同比", $"{revenueYoy:+0.00;-0.00}%", revenueYoy >= 0 ? "up" : "down"));
+        }
+
+        if (dto.Latest?.NetProfit is { } netProfit)
+        {
+            kpis.Add(new ModuleKpiDto("归母净利", $"{netProfit:F2} 亿", "neutral"));
+        }
+
+        if (dto.Latest?.NetProfitYoy is { } profitYoy)
+        {
+            kpis.Add(new ModuleKpiDto("净利同比", $"{profitYoy:+0.00;-0.00}%", profitYoy >= 0 ? "up" : "down"));
+        }
+
+        if (dto.Latest?.Roe is { } roe)
+        {
+            kpis.Add(new ModuleKpiDto("加权 ROE", $"{roe:F2}%", roe >= 8 ? "up" : "neutral"));
+        }
+
+        if (dto.Latest?.GrossMargin is { } margin)
+        {
+            kpis.Add(new ModuleKpiDto("毛利率", $"{margin:F2}%", "neutral"));
+        }
+
+        // 缩略图用营收序列：财务是季频，20 期足够看出多年趋势
+        var thumb = dto.Trend
+            .Select(point => point.Revenue)
+            .Where(value => value is not null)
+            .Select(value => value!.Value)
+            .ToList();
+
+        return new ModuleCardDto(
+            Key: "finance",
+            Name: name,
+            Status: "ready",
+            Tags: dto.Insights.Take(3).Select(text => new ModuleTagDto(text, ToneOf(text))).ToList(),
+            Kpis: kpis,
+            Thumb: thumb,
+            Summary: dto.Latest is null
+                ? null
+                : $"{dto.Latest.ReportType ?? dto.Latest.ReportDate}（{dto.Latest.ReportDate}）",
+            Link: $"/stock/{code}/finance");
+    }
+
+    /// <summary>把结论文案映射到色调：含「下滑/负/不增利」为跌，含「增长/上升」为涨。</summary>
+    private static string ToneOf(string text) =>
+        text.Contains("下滑", StringComparison.Ordinal) || text.Contains("不增利", StringComparison.Ordinal)
+            ? "down"
+            : text.Contains("增长", StringComparison.Ordinal)
+                ? "up"
+                : "neutral";
 
     /// <summary>尚未接入的模块：状态为 collecting，界面据此显示采集中空态。</summary>
     private static ModuleCardDto PendingCard(string key, string name) =>
