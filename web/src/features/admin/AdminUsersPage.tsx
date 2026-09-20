@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { EmptyState, ErrorState } from '@/components/ui/States';
 import { errorText } from '@/lib/errorText';
@@ -26,7 +26,20 @@ import {
  * 不能停用自己、不能删除最后一个管理员、管理员角色必须保留全部功能点。
  */
 export function AdminUsersPage() {
-  const [tab, setTab] = useState<'users' | 'roles'>('users');
+  // 标签与路由保持一致：`/admin/users` 与 `/admin/permissions` 是两个导航入口
+  // （对应原型 admin-users.html 与 admin-permissions.html），
+  // 各自指向本页的一个标签。若只把标签放在本地状态里，
+  // 点「角色与权限」会落到 URL 正确、但显示「用户管理」标签的错位状态（实测过）。
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const tabFromPath: 'users' | 'roles' = location.pathname.endsWith('/permissions') ? 'roles' : 'users';
+
+  const switchTab = (next: 'users' | 'roles') => {
+    navigate(next === 'roles' ? '/admin/permissions' : '/admin/users');
+  };
+
+  const tab = tabFromPath;
 
   return (
     <>
@@ -44,10 +57,10 @@ export function AdminUsersPage() {
 
       <div className="row gap-2 wrap">
         <span className="segmented">
-          <span className={tab === 'users' ? 'is-active' : undefined} onClick={() => setTab('users')}>
+          <span className={tab === 'users' ? 'is-active' : undefined} onClick={() => switchTab('users')}>
             用户管理
           </span>
-          <span className={tab === 'roles' ? 'is-active' : undefined} onClick={() => setTab('roles')}>
+          <span className={tab === 'roles' ? 'is-active' : undefined} onClick={() => switchTab('roles')}>
             角色与权限
           </span>
         </span>
