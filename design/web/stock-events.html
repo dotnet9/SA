@@ -357,7 +357,7 @@
     F.graph("#causalGraph", {
       nodes: nodes.map(function (n) {
         return {
-          id: n.id, name: n.name, cat: n.cat, size: 34 + n.strength / 5,
+          id: n.id, name: n.name.length > 9 ? n.name.slice(0, 9) + "…" : n.name, cat: n.cat, size: 34 + n.strength / 5,
           desc: "类型：" + n.type + " · 日期：" + n.date + " · 方向：" + (n.impact === "up" ? "利好" : "利空") + " · 强度：" + n.strength
         };
       }),

@@ -9,19 +9,18 @@
 <link rel="stylesheet" href="../web/_shared/components.css">
 <style>
   .me-head {
-    border-radius: 14px; padding: 16px;
-    background: linear-gradient(135deg, var(--brand-soft), transparent 70%);
-    border: 1px solid var(--border);
+    border-radius: 16px; padding: 20px;
+    background: var(--bg-panel);
   }
+  [data-theme="light"] .me-head { box-shadow: 0 1px 3px rgba(20, 22, 26, 0.05); }
   .me-row {
     display: flex; align-items: center; gap: 10px;
-    padding: 12px 0; border-bottom: 1px solid var(--border-soft); min-height: 48px;
+    padding: 13px 0; border-bottom: 1px solid var(--border-soft); min-height: 50px;
   }
   .me-row:last-child { border-bottom: none; }
-  .me-ico { width: 26px; text-align: center; color: var(--text-3); }
 </style>
 </head>
-<body data-page="settings" data-title="我的" data-desc="主题与涨跌色、刷新频率、通知偏好、PWA 安装引导、账号信息、退出登录。手机端把设置集中在「我的」Tab。">
+<body data-page="settings" data-title="我的" data-desc="账号 + 我的数据 + 外观 + 推送 + 关于。砍掉账号统计、指标参数、免打扰与数据口径等低频内容，设置回归少数高频项。">
 <div id="appScreen">
   <div class="m-topbar">
     <span class="m-title">我的</span>
@@ -32,27 +31,21 @@
     <!-- 账号 -->
     <div class="me-head">
       <div class="row gap-3">
-        <span class="avatar" style="width:44px;height:44px;font-size:16px">管</span>
+        <span class="avatar" style="width:48px;height:48px;font-size:17px">管</span>
         <div class="grow">
           <div class="fs-16 fw-700">管理员</div>
-          <div class="hint">admin · 创建于 2026-01-06</div>
+          <div class="hint">admin · 全部功能点</div>
         </div>
-        <span class="tag tag-brand">管理员</span>
-      </div>
-      <div class="row gap-3 mt-3">
-        <div class="kpi grow"><span class="kpi-label">权限功能点</span><span class="kpi-value is-sm">24 / 24</span></div>
-        <div class="kpi grow"><span class="kpi-label">在线设备</span><span class="kpi-value is-sm">2 台</span></div>
-        <div class="kpi grow"><span class="kpi-label">二次验证</span><span class="kpi-value is-sm t-up">已开启</span></div>
       </div>
     </div>
 
     <!-- 我的数据 -->
     <div class="m-section-title">我的数据</div>
-    <div class="m-card" style="padding:0 12px">
-      <a class="me-row" href="watchlist.html"><span class="me-ico">★</span><span class="fs-13 grow">自选股</span><span class="mono fs-12 t-3">14 只</span><span class="t-3">›</span></a>
-      <a class="me-row" href="screener.html"><span class="me-ico">⚙</span><span class="fs-13 grow">保存的选股策略</span><span class="mono fs-12 t-3">6 个</span><span class="t-3">›</span></a>
-      <a class="me-row" href="alerts.html"><span class="me-ico">◔</span><span class="fs-13 grow">提醒规则</span><span class="mono fs-12 t-3">10 条</span><span class="t-3">›</span></a>
-      <a class="me-row" href="notifications.html"><span class="me-ico">◍</span><span class="fs-13 grow">通知中心</span><span class="tag tag-brand">4 未读</span><span class="t-3">›</span></a>
+    <div class="m-card" style="padding:0 16px">
+      <a class="me-row" href="watchlist.html"><span class="fs-14 grow">自选股</span><span class="mono fs-12 t-2">14 只</span><span class="t-3">›</span></a>
+      <a class="me-row" href="screener.html"><span class="fs-14 grow">保存的选股策略</span><span class="mono fs-12 t-2">6 个</span><span class="t-3">›</span></a>
+      <a class="me-row" href="alerts.html"><span class="fs-14 grow">提醒规则</span><span class="mono fs-12 t-2">10 条</span><span class="t-3">›</span></a>
+      <a class="me-row" href="notifications.html"><span class="fs-14 grow">通知中心</span><span class="tag tag-brand">4 未读</span><span class="t-3">›</span></a>
     </div>
 
     <!-- 外观 -->
@@ -71,18 +64,11 @@
           <span class="is-active" data-v="red-up">红涨绿跌</span>
           <span data-v="green-up">绿涨红跌</span>
         </div>
-        <span class="hint">影响全部图表、表格与数字颜色，切换后立即重建图表。</span>
-      </div>
-      <div class="field mt-3">
-        <label class="label">表格密度</label>
-        <div class="segmented tap-44" style="width:100%">
-          <span class="is-active">紧凑</span><span>舒适</span>
-        </div>
       </div>
     </div>
 
-    <!-- 刷新与推送 -->
-    <div class="m-section-title">刷新与推送</div>
+    <!-- 推送 -->
+    <div class="m-section-title">推送</div>
     <div class="m-card">
       <div class="field">
         <label class="label">自选股推送间隔</label>
@@ -90,110 +76,31 @@
           <option>3 秒（推荐）</option><option>5 秒</option><option>10 秒</option><option>关闭实时推送</option>
         </select>
       </div>
-      <div class="col gap-2 mt-3">
-        <label class="switch tap-44"><input type="checkbox" checked><span class="track"></span>数字变动闪烁（600ms）</label>
-        <label class="switch tap-44"><input type="checkbox" checked><span class="track"></span>顶栏显示最后更新时间</label>
-        <label class="switch tap-44"><input type="checkbox" checked><span class="track"></span>仅 WiFi 下推送（省流量）</label>
-      </div>
+      <label class="switch tap-44 mt-3"><input type="checkbox" checked><span class="track"></span>仅 WiFi 下推送（省流量）</label>
     </div>
 
-    <!-- 指标参数 -->
-    <div class="m-section-title">指标参数</div>
+    <!-- 安装 -->
+    <div class="m-section-title">安装</div>
     <div class="m-card">
-      <div class="field">
-        <label class="label">均线周期</label>
-        <div class="row gap-2">
-          <input class="input input-sm input-num" value="5" style="width:56px">
-          <input class="input input-sm input-num" value="10" style="width:56px">
-          <input class="input input-sm input-num" value="20" style="width:56px">
-          <input class="input input-sm input-num" value="60" style="width:56px">
-        </div>
-      </div>
-      <div class="field mt-3">
-        <label class="label">复权方式</label>
-        <div class="segmented tap-44" style="width:100%">
-          <span class="is-active">前复权</span><span>后复权</span><span>不复权</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 通知偏好 -->
-    <div class="m-section-title">通知偏好</div>
-    <div class="m-card">
-      <div class="col gap-2">
-        <label class="check tap-44"><input type="checkbox" checked> 站内通知中心</label>
-        <label class="check tap-44"><input type="checkbox" checked> 浏览器通知栏</label>
-        <label class="check tap-44"><input type="checkbox" checked> 震动（iOS 不支持）</label>
-        <label class="check tap-44"><input type="checkbox"> 邮件（未接入）</label>
-      </div>
-      <div class="field mt-3">
-        <label class="label">免打扰时段</label>
-        <div class="row gap-2">
-          <input class="input input-sm" value="23:00" style="width:88px">
-          <span class="hint">至</span>
-          <input class="input input-sm" value="08:30" style="width:88px">
-        </div>
-        <span class="hint">免打扰期间仅写站内通知，不触发通知栏与震动。</span>
-      </div>
-      <a class="btn btn-outline btn-block mt-3" href="notify-preview.html">查看提醒形态预览 →</a>
-    </div>
-
-    <!-- PWA -->
-    <div class="m-section-title">PWA 安装</div>
-    <div class="m-card">
-      <div class="row gap-2 wrap">
-        <span class="tag tag-ok tag-dot">HTTPS 已就绪</span>
-        <span class="tag tag-ok tag-dot">SW 已注册</span>
-        <span class="tag tag-warn tag-dot">未安装</span>
-      </div>
-      <div class="fold mt-3">
-        <div class="fold-head">iOS（Safari）<span class="caret">▼</span></div>
-        <div class="fold-body hint" style="line-height:1.8">
-          必须用 Safari 打开 → 分享按钮 →「添加到主屏幕」→ 从主屏图标启动。
-          之后才会出现通知授权提示；iOS 不支持震动与桌面小组件。
-        </div>
-      </div>
-      <div class="fold is-collapsed">
-        <div class="fold-head">Android（Chrome / Edge）<span class="caret">▼</span></div>
-        <div class="fold-body hint" style="line-height:1.8">
-          打开站点后会弹出「添加到主屏幕」提示，或点浏览器菜单 →「安装应用」。
-          安装后通知栏提醒与震动可用。
-        </div>
-      </div>
-      <button class="btn btn-primary btn-block mt-3" style="height:44px" id="mInstall">立即安装到主屏</button>
+      <button class="btn btn-primary btn-block" style="height:44px;border-radius:12px" id="mInstall">安装到主屏</button>
       <button class="btn btn-outline btn-block mt-2" style="height:44px" id="mTestNotify">发送测试通知</button>
-      <div class="chart-note">
-        Service Worker、Web Push、通知栏 API、震动 API 都要求安全上下文（HTTPS 或 localhost）。
-      </div>
-    </div>
-
-    <!-- 数据口径 -->
-    <div class="m-section-title">数据口径</div>
-    <div class="m-card">
-      <div class="legend-block">
-        <b>行情</b>：东方财富 + 新浪财经，交易时段每 3 秒快照；<br>
-        <b>财务</b>：合并报表披露值，每交易日 18:00 同步；<br>
-        <b>资金流</b>：按成交金额分层统计，交易日 15:20 采集；<br>
-        <b>事件与影响</b>：规则引擎抽取 + 人工标注（0–100）；<br>
-        <b>北向资金</b>：按持股变动估算，非官方净买入额；<br>
-        <b>更新时间</b>：2026-09-18 15:00 · 演示数据，不构成投资建议。
+      <div class="hint" style="margin-top:10px;line-height:1.8">
+        iOS 需用 Safari「添加到主屏幕」后才可申请通知权限；iOS 不支持震动。
       </div>
     </div>
 
     <!-- 关于 -->
     <div class="m-section-title">关于</div>
-    <div class="m-card" style="padding:0 12px">
-      <div class="me-row"><span class="fs-13 grow t-2">版本</span><span class="mono fs-12 t-3">原型 v0.1</span></div>
-      <div class="me-row"><span class="fs-13 grow t-2">服务端</span><span class="fs-12 t-3">ASP.NET Core Web API</span></div>
-      <div class="me-row"><span class="fs-13 grow t-2">前端</span><span class="fs-12 t-3">React + ECharts</span></div>
-      <div class="me-row"><span class="fs-13 grow t-2">移动端</span><span class="fs-12 t-3">响应式 Web + PWA</span></div>
-      <a class="me-row" href="styleguide-mobile.html"><span class="fs-13 grow t-2">移动端设计规范</span><span class="t-3">›</span></a>
+    <div class="m-card" style="padding:0 16px">
+      <div class="me-row"><span class="fs-14 grow t-2">版本</span><span class="mono fs-12 t-2">原型 v0.1</span></div>
+      <div class="me-row"><span class="fs-14 grow t-2">技术栈</span><span class="fs-12 t-2">ASP.NET Core · React · ECharts</span></div>
+      <div class="me-row"><span class="fs-14 grow t-2">移动端</span><span class="fs-12 t-2">响应式 Web + PWA</span></div>
+      <a class="me-row" href="styleguide-mobile.html"><span class="fs-14 grow t-2">移动端设计规范</span><span class="t-3">›</span></a>
     </div>
 
-    <button class="btn btn-danger btn-block mt-4" style="height:44px" id="mLogout">退出登录</button>
-    <div class="hint mt-3" style="text-align:center;line-height:1.8">
-      演示数据 · 非实时 · 不构成投资建议<br>
-      本原型不实现真实登录与推送。
+    <button class="btn btn-danger btn-block mt-4" style="height:48px;border-radius:14px" id="mLogout">退出登录</button>
+    <div class="hint" style="margin-top:16px;text-align:center">
+      演示数据 · 不构成投资建议
     </div>
 
   </div>
@@ -227,10 +134,6 @@
   SA.qsa("#mTheme > *").forEach(function (o) { o.classList.toggle("is-active", o.getAttribute("data-v") === theme); });
   var ud = SA.get(SA.LS.updown, "red-up");
   SA.qsa("#mUpdown > *").forEach(function (o) { o.classList.toggle("is-active", o.getAttribute("data-v") === ud); });
-
-  SA.qsa(".fold-head").forEach(function (h) {
-    h.addEventListener("click", function () { h.parentNode.classList.toggle("is-collapsed"); });
-  });
 
   document.getElementById("mInstall").addEventListener("click", function () {
     SA.toast("请用浏览器菜单或分享按钮「添加到主屏幕」", "info");

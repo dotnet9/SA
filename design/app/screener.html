@@ -9,57 +9,37 @@
 <link rel="stylesheet" href="../web/_shared/components.css">
 <style>
   .preset-chip {
-    flex: 0 0 auto; padding: 8px 12px; border-radius: 10px;
-    border: 1px solid var(--border); background: var(--bg-panel);
-    font-size: 12px; white-space: nowrap;
+    flex: 0 0 auto; padding: 9px 14px; border-radius: 12px;
+    background: var(--bg-panel);
+    font-size: 13px; white-space: nowrap;
   }
-  .preset-chip.is-active { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); font-weight: 600; }
+  [data-theme="light"] .preset-chip { box-shadow: 0 1px 3px rgba(20, 22, 26, 0.05); }
+  .preset-chip.is-active { background: var(--brand-soft); color: var(--brand); font-weight: 600; }
 </style>
 </head>
-<body data-page="screener" data-title="条件选股器" data-desc="底部抽屉选条件、条件气泡可删、结果列表、保存策略。手机端把条件编辑放进抽屉，结果常驻主屏。">
+<body data-page="screener" data-title="条件选股器" data-desc="预设策略横滑、条件气泡可删、大字命中数、结果列表与筛选漏斗。条件编辑收进底部抽屉，散点分布移至 Web 端。">
 <div id="appScreen">
 
   <div class="m-topbar">
-    <span class="m-title">条件选股器</span>
-    <span class="tag tag-outline" style="margin-left:auto" id="mHits">命中 64 只</span>
+    <span class="m-title">选股</span>
+    <span class="fs-12 t-3" style="margin-left:auto" id="mHits">命中 64 只</span>
     <button class="icon-btn" data-open="sheetCond">⚙</button>
   </div>
 
   <div class="m-page">
 
     <!-- 预设策略横滑 -->
-    <div class="m-section-title">预设策略</div>
-    <div class="m-scroll-x" id="mPresets"></div>
+    <div class="m-scroll-x" id="mPresets" style="margin-top:4px"></div>
 
     <!-- 已选条件 -->
-    <div class="m-section-title">
-      已选条件
-      <span class="fs-11 t-3" style="margin-left:auto" id="mCondCount">5 条</span>
-    </div>
-    <div class="row gap-2 wrap" id="mConds"></div>
+    <div class="row gap-2 wrap" style="margin-top:14px" id="mConds"></div>
     <button class="btn btn-outline btn-block mt-3" data-open="sheetCond">+ 添加 / 修改条件</button>
 
-    <!-- 命中统计 -->
-    <div class="m-section-title">筛选结果</div>
-    <div class="m-card">
-      <div class="row-between">
-        <div>
-          <div class="hint">预计命中</div>
-          <div class="mono fw-700 t-brand" style="font-size:30px;line-height:1.15" id="mHitBig">64</div>
-          <div class="hint">占全市场 1.18%</div>
-        </div>
-        <div style="width:120px">
-          <div class="hint">筛选严格度</div>
-          <div class="meter is-warn mt-2"><i style="width:68%"></i></div>
-          <div class="hint mt-1">中高</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 结果分布 -->
-    <div class="m-section-title">结果分布</div>
-    <div class="m-card" style="padding:8px 4px">
-      <div id="mBubble" class="chart" style="height:240px"></div>
+    <!-- 命中数 -->
+    <div class="m-card" style="margin-top:16px">
+      <div class="hint">预计命中</div>
+      <div class="mono fw-700 t-brand" style="font-size:40px;line-height:1.2;letter-spacing:-0.02em" id="mHitBig">64</div>
+      <div class="hint">占全市场 1.18%</div>
     </div>
 
     <!-- 结果列表 -->
@@ -67,25 +47,22 @@
       命中股票
       <span class="fs-11 t-3" style="margin-left:auto">按综合评分</span>
     </div>
-    <div class="m-card" style="padding:0" id="mResults"></div>
+    <div class="m-card" style="padding:0 16px" id="mResults"></div>
 
     <!-- 筛选日志 -->
     <div class="m-section-title">筛选过程</div>
     <div class="m-card">
       <div class="col gap-2">
-        <div class="row-between"><span class="fs-12 t-2">0. 全市场初始集</span><span class="mono fs-12">5,428</span></div>
-        <div class="row-between"><span class="fs-12 t-2">1. 总市值 ≥ 100 亿</span><span class="mono fs-12">1,842</span></div>
-        <div class="row-between"><span class="fs-12 t-2">2. PE ≤ 25</span><span class="mono fs-12">862</span></div>
-        <div class="row-between"><span class="fs-12 t-2">3. ROE ≥ 15%</span><span class="mono fs-12">186</span></div>
-        <div class="row-between"><span class="fs-12 t-2">4. 净利增速 ≥ 20%</span><span class="mono fs-12 t-brand fw-600">64</span></div>
+        <div class="row-between"><span class="fs-13 t-2">0. 全市场初始集</span><span class="mono fs-13">5,428</span></div>
+        <div class="row-between"><span class="fs-13 t-2">1. 总市值 ≥ 100 亿</span><span class="mono fs-13">1,842</span></div>
+        <div class="row-between"><span class="fs-13 t-2">2. PE ≤ 25</span><span class="mono fs-13">862</span></div>
+        <div class="row-between"><span class="fs-13 t-2">3. ROE ≥ 15%</span><span class="mono fs-13">186</span></div>
+        <div class="row-between"><span class="fs-13 t-2">4. 净利增速 ≥ 20%</span><span class="mono fs-13 t-brand fw-600">64</span></div>
       </div>
-      <div class="chart-note">总耗时 170ms（演示值）· 正式版由服务端计算并缓存 5 分钟。</div>
     </div>
 
-    <div class="legend-block mt-4">
-      <b>说明</b>：选股器基于每日批量更新后的快照（技术指标 16:00、财务 18:00、资金流 15:20），
-      盘中筛选结果不随实时行情变化；如需盘中实时条件，请在「提醒规则」中配置。
-      演示数据，不构成投资建议。
+    <div class="hint" style="margin-top:20px;line-height:1.8">
+      基于每日收盘后快照 · 演示数据 · 不构成投资建议
     </div>
 
   </div>
@@ -100,7 +77,7 @@
 <div class="sheet" id="sheetCond">
   <div class="sheet-grip"></div>
   <div class="row-between" style="margin-bottom:12px">
-    <span class="fs-14 fw-600">筛选条件</span>
+    <span class="fs-16 fw-600">筛选条件</span>
     <div class="row gap-2">
       <button class="btn btn-sm btn-ghost" id="mClear">清空</button>
       <button class="icon-btn" data-close="sheetCond">✕</button>
@@ -124,7 +101,7 @@
   /* 预设横滑 */
   document.getElementById("mPresets").innerHTML = sc.presets.map(function (p, i) {
     return '<div class="preset-chip' + (i === 0 ? " is-active" : "") + '" data-id="' + p.id + '">' +
-      p.name + ' <span class="mono fs-10 t-3">' + p.hits + "</span></div>";
+      p.name + ' <span class="mono fs-11 t-3">' + p.hits + "</span></div>";
   }).join("");
   SA.qsa(".preset-chip").forEach(function (c) {
     c.addEventListener("click", function () {
@@ -142,11 +119,9 @@
     document.getElementById("mConds").innerHTML = sc.activeConds.map(function (c, i) {
       return '<span class="cond-chip">' + c.label + ' <span class="x" data-i="' + i + '">✕</span></span>';
     }).join("");
-    document.getElementById("mCondCount").textContent = sc.activeConds.length + " 条";
     SA.qsa("#mConds .x").forEach(function (x) {
       x.addEventListener("click", function () {
         x.parentNode.remove();
-        document.getElementById("mCondCount").textContent = SA.qsa("#mConds .cond-chip").length + " 条";
         SA.toast("已移除条件，命中数将随之变化", "info");
       });
     });
@@ -156,7 +131,7 @@
   /* 条件分组 */
   document.getElementById("condGroups").innerHTML = sc.groups.map(function (g) {
     return '<div class="fold' + (g.open ? "" : " is-collapsed") + '">' +
-      '<div class="fold-head"><span class="fs-12 fw-600">' + g.name + "</span>" +
+      '<div class="fold-head"><span class="fs-13 fw-600">' + g.name + "</span>" +
       '<span class="hint" style="margin-left:auto">' + g.conds.length + " 项</span>" +
       '<span class="caret">▼</span></div>' +
       '<div class="fold-body col gap-2">' +
@@ -181,7 +156,6 @@
 
   document.getElementById("mClear").addEventListener("click", function () {
     document.getElementById("mConds").innerHTML = "";
-    document.getElementById("mCondCount").textContent = "0 条";
     document.getElementById("mHitBig").textContent = "5428";
     SA.toast("已清空全部条件", "info");
   });
@@ -189,24 +163,18 @@
     SA.toast("筛选完成：命中 " + sc.results.length + " 只（演示结果集）", "ok");
   });
 
-  /* 结果散点 */
-  F.bubble("#mBubble", { data: sc.results.map(function (r) { return { name: r.name, pe: r.pe, roe: r.roe, cap: r.cap }; }) });
-
   /* 结果列表 */
-  document.getElementById("mResults").innerHTML = sc.results.slice(0, 10).map(function (r) {
-    var cls = r.pct >= 0 ? "is-up" : "is-down";
-    return '<div class="m-list-row" style="padding:10px 16px">' +
-      '<div class="grow" data-href="stock.html?code=' + r.code + '" style="min-width:0">' +
-        '<div class="row gap-2"><span class="fs-13 fw-600">' + r.name + "</span>" +
-        '<span class="tag tag-outline">' + r.industry + "</span></div>" +
-        '<div class="row gap-3"><span class="mono fs-10 t-3">' + r.code + "</span>" +
-        '<span class="hint">PE ' + r.pe.toFixed(1) + " · ROE " + r.roe.toFixed(1) + "%</span></div>" +
+  document.getElementById("mResults").innerHTML = sc.results.slice().sort(function (a, b) { return b.score - a.score; }).slice(0, 10).map(function (r) {
+    return '<div class="m-list-row" data-href="stock.html?code=' + r.code + '">' +
+      '<div class="grow" style="min-width:0">' +
+        '<div class="fs-14" style="font-weight:600">' + r.name + "</div>" +
+        '<div class="hint">' + r.industry + " · PE " + r.pe.toFixed(1) + " · ROE " + r.roe.toFixed(1) + "%</div>" +
       "</div>" +
-      '<div style="text-align:right;flex:0 0 auto;width:64px">' +
-        '<div class="mono fs-13 fw-600 ' + (r.pct >= 0 ? "t-up" : "t-down") + '">' + r.price.toFixed(2) + "</div>" +
-        '<div class="mono fs-11 ' + (r.pct >= 0 ? "t-up" : "t-down") + '">' + (r.pct >= 0 ? "+" : "") + r.pct.toFixed(2) + "%</div>" +
+      '<div style="text-align:right;flex:0 0 auto;width:88px">' +
+        '<div class="mono fs-14 fw-600 ' + (r.pct >= 0 ? "t-up" : "t-down") + '">' + r.price.toFixed(2) + "</div>" +
+        '<div class="mono fs-12 ' + (r.pct >= 0 ? "t-up" : "t-down") + '">' + (r.pct >= 0 ? "+" : "") + r.pct.toFixed(2) + "%</div>" +
       "</div>" +
-      '<div style="text-align:right;flex:0 0 auto;width:46px">' +
+      '<div style="text-align:right;flex:0 0 auto;width:40px">' +
         '<div class="mono fs-14 fw-700 ' + (r.score >= 85 ? "t-up" : "") + '">' + r.score + "</div>" +
         '<div class="fs-10 t-3">评分</div>' +
       "</div>" +

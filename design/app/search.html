@@ -10,8 +10,7 @@
 <style>
   .search-bar {
     display: flex; align-items: center; gap: 8px; height: 40px;
-    padding: 0 12px; border-radius: 10px; background: var(--bg-sunken);
-    border: 1px solid var(--brand); box-shadow: var(--glow-brand);
+    padding: 0 14px; border-radius: 12px; background: var(--bg-panel);
   }
   .res-row {
     display: flex; align-items: center; gap: 10px;
@@ -34,7 +33,7 @@
 
   <div class="m-page">
 
-    <!-- 历史与热词 -->
+    <!-- 历史 -->
     <div class="m-section-title">
       历史搜索
       <span class="fs-11 t-3" style="margin-left:auto" id="mHistClear">清空</span>
@@ -47,28 +46,12 @@
       <span class="tag tag-lg tag-outline histKw">固态电池</span>
     </div>
 
-    <div class="m-section-title">热门搜索</div>
-    <div class="row gap-2 wrap">
-      <span class="tag tag-lg tag-brand hotKw">宁德时代</span>
-      <span class="tag tag-lg tag-outline hotKw">贵州茅台</span>
-      <span class="tag tag-lg tag-outline hotKw">中际旭创</span>
-      <span class="tag tag-lg tag-outline hotKw">寒武纪</span>
-      <span class="tag tag-lg tag-outline hotKw">贝特瑞</span>
-      <span class="tag tag-lg tag-outline hotKw">赛力斯</span>
-    </div>
-
     <!-- 结果 -->
     <div class="m-section-title">
       搜索结果
-      <span class="tag tag-outline" style="margin-left:auto" id="mCount">命中 2 只</span>
+      <span class="fs-11 t-3" style="margin-left:auto" id="mCount">命中 2 只</span>
     </div>
-    <div class="m-card" style="padding:0 12px" id="mResults"></div>
-
-    <div class="legend-block mt-4">
-      <b>搜索规则</b><br>
-      6 位代码精确匹配 · 中文名称模糊匹配 · 拼音首字母匹配 · 行业与概念关键词。
-      数据范围受角色权限限制（访客仅返回自选股范围内的结果）。
-    </div>
+    <div class="m-card" style="padding:0 16px" id="mResults"></div>
 
   </div>
 </div>

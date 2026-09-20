@@ -16,13 +16,12 @@
   }
   .mock-lock {
     border-radius: 18px; padding: 14px;
-    background: linear-gradient(160deg, rgba(24,33,49,.92), rgba(11,15,23,.92));
-    backdrop-filter: blur(14px); border: 1px solid var(--border);
-    box-shadow: var(--shadow-3);
+    background: var(--bg-panel);
+    box-shadow: var(--shadow-2);
   }
   .app-ico {
     width: 34px; height: 34px; border-radius: 9px; flex: 0 0 auto;
-    background: linear-gradient(135deg, var(--brand), var(--accent));
+    background: var(--brand);
     display: grid; place-items: center; color: #fff;
     font-family: var(--font-num); font-weight: 700; font-size: 12px;
   }
@@ -53,11 +52,11 @@
     <div class="m-section-title">① 站内通知（通知中心）</div>
     <div class="m-card" style="border-left:3px solid var(--up)">
       <div class="row gap-2">
-        <span class="fs-13 fw-600">股价上穿 280.00 元</span>
+        <span class="fs-13 fw-600">股价上穿 265.00 元</span>
         <span class="mono fs-10 t-3" style="margin-left:auto">14:32</span>
       </div>
       <div class="fs-11 t-2 mt-1" style="margin-top:4px;line-height:1.7">
-        现价 280.16 元，涨幅 4.86%，成交量放大至 1.86 倍。
+        现价 268.42 元，涨幅 4.86%，成交量放大至 1.86 倍。
       </div>
       <div class="row gap-2 mt-2">
         <span class="tag tag-outline">价格提醒</span>
@@ -75,8 +74,8 @@
           <span class="fs-12 fw-600">股析 SA</span>
           <span class="fs-10 t-3" style="margin-left:auto">现在</span>
         </div>
-        <div class="fs-12 fw-600 mt-1" style="margin-top:2px">宁德时代 上穿 280.00 元</div>
-        <div class="fs-11 t-2" style="line-height:1.6">现价 280.16，+4.86% · 主力净流入 18.62 亿</div>
+        <div class="fs-12 fw-600 mt-1" style="margin-top:2px">宁德时代 上穿 265.00 元</div>
+        <div class="fs-11 t-2" style="line-height:1.6">现价 268.42，+4.86% · 主力净流入 18.62 亿</div>
       </div>
     </div>
     <div class="chart-note">
@@ -126,57 +125,21 @@
       </div>
     </div>
 
-    <!-- 不做的能力 -->
+    <!-- 概念示意 -->
     <div class="m-section-title">⑤ 明确不做：桌面小组件</div>
     <div class="concept-note">
-      <b>为什么不做手机主屏小组件</b><br>
-      纯 PWA 无法注册桌面小组件（Widget）：<br>
-      · iOS 完全不支持 Web 应用提供主屏小组件；<br>
-      · Android 需要原生 App 或第三方壳（Capacitor / Tauri Mobile）才能注册 AppWidget。<br><br>
+      <b>为什么不做手机主屏小组件</b>：纯 PWA 无法注册桌面小组件 ——
+      iOS 完全不支持 Web 应用提供主屏小组件，Android 需要原生壳才能注册 AppWidget。
       已决定用「通知栏提醒 + 站内通知 + 震动」替代小组件的实时性需求。
-      如后续确实需要小组件，可另做轻量 Android 壳或原生小组件 App 读取同一个 API。
     </div>
 
-    <!-- 概念示意 -->
-    <div class="m-section-title">概念示意（不承诺实现）</div>
+    <!-- 前置条件 -->
+    <div class="m-section-title">前置条件</div>
     <div class="m-card">
-      <div class="hint" style="margin-bottom:10px">若未来实现 Android 小组件，可能的形态：</div>
-      <div class="grid grid-2" style="gap:10px">
-        <div style="border:1px dashed var(--border-strong);border-radius:14px;padding:10px;background:var(--bg-sunken)">
-          <div class="fs-10 t-3">自选股 2×2</div>
-          <div class="col gap-1 mt-2">
-            <div class="row-between"><span class="fs-11 fw-600">宁德时代</span><span class="mono fs-11 t-up">+4.86%</span></div>
-            <div class="row-between"><span class="fs-11 fw-600">寒武纪</span><span class="mono fs-11 t-up">+8.42%</span></div>
-            <div class="row-between"><span class="fs-11 fw-600">天齐锂业</span><span class="mono fs-11 t-down">-3.28%</span></div>
-          </div>
-        </div>
-        <div style="border:1px dashed var(--border-strong);border-radius:14px;padding:10px;background:var(--bg-sunken)">
-          <div class="fs-10 t-3">大盘 4×2</div>
-          <div class="mt-2">
-            <div class="mono fs-16 fw-700 t-up">3286.42</div>
-            <div class="mono fs-11 t-up">+0.45%</div>
-            <div class="row gap-2 mt-2">
-              <span class="fs-10 t-3">涨 <b class="t-up">3124</b></span>
-              <span class="fs-10 t-3">跌 <b class="t-down">1786</b></span>
-            </div>
-          </div>
-        </div>
+      <div class="hint" style="line-height:2">
+        HTTPS 已就绪 · Service Worker 已注册 · 通知权限需用户授权 ·
+        iOS 须先安装到主屏 · 震动 API 仅 Android 支持
       </div>
-      <div class="chart-note">仅为愿景示意，本项目的原型与实现均不包含桌面小组件。</div>
-    </div>
-
-    <!-- 权限前置条件 -->
-    <div class="m-section-title">前置条件清单</div>
-    <div class="m-card">
-      <table class="tbl">
-        <tbody>
-          <tr><td class="t-2">HTTPS 域名</td><td><span class="tag tag-ok">已就绪</span></td></tr>
-          <tr><td class="t-2">Service Worker 注册</td><td><span class="tag tag-ok">已注册</span></td></tr>
-          <tr><td class="t-2">通知权限</td><td><span class="tag tag-ok">已授权</span></td></tr>
-          <tr><td class="t-2">PWA 安装到主屏</td><td><span class="tag tag-warn">未安装</span></td></tr>
-          <tr><td class="t-2">震动 API</td><td><span class="tag tag-warn">iOS 不支持</span></td></tr>
-        </tbody>
-      </table>
       <a class="btn btn-primary btn-block mt-3" href="settings.html">去「我的」页安装 PWA →</a>
     </div>
 
@@ -202,7 +165,7 @@
   document.getElementById("mTryNotify").addEventListener("click", function () {
     if (window.Notification && Notification.permission === "granted") {
       try {
-        new Notification("股析 SA · 宁德时代", { body: "股价上穿 280.00 元，现价 280.16，+4.86%（演示）" });
+        new Notification("股析 SA · 宁德时代", { body: "股价上穿 265.00 元，现价 268.42，+4.86%（演示）" });
         SA.toast("已发送浏览器通知", "ok");
         return;
       } catch (e) { }

@@ -73,16 +73,27 @@
     <!-- 间距与字号 -->
     <div class="m-section-title">3. 移动端字号与间距</div>
     <div class="m-card">
-      <div class="spec-line"><span class="k">页面标题</span><span class="v" style="font-size:18px;font-weight:700">18px / 700</span></div>
-      <div class="spec-line"><span class="k">区块标题</span><span class="v" style="font-size:13px;font-weight:600">13px / 600</span></div>
-      <div class="spec-line"><span class="k">正文</span><span class="v" style="font-size:13px">13px</span></div>
-      <div class="spec-line"><span class="k">次要信息</span><span class="v" style="font-size:12px;color:var(--text-2)">12px</span></div>
+      <div class="spec-line"><span class="k">页面标题</span><span class="v" style="font-size:22px;font-weight:700">22px / 700</span></div>
+      <div class="spec-line"><span class="k">区块标题</span><span class="v" style="font-size:16px;font-weight:700">16px / 700</span></div>
+      <div class="spec-line"><span class="k">正文</span><span class="v" style="font-size:14px">14px（<code>.phone-body</code> 基准）</span></div>
+      <div class="spec-line"><span class="k">次要信息</span><span class="v" style="font-size:13px;color:var(--text-2)">13px</span></div>
       <div class="spec-line"><span class="k">辅助 / 单位</span><span class="v" style="font-size:11px;color:var(--text-3)">11px</span></div>
-      <div class="spec-line"><span class="k">大数字（行情）</span><span class="v" class="mono" style="font-size:22px;font-weight:700">22–34px / 700</span></div>
+      <div class="spec-line"><span class="k">大数字（行情）</span><span class="mono" style="font-size:28px;font-weight:700">28–40px / 700</span></div>
       <div class="spec-line"><span class="k">数字字体</span><span class="v">等宽 + <code>tabular-nums</code>，保证小数点对齐</span></div>
+      <div class="spec-line"><span class="k">左右安全边距</span><span class="v">20px（<code>.m-page</code>）</span></div>
       <div class="spec-line"><span class="k">卡片间距</span><span class="v">12px（<code>.m-card + .m-card</code>）</span></div>
-      <div class="spec-line"><span class="k">区块上间距</span><span class="v">16px（<code>.m-section-title</code>）</span></div>
-      <div class="spec-line"><span class="k">卡片圆角</span><span class="v">14px（<code>--r-card</code>）</span></div>
+      <div class="spec-line"><span class="k">区块上间距</span><span class="v">24px（<code>.m-section-title</code>）</span></div>
+      <div class="spec-line"><span class="k">卡片圆角</span><span class="v">16px（<code>--r-card</code>），无描边，浅色主题用极淡投影分层</span></div>
+    </div>
+
+    <!-- 内容密度 -->
+    <div class="m-section-title">3.5 内容密度（小屏聚焦原则）</div>
+    <div class="m-card">
+      <div class="spec-line"><span class="k">一屏一主角</span><span class="v">每页只有一个视觉主角（大字行情 / 全宽图表 / 列表）</span></div>
+      <div class="spec-line"><span class="k">板块数量</span><span class="v">每页 ≤ 5 个板块，超出即移至 Web 端或折叠</span></div>
+      <div class="spec-line"><span class="k">KPI 阵列</span><span class="v">优先用一行大字 + 关键数字，不做 6 宫格指标阵列</span></div>
+      <div class="spec-line"><span class="k">数据口径</span><span class="v">每页底部统一一条灰字说明，不逐卡片标注</span></div>
+      <div class="spec-line"><span class="k">说明文字</span><span class="v">一律 <code>.hint</code> 灰字，不使用虚线框 / 色块容器</span></div>
     </div>
 
     <!-- 移动端特有交互 -->

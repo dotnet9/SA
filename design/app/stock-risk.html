@@ -9,23 +9,24 @@
 <link rel="stylesheet" href="../web/_shared/components.css">
 <style>
   .alert-card {
-    border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
-    background: var(--bg-sunken); display: flex; gap: 10px;
+    border-radius: 14px; padding: 12px 14px;
+    background: var(--bg-panel); display: flex; gap: 12px;
   }
+  [data-theme="light"] .alert-card { box-shadow: 0 1px 3px rgba(20, 22, 26, 0.05); }
   .alert-lv {
-    width: 26px; height: 26px; border-radius: 8px; flex: 0 0 auto;
-    display: grid; place-items: center; font-family: var(--font-num); font-size: 12px; font-weight: 700; color: #fff;
+    width: 28px; height: 28px; border-radius: 9px; flex: 0 0 auto;
+    display: grid; place-items: center; font-family: var(--font-num); font-size: 13px; font-weight: 700; color: #fff;
   }
-  .wc { padding: 3px 9px; border-radius: 999px; font-size: 12px; border: 1px solid var(--border); background: var(--bg-sunken); }
-  .wc.is-up { color: var(--up); border-color: var(--up-soft); background: var(--up-soft); }
-  .wc.is-down { color: var(--down); border-color: var(--down-soft); background: var(--down-soft); }
+  .stat-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; text-align: center; }
+  .stat-strip .st-v { font-family: var(--font-num); font-size: 15px; font-weight: 600; }
+  .stat-strip .st-k { font-size: 11px; color: var(--text-3); margin-top: 2px; }
 </style>
 </head>
-<body data-page="stock-risk" data-title="风险与舆情监控" data-desc="风险矩阵可捏合、告警卡片列表按等级着色。手机端矩阵需放大才可读，故提供「点击格子看明细」的替代路径。">
+<body data-page="stock-risk" data-title="风险与舆情监控" data-desc="风险矩阵 + 明细折叠是主角；舆情压成一行三项指标；情绪柱状图与热词云移至 Web 端。">
 <div id="appScreen">
   <div class="m-topbar">
     <a class="icon-btn" href="stock.html">←</a>
-    <span class="m-title">风险与舆情监控</span>
+    <span class="m-title">风险与舆情</span>
     <span class="tag tag-warn" style="margin-left:auto">最高 4/5</span>
   </div>
 
@@ -33,59 +34,35 @@
 
     <!-- 概览 -->
     <div class="m-kpi-row" style="grid-template-columns:repeat(3,1fr)">
-      <div class="kpi"><span class="kpi-label">高风险项</span><span class="kpi-value is-sm t-danger">4</span></div>
-      <div class="kpi"><span class="kpi-label">待关注告警</span><span class="kpi-value is-sm t-warn">8</span></div>
-      <div class="kpi"><span class="kpi-label">舆情情绪</span><span class="kpi-value is-sm t-up">74</span><span class="kpi-delta t-up">+6</span></div>
+      <div class="kpi"><span class="kpi-label">高风险项</span><span class="kpi-value t-danger">4</span></div>
+      <div class="kpi"><span class="kpi-label">待关注告警</span><span class="kpi-value t-warn">8</span></div>
+      <div class="kpi"><span class="kpi-label">舆情情绪</span><span class="kpi-value t-up">74</span><span class="kpi-delta t-up">+6</span></div>
     </div>
 
-    <!-- 风险矩阵 -->
-    <div class="m-section-title">
-      风险矩阵
-      <span class="fs-11 t-3" style="margin-left:auto">双指放大查看</span>
-    </div>
-    <div class="m-card" style="padding:8px 4px">
-      <div id="mMatrix" class="chart" style="height:260px"></div>
-      <div class="row gap-2 mt-2 wrap" style="justify-content:center">
-        <span class="risk-lv risk-lv-1"><i></i>1</span>
-        <span class="risk-lv risk-lv-2"><i></i>2</span>
-        <span class="risk-lv risk-lv-3"><i></i>3</span>
-        <span class="risk-lv risk-lv-4"><i></i>4</span>
-        <span class="risk-lv risk-lv-5"><i></i>5</span>
-      </div>
-      <div class="chart-note">横轴 = 严重度，纵轴 = 发生概率。右上角为需重点监控区域。</div>
-    </div>
-
-    <!-- 风险项列表（矩阵的可读替代） -->
-    <div class="m-section-title">风险项明细</div>
+    <!-- 风险项列表 -->
+    <div class="m-section-title">风险项</div>
     <div class="col gap-2" id="mRiskList"></div>
 
-    <!-- 雷达 -->
-    <div class="m-section-title">六维风险雷达</div>
+    <!-- 六维雷达 -->
+    <div class="m-section-title">六维风险对比</div>
     <div class="m-card" style="padding:8px 4px">
-      <div id="mRadar" class="chart" style="height:270px"></div>
-      <div class="chart-note">市场风险（58）高于行业均值（52），其余维度优于或接近行业；财务风险 18 显著优于行业 34。</div>
+      <div id="mRadar" class="chart" style="height:280px"></div>
     </div>
+    <div class="hint mt-3">市场风险（58）略高于行业均值（52），财务风险 18 显著优于行业 34。</div>
 
-    <!-- 舆情情绪 -->
-    <div class="m-section-title">舆情情绪趋势</div>
-    <div class="m-card" style="padding:8px 4px">
-      <div id="mSent" class="chart" style="height:220px"></div>
-      <div class="m-kpi-row mt-3" style="grid-template-columns:repeat(3,1fr)">
-        <div class="kpi"><span class="kpi-label">正面</span><span class="kpi-value is-sm t-up">66%</span></div>
-        <div class="kpi"><span class="kpi-label">负面</span><span class="kpi-value is-sm t-down">9%</span></div>
-        <div class="kpi"><span class="kpi-label">中性</span><span class="kpi-value is-sm t-flat">25%</span></div>
-      </div>
-    </div>
-
-    <!-- 热词 -->
-    <div class="m-section-title">舆情热词</div>
+    <!-- 舆情 -->
+    <div class="m-section-title">舆情构成</div>
     <div class="m-card">
-      <div class="row gap-2 wrap" id="mWords"></div>
+      <div class="stat-strip">
+        <div><div class="st-v t-up">66%</div><div class="st-k">正面</div></div>
+        <div><div class="st-v">25%</div><div class="st-k">中性</div></div>
+        <div><div class="st-v t-down">9%</div><div class="st-k">负面</div></div>
+      </div>
     </div>
 
     <!-- 告警清单 -->
     <div class="m-section-title">
-      告警清单
+      告警
       <span class="segmented" style="margin-left:auto">
         <span class="is-active" data-v="all">全部</span>
         <span data-v="4">高</span>
@@ -94,10 +71,8 @@
     </div>
     <div class="col gap-2" id="mAlerts"></div>
 
-    <div class="legend-block mt-4">
-      <b>数据口径</b>：风险项从公告、监管文件与公开信息按模板抽取，每交易日 19:30；
-      严重度与概率为人工标注 1–5；舆情由公开新闻与资讯按词典 + 规则打分，每交易日 20:30。
-      演示数据，不构成投资建议。
+    <div class="hint" style="margin-top:20px;line-height:1.8">
+      风险等级为人工标注 1–5 · 演示数据 · 不构成投资建议
     </div>
 
   </div>
@@ -113,56 +88,20 @@
   var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F, rk = D.risk;
   var alertFilter = "all";
 
-  /* 矩阵 */
-  var grid = [];
-  for (var y = 0; y < 5; y++) {
-    for (var x = 0; x < 5; x++) {
-      var sev = x + 1, prob = 5 - y;
-      var items = rk.matrix.filter(function (m) { return m.severity === sev && m.probability === prob; });
-      grid.push({
-        x: x, y: y,
-        level: items.length ? Math.max.apply(null, items.map(function (m) { return m.level; })) : Math.max(1, Math.round(sev * prob / 5)),
-        risks: items.map(function (m) { return m.type + "：" + m.note; })
-      });
-    }
-  }
-  F.heatmap("#mMatrix", {
-    xLabels: ["1", "2", "3", "4", "5"],
-    yLabels: ["5", "4", "3", "2", "1"],
-    data: grid
-  });
-
   /* 风险项列表 */
-  document.getElementById("mRiskList").innerHTML = rk.matrix.slice().sort(function (a, b) { return b.level - a.level; }).slice(0, 8).map(function (m) {
+  document.getElementById("mRiskList").innerHTML = rk.matrix.slice().sort(function (a, b) { return b.level - a.level; }).slice(0, 6).map(function (m) {
     return '<div class="fold">' +
       '<div class="fold-head">' +
         '<span class="risk-lv risk-lv-' + m.level + '"><i></i></span>' +
-        '<span class="fs-12 fw-600">' + m.type + "</span>" +
-        '<span class="tag tag-outline">等级 ' + m.level + "</span>" +
-        '<span class="hint" style="margin-left:auto">严重 ' + m.severity + " · 概率 " + m.probability + "</span>" +
+        '<span class="fs-13 fw-600">' + m.type + "</span>" +
+        '<span class="mono fs-11 t-3" style="margin-left:auto">严重 ' + m.severity + " · 概率 " + m.probability + "</span>" +
         '<span class="caret">▼</span>' +
       "</div>" +
-      '<div class="fold-body fs-12 t-2" style="line-height:1.8">' + m.note + "</div>" +
+      '<div class="fold-body fs-13 t-2" style="line-height:1.8">' + m.note + "</div>" +
       "</div>";
   }).join("");
 
-  F.radar("#mRadar", { indicators: rk.radar.indicators, series: rk.radar.series, radius: "60%" });
-
-  F.combo("#mSent", {
-    labels: rk.sentiment.labels, unit: "条",
-    bars: [
-      { name: "正面", data: rk.sentiment.positive, color: C.cv("--up") },
-      { name: "负面", data: rk.sentiment.negative, color: C.cv("--down") }
-    ],
-    lines: [{ name: "情绪得分", data: rk.sentiment.score, axis: 2, color: C.cv("--chart-2") }],
-    unit2: "分"
-  });
-
-  document.getElementById("mWords").innerHTML = rk.hotWords.map(function (w) {
-    var size = 11 + Math.round(w.weight / 16);
-    var cls = w.tone === "up" ? "is-up" : w.tone === "down" ? "is-down" : "";
-    return '<span class="wc ' + cls + '" style="font-size:' + size + 'px">' + w.word + "</span>";
-  }).join("");
+  F.radar("#mRadar", { indicators: rk.radar.indicators, series: rk.radar.series, radius: "62%" });
 
   /* 告警 */
   function renderAlerts() {
@@ -171,16 +110,14 @@
       if (alertFilter === "4") return a.level >= 4;
       return a.level === 3;
     });
-    document.getElementById("mAlerts").innerHTML = rows.length ? rows.map(function (a) {
-      var color = a.level >= 5 ? "#ef4444" : a.level === 4 ? "#f97316" : a.level === 3 ? "#eab308" : "#84cc16";
+    document.getElementById("mAlerts").innerHTML = rows.length ? rows.slice(0, 6).map(function (a) {
+      var color = a.level >= 5 ? "#e5544b" : a.level === 4 ? "#e58a3f" : a.level === 3 ? "#e0a83f" : "#84cc16";
       return '<div class="alert-card">' +
         '<div class="alert-lv" style="background:' + color + '">' + a.level + "</div>" +
         '<div class="grow">' +
-          '<div class="row gap-2"><span class="tag tag-outline">' + a.type + "</span>" +
-          '<span class="mono fs-10 t-3" style="margin-left:auto">' + a.date + "</span></div>" +
-          '<div class="fs-12 fw-600 mt-1" style="margin-top:4px;line-height:1.6">' + a.title + "</div>" +
-          '<div class="fs-11 t-2 mt-1" style="margin-top:4px;line-height:1.7">' + a.detail + "</div>" +
-          '<div class="hint mt-1" style="margin-top:4px">来源：' + a.source + "</div>" +
+          '<div class="row gap-2"><span class="fs-13" style="font-weight:600;line-height:1.6">' + a.title + "</span>" +
+          '<span class="mono fs-11 t-3" style="margin-left:auto;flex:0 0 auto">' + a.date + "</span></div>" +
+          '<div class="fs-12 t-2" style="margin-top:4px;line-height:1.7">' + a.detail + "</div>" +
         "</div></div>";
     }).join("") : '<div class="empty"><div class="em-icon">◌</div><div class="fs-13">该筛选下暂无告警</div></div>';
   }

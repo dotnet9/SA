@@ -573,7 +573,7 @@
     });
 
     /* 演示数据角标 */
-    if (!qs(".demo-badge")) {
+    if (!qs(".demo-badge") && !qs("#appScreen")) {
       var b = document.createElement("div");
       b.className = "demo-badge";
       b.innerHTML = "<b>演示数据</b> · 非实时 · 不构成投资建议";

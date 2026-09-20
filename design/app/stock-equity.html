@@ -9,49 +9,34 @@
 <link rel="stylesheet" href="../web/_shared/components.css">
 <style>
   .graph-box {
-    position: relative; border-radius: 12px; overflow: hidden;
-    background: var(--bg-sunken); border: 1px solid var(--border-soft);
+    position: relative; border-radius: 16px; overflow: hidden;
+    background: var(--bg-panel);
   }
-  .zoom-tip {
-    position: absolute; left: 8px; bottom: 8px; z-index: 5;
-    font-size: 10px; color: var(--text-3);
-    background: var(--bg-glass); backdrop-filter: blur(8px);
-    padding: 3px 8px; border-radius: 999px; border: 1px solid var(--border);
-  }
+  [data-theme="light"] .graph-box { box-shadow: 0 1px 3px rgba(20, 22, 26, 0.05); }
 </style>
 </head>
-<body data-page="stock-equity" data-title="投资与股权结构" data-desc="拓扑图全屏可捏合缩放、股东列表折叠面板。手机端把拓扑图放在首屏，数据用折叠面板逐层展开。">
+<body data-page="stock-equity" data-title="投资与股权结构" data-desc="拓扑图是首屏主角，股权穿透时间轴讲清控制权，其余数据用折叠面板逐层展开。机构持仓趋势与质押细节移至 Web 端。">
 <div id="appScreen">
   <div class="m-topbar">
     <a class="icon-btn" href="stock.html">←</a>
-    <span class="m-title">投资与股权结构</span>
+    <span class="m-title">投资与股权</span>
     <span class="mono fs-11 t-3" style="margin-left:auto">300750</span>
   </div>
 
   <div class="m-page">
 
     <!-- 拓扑 -->
-    <div class="m-section-title">
-      股权关系拓扑
-      <span class="tag tag-outline" style="margin-left:auto">13 节点 · 12 边</span>
+    <div class="graph-box" style="margin-top:4px">
+      <div id="mEqGraph" class="chart" style="height:320px"></div>
     </div>
-    <div class="graph-box">
-      <div id="mEqGraph" class="chart" style="height:300px"></div>
-      <span class="zoom-tip">双指捏合缩放 · 单指拖动平移</span>
-    </div>
-    <div class="row gap-2 mt-2 wrap">
-      <span class="tag tag-lg tag-outline">控股方 2</span>
-      <span class="tag tag-lg tag-outline">子公司 6</span>
-      <span class="tag tag-lg tag-outline">参股 2</span>
-      <span class="tag tag-lg tag-outline">合资 2</span>
-    </div>
+    <div class="hint" style="margin-top:8px;text-align:center">双指捏合缩放 · 单指拖动平移</div>
 
     <!-- 关键指标 -->
-    <div class="m-kpi-row mt-3" style="grid-template-columns:repeat(2,1fr)">
-      <div class="kpi"><span class="kpi-label">实际控制人</span><span class="kpi-value is-sm">曾毓群</span><span class="kpi-delta t-3">控制 33.02%</span></div>
-      <div class="kpi"><span class="kpi-label">机构持仓</span><span class="kpi-value is-sm t-up">25.2%</span><span class="kpi-delta t-up">↑ +1.4pct</span></div>
-      <div class="kpi"><span class="kpi-label">股权质押</span><span class="kpi-value is-sm t-up">2.4%</span><span class="kpi-delta t-3">无平仓风险</span></div>
-      <div class="kpi"><span class="kpi-label">近一年投资</span><span class="kpi-value is-sm">6 笔</span><span class="kpi-delta t-3">360.2 亿</span></div>
+    <div class="m-kpi-row" style="margin-top:16px;grid-template-columns:repeat(2,1fr)">
+      <div class="kpi"><span class="kpi-label">实际控制人</span><span class="kpi-value">曾毓群</span><span class="kpi-delta t-3">控制 33.02%</span></div>
+      <div class="kpi"><span class="kpi-label">机构持仓</span><span class="kpi-value t-up">25.2%</span><span class="kpi-delta t-up">↑ +1.4pct</span></div>
+      <div class="kpi"><span class="kpi-label">股权质押</span><span class="kpi-value t-up">2.4%</span><span class="kpi-delta t-3">远低于行业 8.6%</span></div>
+      <div class="kpi"><span class="kpi-label">近一年投资</span><span class="kpi-value">6 笔</span><span class="kpi-delta t-3">合计 360.2 亿</span></div>
     </div>
 
     <!-- 股权穿透 -->
@@ -64,54 +49,27 @@
           <div class="tl-body">自然人 · 实际控制人（直接持股）</div>
         </div>
         <div class="tl-item"><span class="tl-dot"></span>
-          <div class="tl-head"><span class="tl-time">L1</span><span class="fs-13 fw-600">宁波梅山保税港区瑞庭投资</span></div>
+          <div class="tl-head"><span class="tl-time">L1</span><span class="fs-13 fw-600">瑞庭投资</span></div>
           <div class="tl-body">曾毓群 100% 持股</div>
         </div>
         <div class="tl-item is-up"><span class="tl-dot"></span>
           <div class="tl-head"><span class="tl-time">L2</span><span class="fs-13 fw-600">宁德时代</span>
             <span class="mono fs-12 t-up" style="margin-left:auto">10.6%</span></div>
-          <div class="tl-body">瑞庭投资直接持股，叠加直接持股合计控制 33.02%</div>
+          <div class="tl-body">叠加直接持股，合计控制 33.02%</div>
         </div>
       </div>
-      <div class="chart-note">一致行动人：宁波联合创新持股 10.6%，控制权稳定。</div>
     </div>
 
     <!-- 股东折叠 -->
-    <div class="m-section-title">十大股东与变动</div>
+    <div class="m-section-title">主要股东</div>
     <div id="mHolders"></div>
 
-    <!-- 机构持仓 -->
-    <div class="m-section-title">机构持仓趋势</div>
-    <div class="m-card" style="padding:8px 4px">
-      <div id="mInst" class="chart" style="height:230px"></div>
-    </div>
-
-    <!-- 质押 -->
-    <div class="m-section-title">股权质押</div>
-    <div class="m-card">
-      <div class="m-kpi-row" style="grid-template-columns:repeat(3,1fr)">
-        <div class="kpi"><span class="kpi-label">质押比例</span><span class="kpi-value is-sm t-up">2.4%</span></div>
-        <div class="kpi"><span class="kpi-label">质押股数</span><span class="kpi-value is-sm">1.06 亿</span></div>
-        <div class="kpi"><span class="kpi-label">预警线估算</span><span class="kpi-value is-sm">148 元</span></div>
-      </div>
-      <div class="meter is-ok mt-3"><i style="width:24%"></i></div>
-      <div class="chart-note">质押比例远低于行业平均 8.6%，距预警线仍有 45% 空间。</div>
-    </div>
-
-    <!-- 对外投资 -->
-    <div class="m-section-title">对外投资与并购</div>
-    <div id="mInvest"></div>
-
     <!-- 子公司清单 -->
-    <div class="m-section-title">
-      控股与参股公司
-      <span class="fs-11 t-3" style="margin-left:auto">点击展开</span>
-    </div>
+    <div class="m-section-title">控股与参股公司</div>
     <div id="mSubs"></div>
 
-    <div class="legend-block mt-4">
-      <b>数据口径</b>：股权与子公司取自定期报告「合并范围」与公告，每日 19:30 抽取；
-      质押取自公告与登记结算披露；演示数据，不构成投资建议。
+    <div class="hint" style="margin-top:20px;line-height:1.8">
+      取自定期报告与公告 · 演示数据 · 不构成投资建议
     </div>
 
   </div>
@@ -143,64 +101,35 @@
     repulsion: 190, edgeLength: [40, 90], showLegend: false, showLinkLabel: false
   });
 
-  /* 十大股东折叠 */
-  document.getElementById("mHolders").innerHTML = eq.topHolders.slice(0, 6).map(function (h) {
+  /* 主要股东折叠：前 4 */
+  document.getElementById("mHolders").innerHTML = eq.topHolders.slice(0, 4).map(function (h) {
     var isUp = h.chg > 0, isDown = h.chg < 0;
     var tag = h.chgType === "增持" ? "tag-up" : h.chgType === "减持" ? "tag-down" : "tag";
     return '<div class="fold">' +
       '<div class="fold-head">' +
         '<span class="mono fs-11 t-3" style="width:18px">' + h.rank + "</span>" +
-        '<span class="fs-12 fw-600 ellipsis" style="max-width:130px">' + h.name + "</span>" +
-        '<span class="mono fs-12" style="margin-left:auto">' + h.pct.toFixed(2) + "%</span>" +
+        '<span class="fs-13 fw-600 ellipsis" style="max-width:140px">' + h.name + "</span>" +
+        '<span class="mono fs-13" style="margin-left:auto">' + h.pct.toFixed(2) + "%</span>" +
         '<span class="tag ' + tag + '">' + h.chgType + "</span>" +
         '<span class="caret">▼</span>' +
       "</div>" +
       '<div class="fold-body">' +
         '<div class="row-between"><span class="fs-12 t-2">类型</span><span class="fs-12">' + h.type + "</span></div>" +
         '<div class="row-between mt-2"><span class="fs-12 t-2">持股数</span><span class="mono fs-12">' + h.shares.toFixed(2) + " 亿股</span></div>" +
-        '<div class="row-between mt-2"><span class="fs-12 t-2">持股市值</span><span class="mono fs-12">' + h.value.toFixed(1) + " 亿元</span></div>" +
         '<div class="row-between mt-2"><span class="fs-12 t-2">本期变动</span><span class="mono fs-12 ' + (isUp ? "t-up" : isDown ? "t-down" : "t-flat") + '">' +
           (h.chg === 0 ? "— 不变" : (isUp ? "+" : "") + h.chg.toFixed(2) + "%") + "</span></div>" +
       "</div></div>";
   }).join("");
 
-  /* 机构持仓 */
-  F.combo("#mInst", {
-    labels: eq.institutions.labels, unit: "%",
-    bars: [],
-    lines: [
-      { name: "公募基金", data: eq.institutions.fund, color: C.cv("--chart-1"), area: true },
-      { name: "北向资金", data: eq.institutions.northbound, color: C.cv("--chart-2"), area: true },
-      { name: "社保基金", data: eq.institutions.social, color: C.cv("--chart-6"), area: true }
-    ],
-    rotate: 30
-  });
-
-  /* 对外投资 */
-  document.getElementById("mInvest").innerHTML = eq.investments.slice(0, 5).map(function (iv) {
-    return '<div class="fold">' +
-      '<div class="fold-head">' +
-        '<span class="tag tag-outline">' + iv.type + "</span>" +
-        '<span class="fs-12 fw-600 ellipsis" style="max-width:120px">' + iv.target + "</span>" +
-        '<span class="mono fs-12 t-brand" style="margin-left:auto">' + iv.amount.toFixed(1) + " 亿</span>" +
-        '<span class="caret">▼</span>' +
-      "</div>" +
-      '<div class="fold-body">' +
-        '<div class="row-between"><span class="fs-12 t-2">日期</span><span class="mono fs-12">' + iv.date + "</span></div>" +
-        '<div class="row-between mt-2"><span class="fs-12 t-2">持股比例</span><span class="mono fs-12">' + iv.stake + "</span></div>" +
-        '<div class="fs-12 t-2 mt-2" style="line-height:1.7">' + iv.note + "</div>" +
-      "</div></div>";
-  }).join("");
-
-  /* 子公司清单 */
+  /* 子公司清单：折叠面板 */
   var catName = { control: "控股方", self: "本公司", sub: "控股子公司", assoc: "参股公司", partner: "合资 / 授权" };
-  document.getElementById("mSubs").innerHTML = eq.graph.nodes.filter(function (n) { return n.cat !== "self"; }).map(function (n) {
+  document.getElementById("mSubs").innerHTML = eq.graph.nodes.filter(function (n) { return n.cat === "sub" || n.cat === "assoc"; }).map(function (n) {
     var lk = eq.graph.links.filter(function (l) { return l.target === n.id; })[0];
     return '<div class="fold is-collapsed">' +
       '<div class="fold-head">' +
         '<span class="tag tag-outline">' + (catName[n.cat] || n.cat) + "</span>" +
-        '<span class="fs-12 fw-600 ellipsis" style="max-width:110px">' + n.name + "</span>" +
-        (lk && lk.ratio ? '<span class="mono fs-12 t-up" style="margin-left:auto">' + lk.ratio + "%</span>" : "") +
+        '<span class="fs-13 fw-600 ellipsis" style="max-width:130px">' + n.name + "</span>" +
+        (lk && lk.ratio ? '<span class="mono fs-13 t-up" style="margin-left:auto">' + lk.ratio + "%</span>" : "") +
         '<span class="caret">▼</span>' +
       "</div>" +
       '<div class="fold-body fs-12 t-2" style="line-height:1.8">' + n.desc + "</div>" +

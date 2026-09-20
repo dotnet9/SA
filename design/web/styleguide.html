@@ -261,7 +261,7 @@
             <div class="field"><label class="label">现价（元）</label>
               <input class="input input-num" value="268.42"></div>
             <div class="field"><label class="label">聚焦态</label>
-              <input class="input" value="聚焦时品牌色描边 + 外发光" style="border-color:var(--brand);box-shadow:var(--glow-brand)"></div>
+              <input class="input" value="聚焦时品牌色 1px 描边 + 柔和光圈" style="border-color:var(--brand);box-shadow:var(--glow-brand)"></div>
             <div class="field"><label class="label">禁用态</label>
               <input class="input" value="只读字段" disabled style="opacity:.5"></div>
             <div class="field"><label class="label">带按钮</label>
@@ -607,7 +607,7 @@
           <button class="btn" id="sgToastOk">成功 Toast</button>
           <button class="btn" id="sgToastErr">错误 Toast</button>
           <button class="btn" data-menu="sgMenu">下拉菜单 ▾</button>
-          <span class="hint">浮层统一使用玻璃拟态：<code>backdrop-filter: blur(12px)</code> + 半透明底 + 3 级阴影</span>
+          <span class="hint">浮层统一使用玻璃拟态：<code>backdrop-filter: blur(20px)</code> + 半透明底 + 3 级阴影（页面内容不用模糊与阴影）</span>
         </div>
       </div>
 
@@ -726,11 +726,11 @@
             <thead><tr><th style="width:34px">#</th><th style="width:190px">手法</th><th>实现要点</th><th style="width:130px">示例</th></tr></thead>
             <tbody>
               <tr><td class="num">1</td><td class="fw-600">顶栏常驻全局搜索</td><td>支持代码 / 名称 / 拼音首字母；<kbd>⌘</kbd><kbd>K</kbd> 或 <kbd>/</kbd> 唤起；结果带行业与实时涨跌</td><td class="t-3">顶栏</td></tr>
-              <tr><td class="num">2</td><td class="fw-600">表格左侧涨跌色竖条</td><td>3px，与整行涨跌一致；数字列等宽右对齐 + <code>tabular-nums</code></td><td><a class="t-brand" href="#c-tbl">见第 7 节</a></td></tr>
+              <tr><td class="num">2</td><td class="fw-600">表格左侧涨跌色细条</td><td>2px 半透明细条，与整行涨跌一致；数字列等宽右对齐 + <code>tabular-nums</code></td><td><a class="t-brand" href="#c-tbl">见第 7 节</a></td></tr>
               <tr><td class="num">3</td><td class="fw-600">数字变动闪烁</td><td>推送到达时用涨/跌软底色高亮 600ms 后衰减，不做位移避免跳动</td><td><a class="t-brand" href="#c-biz">见第 12 节</a></td></tr>
               <tr><td class="num">4</td><td class="fw-600">K 线十字光标 + 悬浮数据条</td><td>十字光标联动成交量与 MACD；tooltip 显示开高低收、涨跌幅、成交量与各均线值</td><td><a class="t-brand" href="#c-chart">见第 9 节</a></td></tr>
-              <tr><td class="num">5</td><td class="fw-600">卡片顶部品牌渐变描边</td><td><code>.card.is-accent</code>：顶部 1px <code>linear-gradient(90deg, brand, accent, transparent)</code></td><td class="t-3">本页卡片</td></tr>
-              <tr><td class="num">6</td><td class="fw-600">玻璃拟态浮层</td><td>下拉 / tooltip / 抽屉 / Toast 统一 <code>backdrop-filter: blur(12px)</code> + 半透明底</td><td><a class="t-brand" href="#c-overlay">见第 10 节</a></td></tr>
+              <tr><td class="num">5</td><td class="fw-600">无描边卡片分层</td><td>卡片一律无描边、16px 圆角，靠底色一档差与留白分层；深色主题零投影，浅色主题仅 0.05 透明度极淡投影</td><td class="t-3">本页卡片</td></tr>
+              <tr><td class="num">6</td><td class="fw-600">玻璃拟态浮层</td><td>下拉 / tooltip / 抽屉 / Toast 统一 <code>backdrop-filter: blur(20px)</code> + 半透明底，仅浮层使用模糊，页面本身保持纯净</td><td><a class="t-brand" href="#c-overlay">见第 10 节</a></td></tr>
               <tr><td class="num">7</td><td class="fw-600">骨架屏 + 过渡</td><td>首屏骨架占位；切换股票时图表 400ms 过渡；尊重 <code>prefers-reduced-motion</code></td><td><a class="t-brand" href="#c-state">见第 11 节</a></td></tr>
               <tr><td class="num">8</td><td class="fw-600">数据口径问号</td><td>每个数据卡片右上角 <code>.infoq[data-tip]</code>，hover 显示字段口径与更新时间</td><td><a class="t-brand" href="#c-tag">见第 6 节</a></td></tr>
               <tr><td class="num">9</td><td class="fw-600">全局演示数据角标</td><td>右下角固定「演示数据 · 非实时 · 不构成投资建议」，全站统一</td><td class="t-3">右下角</td></tr>

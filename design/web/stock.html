@@ -40,16 +40,14 @@
       </div>
 
       <!-- 行情条 -->
-      <div class="card is-accent">
+      <div class="card">
         <div class="quote-bar">
           <div>
             <div class="row gap-2 wrap">
               <span class="fs-18 fw-700">宁德时代</span>
               <span class="mono fs-12 t-3">300750</span>
-              <span class="tag tag-outline">创业板</span>
-              <span class="tag tag-brand">电池</span>
+              <span class="tag tag-outline">创业板 · 电池</span>
               <span class="tag tag-ok tag-dot">自选</span>
-              <span class="tag tag-outline">市值第 1（电池行业）</span>
             </div>
             <div class="row gap-3 mt-2">
               <span class="quote-price t-up" id="livePrice" data-price="268.42">268.42</span>
@@ -63,8 +61,7 @@
               </span>
             </div>
             <div class="row gap-3 mt-2">
-              <span class="hint">最后更新 2026-09-18 15:00</span>
-              <span class="row gap-2"><span class="dot dot-live"></span><span class="hint">自选股实时推送已开启（3 秒）</span></span>
+              <span class="hint">更新于 2026-09-18 15:00 · 实时推送 3 秒</span>
             </div>
           </div>
           <div class="quote-grid">
@@ -72,13 +69,10 @@
             <div class="quote-cell"><span class="k">成交额</span><span class="v">186.4 亿</span></div>
             <div class="quote-cell"><span class="k">换手率</span><span class="v">1.42%</span></div>
             <div class="quote-cell"><span class="k">量比</span><span class="v">1.86</span></div>
-            <div class="quote-cell"><span class="k">振幅</span><span class="v">6.11%</span></div>
             <div class="quote-cell"><span class="k">总市值</span><span class="v">11,820 亿</span></div>
             <div class="quote-cell"><span class="k">流通市值</span><span class="v">10,426 亿</span></div>
             <div class="quote-cell"><span class="k">PE(TTM)</span><span class="v">24.8</span></div>
-            <div class="quote-cell"><span class="k">PE(静)</span><span class="v">22.4</span></div>
             <div class="quote-cell"><span class="k">PB</span><span class="v">4.62</span></div>
-            <div class="quote-cell"><span class="k">PS</span><span class="v">3.86</span></div>
             <div class="quote-cell"><span class="k">股息率</span><span class="v">1.24%</span></div>
           </div>
         </div>
@@ -86,8 +80,7 @@
           <button class="btn btn-sm btn-primary" id="btnWatch">+ 加入自选</button>
           <button class="btn btn-sm btn-outline" data-open="dlgAlert">设为提醒</button>
           <a class="btn btn-sm btn-outline" href="stock-industry.html">对比同业</a>
-          <button class="btn btn-sm btn-ghost" id="btnExportStock">导出分析</button>
-          <span style="margin-left:auto" class="hint">共 8 个分析模块 · 4 种拓扑图 · 拖动卡片可调整顺序（顺序保存在本机）</span>
+          <span style="margin-left:auto" class="hint">8 个分析模块 · 拖动卡片可调整顺序（保存在本机）</span>
         </div>
       </div>
 
@@ -112,7 +105,6 @@
           <!-- 1 趋势 -->
           <div class="card is-accent is-collapsible" draggable="true" data-order-key="trend">
             <div class="card-head">
-              <span class="drag-handle" title="拖动排序">⣿</span>
               <span class="card-title">趋势与价格结构</span>
               <span class="tag tag-up">多头排列</span>
               <span class="card-sub">日线 · 前复权</span>
@@ -152,7 +144,6 @@
           <!-- 2 财务 -->
           <div class="card is-collapsible" draggable="true" data-order-key="finance">
             <div class="card-head">
-              <span class="drag-handle" title="拖动排序">⣿</span>
               <span class="card-title">盈利与财务表现</span>
               <span class="tag tag-up">连续 3 季毛利率回升</span>
               <span class="card-sub">2025 年报 · 单位亿元</span>
@@ -191,7 +182,6 @@
           <!-- 3 股权 -->
           <div class="card is-collapsible" draggable="true" data-order-key="equity">
             <div class="card-head">
-              <span class="drag-handle" title="拖动排序">⣿</span>
               <span class="card-title">公司投资与股权结构</span>
               <span class="tag tag-ok">质押比例极低</span>
               <span class="card-sub">关系拓扑 · 持股比例</span>
@@ -212,12 +202,6 @@
                     <b>股权穿透</b>：曾毓群 → 宁波梅山保税港区瑞庭投资（100%）→ 宁德时代（10.6%）；
                     叠加直接持股 22.42%，合计控制 33.02%。一致行动人宁波联合创新持股 10.6%。
                   </div>
-                  <div class="row gap-2 wrap">
-                    <span class="tag tag-outline">香港中央结算 7.09%</span>
-                    <span class="tag tag-outline">社保基金 1.18%</span>
-                    <span class="tag tag-outline">公募基金 25.2%</span>
-                    <span class="tag tag-down">高管减持进行中</span>
-                  </div>
                 </div>
                 <div class="mod-thumb">
                   <div id="thEquity" class="chart chart-sm"></div>
@@ -230,7 +214,6 @@
           <!-- 4 资金 -->
           <div class="card is-collapsible" draggable="true" data-order-key="capital">
             <div class="card-head">
-              <span class="drag-handle" title="拖动排序">⣿</span>
               <span class="card-title">资金面与筹码</span>
               <span class="tag tag-up">主力大幅流入</span>
               <span class="card-sub">今日 · 亿元</span>
@@ -271,7 +254,6 @@
           <!-- 5 行业 -->
           <div class="card is-collapsible" draggable="true" data-order-key="industry">
             <div class="card-head">
-              <span class="drag-handle" title="拖动排序">⣿</span>
               <span class="card-title">行业与同业对比</span>
               <span class="tag tag-up">行业景气 68</span>
               <span class="card-sub">产业链传导 · 同业 5 家</span>
@@ -312,7 +294,6 @@
           <!-- 6 事件 -->
           <div class="card is-collapsible" draggable="true" data-order-key="events">
             <div class="card-head">
-              <span class="drag-handle" title="拖动排序">⣿</span>
               <span class="card-title">事件时间线与影响</span>
               <span class="tag tag-up">近 30 日利好 8 / 利空 3</span>
               <span class="card-sub">四种拓扑图 + 事件表</span>
@@ -356,7 +337,6 @@
           <!-- 7 风险 -->
           <div class="card is-collapsible" draggable="true" data-order-key="risk">
             <div class="card-head">
-              <span class="drag-handle" title="拖动排序">⣿</span>
               <span class="card-title">风险与舆情监控</span>
               <span class="tag tag-warn">2 项高风险</span>
               <span class="card-sub">风险矩阵 · 告警 · 舆情情绪</span>
@@ -374,10 +354,10 @@
                     <div class="kpi"><span class="kpi-label">合规风险</span><span class="kpi-value is-sm t-up">22</span><span class="kpi-delta t-3">低于行业 32</span></div>
                   </div>
                   <div class="col gap-2">
-                    <div class="row gap-2"><span class="risk-lv risk-lv-4"><i></i></span><span class="fs-12 t-1">价格战：二线厂商报价下调 8%，行业毛利承压</span><span class="tag tag-outline" style="margin-left:auto">09-04</span></div>
-                    <div class="row gap-2"><span class="risk-lv risk-lv-4"><i></i></span><span class="fs-12 t-1">原材料涨价：碳酸锂触底回升 6.4%</span><span class="tag tag-outline" style="margin-left:auto">08-28</span></div>
-                    <div class="row gap-2"><span class="risk-lv risk-lv-4"><i></i></span><span class="fs-12 t-1">海外贸易壁垒：欧盟终裁加征关税</span><span class="tag tag-outline" style="margin-left:auto">07-15</span></div>
-                    <div class="row gap-2"><span class="risk-lv risk-lv-3"><i></i></span><span class="fs-12 t-1">减持压力：董事减持计划进行中</span><span class="tag tag-outline" style="margin-left:auto">09-12</span></div>
+                    <div class="row gap-2"><span class="risk-lv risk-lv-4"><i></i></span><span class="fs-12 t-1">价格战：二线厂商报价下调 8%，行业毛利承压</span></div>
+                    <div class="row gap-2"><span class="risk-lv risk-lv-4"><i></i></span><span class="fs-12 t-1">原材料涨价：碳酸锂触底回升 6.4%</span></div>
+                    <div class="row gap-2"><span class="risk-lv risk-lv-4"><i></i></span><span class="fs-12 t-1">海外贸易壁垒：欧盟终裁加征关税</span></div>
+                    <div class="row gap-2"><span class="risk-lv risk-lv-3"><i></i></span><span class="fs-12 t-1">减持压力：董事减持计划进行中</span></div>
                   </div>
                 </div>
                 <div class="mod-thumb">
@@ -391,7 +371,6 @@
           <!-- 8 评级 -->
           <div class="card is-collapsible" draggable="true" data-order-key="rating">
             <div class="card-head">
-              <span class="drag-handle" title="拖动排序">⣿</span>
               <span class="card-title">机构评级与盈利预测</span>
               <span class="tag tag-up">一致目标价 320</span>
               <span class="card-sub">近 12 个月 · 35 家机构</span>
@@ -441,10 +420,6 @@
               <div class="row-between"><span class="fs-12 t-2">估值</span><span class="tag tag-brand">PE 分位 38%，中性偏低</span></div>
               <div class="row-between"><span class="fs-12 t-2">风险</span><span class="tag tag-warn">价格战 + 原材料</span></div>
               <div class="row-between"><span class="fs-12 t-2">机构</span><span class="tag tag-up">一致目标价 +19.2%</span></div>
-              <div class="legend-block">
-                <b>说明</b>：以上为规则引擎按各模块指标自动生成的摘要，
-                仅用于原型演示，<b>不构成投资建议</b>。
-              </div>
             </div>
           </div>
 
@@ -455,8 +430,6 @@
               <a class="btn btn-outline btn-block" href="screener.html">用这只股的条件选股</a>
               <a class="btn btn-outline btn-block" href="stock-industry.html">与同业对比（最多 5 只）</a>
               <a class="btn btn-outline btn-block" href="topology.html">查看四种拓扑图</a>
-              <button class="btn btn-ghost btn-block" id="btnShuffle">打乱卡片顺序</button>
-              <button class="btn btn-ghost btn-block" id="btnResetOrder">恢复默认顺序</button>
             </div>
           </div>
 
@@ -489,19 +462,6 @@
             </div>
           </div>
 
-          <div class="card">
-            <div class="card-head"><span class="card-title">数据口径</span></div>
-            <div class="card-body">
-              <div class="legend-block">
-                行情与资金：东方财富 + 新浪，交易日 15:00 快照；<br>
-                财务：2025 年报 + 2026 中报，18:00 同步；<br>
-                股权与投资：定期报告 + 公告，每日 19:30 抽取；<br>
-                事件与影响强度：规则引擎 + 人工标注（0–100）；<br>
-                机构评级：公开评级汇总，每日 20:00 更新；<br>
-                更新时间 2026-09-18 15:00 · 演示数据。
-              </div>
-            </div>
-          </div>
         </aside>
       </div>
 
@@ -527,7 +487,7 @@
         <label class="label">触发条件</label>
         <div class="row gap-2">
           <select class="select" style="width:120px"><option>上穿</option><option>下穿</option><option>涨跌幅超过</option></select>
-          <input class="input input-num" value="280.00">
+          <input class="input input-num" value="265.00">
           <span class="tag tag-outline">元</span>
         </div>
       </div>
@@ -615,22 +575,7 @@
     watchBtn.classList.toggle("btn-outline", !on);
     SA.toast(on ? "已从自选股移除：宁德时代 300750" : "已加入自选股：宁德时代 300750", on ? "info" : "ok");
   });
-  document.getElementById("btnExportStock").addEventListener("click", function () {
-    SA.toast("已导出当前 8 个模块的指标摘要为 CSV（原型不产生文件）", "ok");
-  });
 
-  /* 卡片排序 */
-  document.getElementById("btnShuffle").addEventListener("click", function () {
-    var grid = document.getElementById("cardGrid");
-    var cards = SA.qsa(".card[draggable='true']", grid);
-    cards.sort(function () { return Math.random() - 0.5; });
-    cards.forEach(function (c) { grid.appendChild(c); });
-    SA.toast("已打乱卡片顺序（拖动卡片可手动排序）", "info");
-  });
-  document.getElementById("btnResetOrder").addEventListener("click", function () {
-    try { localStorage.removeItem(SA.LS.cardOrder + "trend"); } catch (e) { }
-    window.location.reload();
-  });
 
   /* 模拟实时推送 */
   SA.startLiveTicker("#livePrice", { interval: 3000 });

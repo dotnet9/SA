@@ -232,7 +232,7 @@
     asOf: "2026-09-18 15:00"
   };
 
-  const focusKline = kline(7501, 240, 168.4, 0.58, 0.021, 42);
+  const focusKline = kline(40276, 240, 168.4, 0.58, 0.021, 42);
   const focusWeekly = kline(7502, 120, 186.2, 0.44, 0.038, 186);
   const focusMonthly = kline(7503, 60, 214.6, 0.24, 0.072, 720);
 
@@ -800,7 +800,7 @@
      ============================================================ */
   const alerts = {
     rules: [
-      { id: "r1", code: "300750", name: "宁德时代", type: "价格", desc: "股价上穿 280.00 元", threshold: "280.00", status: "on", triggers: 2, lastTrigger: "2026-09-18 14:32", channels: ["站内", "浏览器", "震动"] },
+      { id: "r1", code: "300750", name: "宁德时代", type: "价格", desc: "股价上穿 265.00 元", threshold: "265.00", status: "on", triggers: 2, lastTrigger: "2026-09-18 14:32", channels: ["站内", "浏览器", "震动"] },
       { id: "r2", code: "300750", name: "宁德时代", type: "技术指标", desc: "MACD 金叉（日线）", threshold: "—", status: "on", triggers: 3, lastTrigger: "2026-09-16 15:00", channels: ["站内", "浏览器"] },
       { id: "r3", code: "600519", name: "贵州茅台", type: "价格", desc: "跌幅超过 3%", threshold: "-3%", status: "on", triggers: 1, lastTrigger: "2026-08-26 14:52", channels: ["站内", "浏览器", "震动"] },
       { id: "r4", code: "002466", name: "天齐锂业", type: "技术指标", desc: "跌破 MA20（日线）", threshold: "—", status: "on", triggers: 4, lastTrigger: "2026-09-17 15:00", channels: ["站内", "浏览器"] },
@@ -818,7 +818,7 @@
       { id: "event", name: "公告与事件", desc: "定期报告、业绩预告、重大合同、股东增减持、监管函", icon: "◍" }
     ],
     history: [
-      { time: "2026-09-18 14:32", code: "300750", name: "宁德时代", rule: "股价上穿 280.00 元", value: "280.16", channel: "站内 + 浏览器 + 震动" },
+      { time: "2026-09-18 14:32", code: "300750", name: "宁德时代", rule: "股价上穿 265.00 元", value: "268.42", channel: "站内 + 浏览器 + 震动" },
       { time: "2026-09-18 14:05", code: "688256", name: "寒武纪", rule: "主力净流入超 5 亿元", value: "9.86 亿元", channel: "站内 + 浏览器 + 震动" },
       { time: "2026-09-18 13:48", code: "835185", name: "贝特瑞", rule: "创 60 日新高", value: "42.86", channel: "站内 + 浏览器 + 震动" },
       { time: "2026-09-17 15:00", code: "002466", name: "天齐锂业", rule: "跌破 MA20（日线）", value: "MA20 = 36.42", channel: "站内 + 浏览器" },
@@ -829,7 +829,7 @@
   };
 
   const notifications = [
-    { id: "n1", time: "2026-09-18 14:32", code: "300750", name: "宁德时代", rule: "价格提醒", title: "股价上穿 280.00 元", body: "现价 280.16 元，涨幅 4.86%，成交量放大至 1.86 倍。", read: false, level: "up" },
+    { id: "n1", time: "2026-09-18 14:32", code: "300750", name: "宁德时代", rule: "价格提醒", title: "股价上穿 265.00 元", body: "现价 268.42 元，涨幅 4.86%，成交量放大至 1.86 倍。", read: false, level: "up" },
     { id: "n2", time: "2026-09-18 14:05", code: "688256", name: "寒武纪", rule: "资金流提醒", title: "主力净流入 9.86 亿元", body: "超大单净流入 6.42 亿元，居半导体板块首位。", read: false, level: "up" },
     { id: "n3", time: "2026-09-18 13:48", code: "835185", name: "贝特瑞", rule: "价格提醒", title: "创 60 日新高 42.86 元", body: "换手率 4.24%，量比 3.16，固态电池主题催化。", read: false, level: "up" },
     { id: "n4", time: "2026-09-18 09:02", code: "300750", name: "宁德时代", rule: "公告事件", title: "三季度业绩预告发布", body: "预计净利润同比预增 32%–45%，超出市场一致预期。", read: false, level: "up" },

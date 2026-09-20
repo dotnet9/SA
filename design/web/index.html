@@ -21,10 +21,9 @@
     flex-direction: column;
     justify-content: space-between;
     overflow: hidden;
-    border-right: 1px solid var(--border);
+    border-right: 1px solid var(--border-soft);
     background:
-      radial-gradient(900px 520px at 12% 8%, rgba(79,140,255,.16), transparent 62%),
-      radial-gradient(760px 520px at 88% 92%, rgba(34,211,238,.13), transparent 60%),
+      radial-gradient(900px 520px at 12% 8%, rgba(91, 141, 239, 0.07), transparent 62%),
       var(--bg-root);
   }
   .login-hero::after {
@@ -35,24 +34,21 @@
       linear-gradient(var(--border-soft) 1px, transparent 1px),
       linear-gradient(90deg, var(--border-soft) 1px, transparent 1px);
     background-size: 44px 44px;
-    opacity: .5;
+    opacity: .35;
     mask-image: radial-gradient(circle at 30% 40%, #000 20%, transparent 78%);
     -webkit-mask-image: radial-gradient(circle at 30% 40%, #000 20%, transparent 78%);
     pointer-events: none;
   }
   .login-hero > * { position: relative; z-index: 1; }
   .hero-title {
-    font-size: 40px;
+    font-size: 42px;
     font-weight: 700;
     letter-spacing: -.02em;
     line-height: 1.2;
   }
   .hero-title em {
     font-style: normal;
-    background: linear-gradient(100deg, var(--brand), var(--accent));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: var(--brand);
   }
   .hero-sub { color: var(--text-2); font-size: var(--fs-14); max-width: 520px; line-height: 1.9; margin-top: 16px; }
   .hero-matrix {
@@ -63,11 +59,9 @@
     max-width: 560px;
   }
   .hero-matrix .hm {
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 10px 12px;
-    background: rgba(17,24,39,.55);
-    backdrop-filter: blur(6px);
+    border-radius: 12px;
+    padding: 12px 14px;
+    background: var(--bg-panel);
   }
   .hm .hm-k { font-size: var(--fs-11); color: var(--text-3); }
   .hm .hm-v { font-family: var(--font-num); font-size: var(--fs-14); font-weight: 600; margin-top: 2px; }
@@ -79,20 +73,21 @@
     padding: 48px 40px;
     background: var(--bg-panel);
   }
+  [data-theme="light"] .login-panel { box-shadow: 0 1px 3px rgba(20, 22, 26, 0.05); }
   .login-box { width: min(380px, 100%); }
   .role-card {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 12px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
+    padding: 11px 14px;
+    border-radius: 12px;
     background: var(--bg-sunken);
     cursor: pointer;
-    transition: border-color var(--t-fast), background var(--t-fast);
+    transition: background var(--t-fast);
   }
-  .role-card:hover { border-color: var(--brand); }
-  .role-card.is-active { border-color: var(--brand); background: var(--brand-soft); }
+  .role-card:hover { background: var(--bg-hover); }
+  .role-card.is-active { background: var(--brand-soft); }
+  .role-card.is-active .rc-name { color: var(--brand); }
   .role-card .rc-name { font-size: var(--fs-13); font-weight: 600; }
   .role-card .rc-desc { font-size: var(--fs-11); color: var(--text-3); }
   @media (max-width: 1024px) {
@@ -148,7 +143,6 @@
             <div class="rc-name">管理员</div>
             <div class="rc-desc">全部功能点，含后台管理（用户 / 权限 / 数据源 / 安全）</div>
           </div>
-          <span class="tag tag-brand">全部可见</span>
         </div>
         <div class="role-card" data-role="user">
           <span class="avatar">用</span>
@@ -156,7 +150,6 @@
             <div class="rc-name">普通用户</div>
             <div class="rc-desc">只读分析 + 自选 + 选股 + 提醒，无导出与后台</div>
           </div>
-          <span class="tag tag-outline">隐藏后台</span>
         </div>
         <div class="role-card" data-role="guest">
           <span class="avatar">访</span>
@@ -164,7 +157,6 @@
             <div class="rc-name">访客</div>
             <div class="rc-desc">仅市场概览 + 趋势 + 搜索，数据范围仅自选</div>
           </div>
-          <span class="tag tag-outline">仅 3 个菜单</span>
         </div>
       </div>
 
@@ -189,12 +181,7 @@
         </div>
       </div>
 
-      <div class="legend-block mt-6">
-        <b>关于 PWA 安装</b><br>
-        手机端建议通过 HTTPS 域名访问后「添加到主屏幕」，可获得通知栏提醒与震动。
-        iOS 需在 Safari 中手动添加，Android 会弹出安装引导。
-        <a class="t-brand" href="../app/notify-preview.html" style="margin-left:4px">查看提醒形态预览 →</a>
-      </div>
+      <div class="hint" style="line-height:1.9">PWA：HTTPS 下「添加到主屏幕」可获得通知栏提醒 · <a class="t-brand" href="../app/notify-preview.html">提醒形态预览 →</a></div>
 
       <div class="row gap-2 center mt-6">
         <button class="btn btn-ghost btn-sm" id="lgTheme">切换主题</button>

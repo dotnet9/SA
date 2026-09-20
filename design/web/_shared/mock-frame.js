@@ -112,14 +112,6 @@
       if (!phoneScreen.contains(el)) phoneScreen.appendChild(el);
     });
 
-    /* 演示数据角标：若 app.js 未生成则补一个（都放进手机屏幕内） */
-    if (!phoneScreen.querySelector(".demo-badge")) {
-      var badge = document.createElement("div");
-      badge.className = "demo-badge";
-      badge.innerHTML = "<b>演示数据</b> · 不构成投资建议";
-      phoneScreen.appendChild(badge);
-    }
-
     /* 状态栏时间每分钟刷新 */
     setInterval(function () {
       var el = qs(".phone-status span");

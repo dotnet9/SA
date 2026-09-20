@@ -8,26 +8,27 @@
 <link rel="stylesheet" href="../web/_shared/tailwind.css">
 <link rel="stylesheet" href="../web/_shared/components.css">
 <style>
-  .lg-wrap { padding: 8px 20px 24px; }
+  .lg-wrap { padding: 16px 24px 24px; }
   .lg-logo {
     width: 56px; height: 56px; border-radius: 16px;
-    background: linear-gradient(135deg, var(--brand), var(--accent));
+    background: var(--brand);
     display: grid; place-items: center; color: #fff;
     font-family: var(--font-num); font-weight: 700; font-size: 20px;
-    box-shadow: 0 8px 24px rgba(79, 140, 255, .35);
   }
   .role-chip {
-    display: flex; align-items: center; gap: 10px; padding: 12px;
-    border: 1px solid var(--border); border-radius: 12px; background: var(--bg-sunken);
-    min-height: 56px;
+    display: flex; align-items: center; gap: 12px; padding: 14px;
+    border-radius: 14px; background: var(--bg-panel);
+    min-height: 60px;
   }
-  .role-chip.is-active { border-color: var(--brand); background: var(--brand-soft); }
+  [data-theme="light"] .role-chip { box-shadow: 0 1px 3px rgba(20, 22, 26, 0.05); }
+  .role-chip.is-active { background: var(--brand-soft); }
+  .role-chip.is-active .fs-13 { color: var(--brand); }
 </style>
 </head>
-<body data-page="index" data-no-tabs data-title="登录" data-desc="大按钮、记住我、演示角色选择与 PWA 安装引导；不做独立 App，安装到主屏即为原生体验。">
+<body data-page="index" data-no-tabs data-title="登录" data-desc="大标题 + 演示角色选择 + 登录按钮。去掉一切与登录无关的内容，安装引导压缩为一行提示。">
 <div id="appScreen">
   <div class="lg-wrap">
-    <div class="row gap-3 mt-3">
+    <div class="row gap-3" style="margin-top:24px">
       <div class="lg-logo">SA</div>
       <div>
         <div style="font-size:20px;font-weight:700">股析</div>
@@ -35,56 +36,38 @@
       </div>
     </div>
 
-    <div class="mt-6" style="margin-top:24px">
-      <div style="font-size:22px;font-weight:700;line-height:1.35">把一家公司<br>拆成一张矩阵</div>
-      <div class="hint mt-2" style="line-height:1.9">
-        输入股票名称或代码，聚合公开披露资料，形成 8 个维度的分析矩阵，四种拓扑图把「谁影响谁」画出来。
+    <div style="margin-top:40px">
+      <div style="font-size:26px;font-weight:700;line-height:1.4;letter-spacing:-0.01em">把一家公司<br>拆成一张矩阵</div>
+      <div class="hint mt-3" style="line-height:1.9;font-size:13px">
+        8 个维度拆解个股，四种拓扑图看清「谁影响谁」。
       </div>
-    </div>
-
-    <div class="m-kpi-row mt-4" style="grid-template-columns:repeat(3,1fr)">
-      <div class="kpi"><span class="kpi-label">分析模块</span><span class="kpi-value is-sm">8 个</span></div>
-      <div class="kpi"><span class="kpi-label">拓扑图</span><span class="kpi-value is-sm">4 种</span></div>
-      <div class="kpi"><span class="kpi-label">推送</span><span class="kpi-value is-sm">3 秒</span></div>
     </div>
 
     <div class="m-section-title">选择演示角色</div>
     <div class="col gap-2">
       <div class="role-chip is-active" data-role="admin">
         <span class="avatar">管</span>
-        <div class="grow"><div class="fs-13 fw-600">管理员</div><div class="hint">全部功能点，含后台管理</div></div>
-        <span class="tag tag-brand">全部</span>
+        <div class="grow"><div class="fs-14 fw-600">管理员</div><div class="hint">全部功能，含后台管理</div></div>
       </div>
       <div class="role-chip" data-role="user">
         <span class="avatar">用</span>
-        <div class="grow"><div class="fs-13 fw-600">普通用户</div><div class="hint">只读分析 + 自选 + 提醒</div></div>
-        <span class="tag tag-outline">无后台</span>
+        <div class="grow"><div class="fs-14 fw-600">普通用户</div><div class="hint">分析 + 自选 + 提醒</div></div>
       </div>
       <div class="role-chip" data-role="guest">
         <span class="avatar">访</span>
-        <div class="grow"><div class="fs-13 fw-600">访客</div><div class="hint">仅市场 + 趋势 + 搜索</div></div>
-        <span class="tag tag-outline">3 个菜单</span>
+        <div class="grow"><div class="fs-14 fw-600">访客</div><div class="hint">仅市场与搜索</div></div>
       </div>
     </div>
 
-    <div class="m-section-title">账号</div>
-    <div class="col gap-3">
+    <div class="col gap-3" style="margin-top:20px">
       <div class="field"><label class="label">用户名</label>
         <input class="input is-mono tap-44" id="mUser" value="admin"></div>
       <div class="field"><label class="label">密码</label>
         <input class="input is-mono tap-44" id="mPass" type="password" value="admin123"></div>
-      <label class="check tap-44"><input type="checkbox" checked> 记住我（7 天）</label>
     </div>
 
-    <div class="legend-block mt-4">
-      <b>安装到主屏</b><br>
-      iOS：Safari → 分享 → 添加到主屏幕；Android：浏览器菜单 → 安装应用。
-      安装后才可使用通知栏提醒（iOS 不支持震动与桌面小组件）。
-    </div>
-
-    <div class="hint mt-4" style="line-height:1.9">
-      演示数据 · 非实时 · 不构成投资建议<br>
-      本页不校验真实密码，点击登录后按所选角色进入。
+    <div class="hint" style="margin-top:24px;line-height:1.9">
+      演示数据 · 不校验真实密码 · iOS 可「添加到主屏幕」获得原生体验
     </div>
   </div>
 </div>

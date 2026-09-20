@@ -9,37 +9,32 @@
 <link rel="stylesheet" href="../web/_shared/components.css">
 <style>
   .rule-card {
-    border: 1px solid var(--border); border-radius: 10px; padding: 12px;
-    background: var(--bg-sunken);
+    border-radius: 14px; padding: 14px;
+    background: var(--bg-panel);
   }
+  [data-theme="light"] .rule-card { box-shadow: 0 1px 3px rgba(20, 22, 26, 0.05); }
   .rule-card.is-off { opacity: .55; }
   .type-tile {
-    border: 1px solid var(--border); border-radius: 10px; padding: 10px;
-    background: var(--bg-sunken); text-align: center;
+    border-radius: 14px; padding: 14px;
+    background: var(--bg-panel); text-align: center;
   }
-  .type-tile.is-active { border-color: var(--brand); background: var(--brand-soft); }
-  .type-ico { font-size: 16px; color: var(--brand); }
+  .type-tile.is-active { background: var(--brand-soft); }
+  .type-tile.is-active .fs-12 { color: var(--brand); }
 </style>
 </head>
-<body data-page="alerts" data-title="提醒规则" data-desc="规则卡片列表 + 新建规则全屏页（四类分段）。手机端把「新建」做成全屏步骤式页面，比对话框更好点按。">
+<body data-page="alerts" data-title="提醒规则" data-desc="规则卡片 + 开关是主角，新建规则走全屏分步页。模板压成一行标签，触发历史只留最近两条。">
 <div id="appScreen">
 
   <div class="m-topbar">
-    <span class="m-title">提醒规则</span>
-    <span class="row gap-2" style="margin-left:auto"><span class="dot dot-live"></span><span class="fs-11 t-2">巡检中</span></span>
+    <span class="m-title">提醒</span>
+    <span class="row gap-2" style="margin-left:auto"><span class="dot dot-live"></span><span class="fs-11 t-3">巡检中</span></span>
     <button class="icon-btn" data-open="fullNew">＋</button>
   </div>
 
   <div class="m-page">
 
-    <div class="m-kpi-row" style="grid-template-columns:repeat(3,1fr)">
-      <div class="kpi"><span class="kpi-label">启用中</span><span class="kpi-value is-sm t-up" id="mOn">8</span><span class="kpi-delta t-3">共 10 条</span></div>
-      <div class="kpi"><span class="kpi-label">今日触发</span><span class="kpi-value is-sm">3</span><span class="kpi-delta t-3">09-18</span></div>
-      <div class="kpi"><span class="kpi-label">覆盖股票</span><span class="kpi-value is-sm">9</span><span class="kpi-delta t-3">含 4 只核心</span></div>
-    </div>
-
     <!-- 筛选 -->
-    <div class="row gap-2 mt-3 wrap">
+    <div class="row gap-2 wrap" id="mFilters">
       <span class="tag tag-lg tag-brand" id="fAll">全部</span>
       <span class="tag tag-lg tag-outline" id="fOn">仅启用</span>
       <span class="tag tag-lg tag-outline" id="fOff">仅停用</span>
@@ -47,25 +42,23 @@
     </div>
 
     <!-- 规则列表 -->
-    <div class="m-section-title">规则列表</div>
-    <div class="col gap-2" id="mRules"></div>
+    <div class="col gap-2" style="margin-top:14px" id="mRules"></div>
 
     <!-- 模板 -->
-    <div class="m-section-title">规则模板</div>
-    <div class="col gap-2">
-      <button class="btn btn-outline btn-block tplBtn" data-t="趋势转弱三连">趋势转弱三连</button>
-      <button class="btn btn-outline btn-block tplBtn" data-t="突破确认">突破确认</button>
-      <button class="btn btn-outline btn-block tplBtn" data-t="资金异动">资金异动</button>
-      <button class="btn btn-outline btn-block tplBtn" data-t="事件驱动">事件驱动</button>
+    <div class="m-section-title">从模板新建</div>
+    <div class="row gap-2 wrap">
+      <span class="tag tag-lg tag-outline tplBtn" data-t="趋势转弱三连">趋势转弱三连</span>
+      <span class="tag tag-lg tag-outline tplBtn" data-t="突破确认">突破确认</span>
+      <span class="tag tag-lg tag-outline tplBtn" data-t="资金异动">资金异动</span>
+      <span class="tag tag-lg tag-outline tplBtn" data-t="事件驱动">事件驱动</span>
     </div>
 
     <!-- 触发历史 -->
-    <div class="m-section-title">触发历史</div>
+    <div class="m-section-title">最近触发</div>
     <div class="col gap-2" id="mHist"></div>
 
-    <div class="legend-block mt-4">
-      <b>巡检频率</b>：价格类每 30 秒；技术指标每交易日 16:00；资金流 15:20；公告事件抓取后立即。<br>
-      演示数据，原型不实现真实推送。
+    <div class="hint" style="margin-top:20px;line-height:1.8">
+      价格类每 30 秒巡检 · 演示数据 · 原型不实现真实推送
     </div>
 
   </div>
@@ -84,24 +77,23 @@
       <span class="m-title">新建提醒规则</span>
       <button class="btn btn-sm btn-primary" style="margin-left:auto" data-close="fullNew" onclick="SA.toast('规则已保存并启用','ok')">保存</button>
     </div>
-    <div style="flex:1;overflow-y:auto;padding:12px 16px 24px">
+    <div style="flex:1;overflow-y:auto;padding:12px 20px 24px">
 
-      <div class="m-section-title">1. 选择规则类型</div>
-      <div class="grid grid-2" style="gap:8px">
-        <div class="type-tile is-active" data-t="price"><div class="type-ico">◈</div><div class="fs-12 fw-600 mt-1">价格与涨跌幅</div></div>
-        <div class="type-tile" data-t="tech"><div class="type-ico">◉</div><div class="fs-12 fw-600 mt-1">技术指标</div></div>
-        <div class="type-tile" data-t="flow"><div class="type-ico">◐</div><div class="fs-12 fw-600 mt-1">资金流异动</div></div>
-        <div class="type-tile" data-t="event"><div class="type-ico">◍</div><div class="fs-12 fw-600 mt-1">公告与事件</div></div>
+      <div class="m-section-title">1. 规则类型</div>
+      <div class="grid grid-2" style="gap:10px">
+        <div class="type-tile is-active" data-t="price"><div class="fs-13 fw-600">价格与涨跌幅</div></div>
+        <div class="type-tile" data-t="tech"><div class="fs-13 fw-600">技术指标</div></div>
+        <div class="type-tile" data-t="flow"><div class="fs-13 fw-600">资金流异动</div></div>
+        <div class="type-tile" data-t="event"><div class="fs-13 fw-600">公告与事件</div></div>
       </div>
-      <div class="legend-block mt-2" id="typeDesc">
+      <div class="hint mt-3" id="typeDesc">
         股价上穿/下穿指定价格、当日涨跌幅超阈值、创 N 日新高/新低。
       </div>
 
-      <div class="m-section-title">2. 股票与应用范围</div>
+      <div class="m-section-title">2. 股票与范围</div>
       <div class="field">
         <label class="label">股票</label>
         <input class="input tap-44" value="宁德时代 300750">
-        <span class="hint">支持代码 / 名称 / 拼音首字母</span>
       </div>
       <div class="field mt-3">
         <label class="label">应用范围</label>
@@ -122,14 +114,9 @@
       <div class="field mt-3">
         <label class="label">阈值</label>
         <div class="row gap-2">
-          <input class="input input-num tap-44" value="280.00">
-          <span class="tag tag-outline" style="height:44px;display:flex;align-items:center">元</span>
+          <input class="input input-num tap-44" value="265.00">
+          <span class="hint">元</span>
         </div>
-      </div>
-      <div class="field mt-3">
-        <label class="label">涨跌幅阈值（滑杆）</label>
-        <input class="slider" type="range" min="1" max="20" value="5">
-        <div class="row-between"><span class="hint">1%</span><span class="mono fs-12 t-brand">5%</span><span class="hint">20%</span></div>
       </div>
 
       <div class="m-section-title">4. 通知方式</div>
@@ -139,26 +126,16 @@
         <label class="check tap-44"><input type="checkbox" checked> 震动（iOS 不支持）</label>
       </div>
 
-      <div class="m-section-title">5. 生效时间与频率</div>
-      <div class="field">
-        <label class="label">生效时间</label>
-        <div class="segmented tap-44" style="width:100%">
-          <span class="is-active">交易日 9:30–15:00</span><span>全天</span>
-        </div>
-      </div>
-      <div class="field mt-3">
-        <label class="label">频率限制</label>
-        <div class="segmented tap-44" style="width:100%">
-          <span class="is-active">5 分钟一次</span><span>每日一次</span><span>不限</span>
-        </div>
+      <div class="m-section-title">5. 生效时间</div>
+      <div class="segmented tap-44" style="width:100%">
+        <span class="is-active">交易日 9:30–15:00</span><span>全天</span>
       </div>
 
-      <div class="legend-block mt-4">
-        <b>预览</b>：当「宁德时代 300750」在交易日 9:30–15:00 上穿 <b>280.00 元</b> 时，
-        通过站内 + 通知栏 + 震动提醒，同一规则 5 分钟内不重复提醒。
+      <div class="hint mt-4" style="line-height:1.8">
+        预览：在交易日 9:30–15:00 内上穿 265.00 元时提醒，5 分钟内不重复。
       </div>
 
-      <button class="btn btn-primary btn-block mt-4" style="height:44px" data-close="fullNew" onclick="SA.toast('规则已保存并启用','ok')">保存并启用</button>
+      <button class="btn btn-primary btn-block mt-4" style="height:48px;border-radius:14px" data-close="fullNew" onclick="SA.toast('规则已保存并启用','ok')">保存并启用</button>
     </div>
   </div>
 </div>
@@ -179,28 +156,16 @@
       if (filter === "off") return r.status === "off";
       return true;
     });
-    var onCount = al.rules.filter(function (r) { return r.status === "on"; }).length;
-    document.getElementById("mOn").textContent = onCount;
 
     document.getElementById("mRules").innerHTML = list.map(function (r) {
-      var icon = r.type === "价格" ? "◈" : r.type === "技术指标" ? "◉" : r.type === "资金流" ? "◐" : "◍";
       return '<div class="rule-card' + (r.status === "off" ? " is-off" : "") + '">' +
         '<div class="row gap-2">' +
-          '<span class="type-ico">' + icon + "</span>" +
-          '<span class="fs-13 fw-600">' + r.name + "</span>" +
-          '<span class="mono fs-10 t-3">' + r.code + "</span>" +
+          '<span class="fs-14 fw-600">' + r.name + "</span>" +
           '<label class="switch" style="margin-left:auto"><input type="checkbox"' + (r.status === "on" ? " checked" : "") + ' data-toggle="' + r.id + '"><span class="track"></span></label>' +
         "</div>" +
-        '<div class="fs-12 t-2 mt-2" style="margin-top:8px;line-height:1.7">' + r.desc + "</div>" +
-        '<div class="row gap-3 mt-2 wrap">' +
-          '<span class="hint">阈值 ' + r.threshold + "</span>" +
-          '<span class="hint">触发 ' + r.triggers + " 次</span>" +
-          '<span class="hint">最近 ' + r.lastTrigger + "</span>" +
-        "</div>" +
-        '<div class="row gap-1 mt-2 wrap">' + r.channels.map(function (c) { return '<span class="tag tag-outline">' + c + "</span>"; }).join("") + "</div>" +
-        '<div class="row gap-2 mt-3">' +
-          '<button class="btn btn-sm btn-outline ruleEdit" data-id="' + r.id + '">编辑</button>' +
-          '<button class="btn btn-sm btn-ghost ruleDel" data-id="' + r.id + '">删除</button>' +
+        '<div class="fs-13 t-2" style="margin-top:6px;line-height:1.7">' + r.desc + "</div>" +
+        '<div class="row gap-3" style="margin-top:8px">' +
+          '<span class="hint">触发 ' + r.triggers + " 次 · 最近 " + r.lastTrigger + "</span>" +
         "</div>" +
       "</div>";
     }).join("");
@@ -211,15 +176,6 @@
         r.status = sw.checked ? "on" : "off";
         SA.toast((sw.checked ? "已启用：" : "已停用：") + r.name, sw.checked ? "ok" : "warn");
         render();
-      });
-    });
-    SA.qsa(".ruleEdit").forEach(function (b) {
-      b.addEventListener("click", function () { SA.openDialog("fullNew"); });
-    });
-    SA.qsa(".ruleDel").forEach(function (b) {
-      b.addEventListener("click", function () {
-        b.closest(".rule-card").remove();
-        SA.toast("已删除规则", "info");
       });
     });
   }
@@ -254,14 +210,13 @@
     });
   });
 
-  /* 触发历史 */
-  document.getElementById("mHist").innerHTML = al.history.map(function (h) {
-    return '<div class="m-card" style="padding:10px 12px">' +
-      '<div class="row-between"><span class="mono fs-11 t-3">' + h.time + "</span>" +
+  /* 触发历史：最近 2 条 */
+  document.getElementById("mHist").innerHTML = al.history.slice(0, 2).map(function (h) {
+    return '<div class="m-card">' +
+      '<div class="row-between"><span class="fs-13 fw-600">' + h.name + " " + h.code + "</span>" +
       '<span class="mono fs-12 t-brand">' + h.value + "</span></div>" +
-      '<div class="fs-12 fw-600 mt-1" style="margin-top:4px">' + h.name + " " + h.code + "</div>" +
-      '<div class="fs-11 t-2" style="line-height:1.7">' + h.rule + "</div>" +
-      '<div class="hint mt-1">' + h.channel + "</div>" +
+      '<div class="fs-12 t-2" style="margin-top:4px;line-height:1.7">' + h.rule + "</div>" +
+      '<div class="hint" style="margin-top:4px">' + h.time + " · " + h.channel + "</div>" +
       "</div>";
   }).join("");
 
