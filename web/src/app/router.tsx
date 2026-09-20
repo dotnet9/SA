@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate, Outlet, useLocation, useParams } from 'react-router';
 import { AppShell } from '@/app/layout/AppShell';
 import { DefaultStockCode, landingPath, StockModuleFunctionPoints, StockModuleNames } from '@/app/nav';
@@ -12,7 +13,25 @@ import { useAuth } from '@/providers/AuthProvider';
  *
  * 守卫策略与概要设计 §2.1 一致：无权限的路由不渲染内容（而不是先渲染再报错），
  * 未登录一律回登录页，首登未改密则锁在改密页。
+ *
+ * 业务页面按路由分包（详细设计 §12「前端按路由分包」）：市场页会拉起 ECharts，
+ * 若内联进首屏会把主包撑到 1MB 以上，因此这两页走动态 import。
  */
+
+/** 市场概览（含 ECharts，单独分包）。 */
+const MarketPage = lazy(() =>
+  import('@/features/market/MarketPage').then((module) => ({ default: module.MarketPage }))
+);
+
+/** 股票搜索。 */
+const SearchPage = lazy(() =>
+  import('@/features/search/SearchPage').then((module) => ({ default: module.SearchPage }))
+);
+
+/** 分包加载占位：沿用启动态样式，避免白屏。 */
+function RouteFallback() {
+  return <div className="sa-boot">正在载入页面…</div>;
+}
 
 /** 会话恢复中或未登录时的处理。 */
 function ProtectedShell() {
@@ -152,7 +171,9 @@ export const router = createBrowserRouter([
         path: 'market',
         element: (
           <RequireFunctionPoint codes={['market.view']}>
-            <PlaceholderPage title="市场概览" batch="第 2 批" />
+            <Suspense fallback={<RouteFallback />}>
+              <MarketPage />
+            </Suspense>
           </RequireFunctionPoint>
         )
       },
@@ -160,7 +181,9 @@ export const router = createBrowserRouter([
         path: 'search',
         element: (
           <RequireFunctionPoint codes={['stock.search']}>
-            <PlaceholderPage title="股票搜索" batch="第 2 批" />
+            <Suspense fallback={<RouteFallback />}>
+              <SearchPage />
+            </Suspense>
           </RequireFunctionPoint>
         )
       },

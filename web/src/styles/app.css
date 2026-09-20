@@ -74,7 +74,18 @@ body,
   }
 }
 
-/* 5. 登录页：以下规则逐条照抄原型 `design/web/index.html` 的内联 <style> 块
+/* 5. 底部 Tab 只在窄屏出现。
+      原型把 `.app-tabbar` 放进手机外框（mock-frame.js）的 `grid-area: tabbar` 里，
+      桌面页面（design/web/*）根本没有这个元素；实现版是同一套 DOM，
+      因此在 ≥768px 必须显式隐藏，否则侧边导航之外还会多出一条底部栏
+      （实施计划 §5.9：≤767px 底部 Tab，≥768px 侧边导航）。 */
+@media (min-width: 768px) {
+  .app-tabbar {
+    display: none;
+  }
+}
+
+/* 6. 登录页：以下规则逐条照抄原型 `design/web/index.html` 的内联 <style> 块
       （.login-stage / .login-hero / .hero-* / .login-panel / .login-box）。
       原型用行内样式是因为它不引入构建步骤；实现版放进样式文件避免散落。 */
 .login-stage {
@@ -194,7 +205,7 @@ body,
   }
 }
 
-/* 6. 表单错误提示：原型的 .field/.label/.input 未覆盖错误态，这里补一行文案样式 */
+/* 7. 表单错误提示：原型的 .field/.label/.input 未覆盖错误态，这里补一行文案样式 */
 .field-error {
   margin-top: 6px;
   font-size: var(--fs-12);
@@ -202,7 +213,7 @@ body,
   line-height: 1.6;
 }
 
-/* 7. 占位页：尚未实现的页面用统一形态说明批次与所需权限，避免空屏 */
+/* 8. 占位页：尚未实现的页面用统一形态说明批次与所需权限，避免空屏 */
 .placeholder-note {
   display: flex;
   flex-direction: column;

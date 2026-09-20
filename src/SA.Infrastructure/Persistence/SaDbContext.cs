@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using SA.Domain.Entities.Collect;
 using SA.Domain.Entities.Identity;
+using SA.Domain.Entities.Market;
 using SA.Domain.Entities.System;
 using SA.Infrastructure.Persistence.Converters;
 
@@ -47,6 +49,30 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
     /// <summary>导出记录。</summary>
     public DbSet<ExportLog> ExportLogs => Set<ExportLog>();
 
+    /// <summary>证券基础信息（股票池）。</summary>
+    public DbSet<Instrument> Instruments => Set<Instrument>();
+
+    /// <summary>个股行情快照（整体替换）。</summary>
+    public DbSet<QuoteSnapshot> QuoteSnapshots => Set<QuoteSnapshot>();
+
+    /// <summary>指数快照。</summary>
+    public DbSet<IndexQuote> IndexQuotes => Set<IndexQuote>();
+
+    /// <summary>行业板块快照。</summary>
+    public DbSet<Sector> Sectors => Set<Sector>();
+
+    /// <summary>数据源健康状态。</summary>
+    public DbSet<DataSourceStatus> DataSourceStatuses => Set<DataSourceStatus>();
+
+    /// <summary>采集任务日志。</summary>
+    public DbSet<CollectTaskLog> CollectTaskLogs => Set<CollectTaskLog>();
+
+    /// <summary>交易日历缓存。</summary>
+    public DbSet<TradingDay> TradingDays => Set<TradingDay>();
+
+    /// <summary>市场级日度统计。</summary>
+    public DbSet<MarketStat> MarketStats => Set<MarketStat>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -55,6 +81,7 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
         var timeConverter = new SaDateTimeOffsetConverter();
         var nullableTimeConverter = new SaNullableDateTimeOffsetConverter();
         var dateConverter = new SaDateOnlyConverter();
+        var nullableDateConverter = new SaNullableDateOnlyConverter();
 
         modelBuilder.Entity<Role>(entity =>
         {
@@ -194,6 +221,144 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
             entity.Property(e => e.Format).HasMaxLength(16).IsRequired();
             entity.Property(e => e.CreatedAt).HasConversion(timeConverter);
             entity.HasOne<User>().WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Instrument>(entity =>
+        {
+            entity.ToTable("Instrument");
+            entity.HasKey(e => e.Code);
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.Name).HasMaxLength(64).IsRequired();
+            entity.Property(e => e.Pinyin).HasMaxLength(64);
+            entity.Property(e => e.Board).HasMaxLength(16).IsRequired();
+            entity.Property(e => e.Industry).HasMaxLength(64);
+            entity.Property(e => e.UpdatedOn).HasConversion(dateConverter);
+
+            // 搜索的三个入口：代码、名称、拼音首字母，都是等值与前缀匹配
+            entity.HasIndex(e => e.Name);
+            entity.HasIndex(e => e.Pinyin);
+            entity.HasIndex(e => e.Industry);
+        });
+
+        modelBuilder.Entity<QuoteSnapshot>(entity =>
+        {
+            entity.ToTable("QuoteSnapshot");
+            entity.HasKey(e => e.Code);
+            entity.Property(e => e.Code).HasMaxLength(16);
+
+            // 金额以元计，需要 decimal 精度；SQLite 存 REAL，换算到亿元时再做四舍五入
+            foreach (var property in new[]
+            {
+                nameof(QuoteSnapshot.Price), nameof(QuoteSnapshot.Change), nameof(QuoteSnapshot.Pct),
+                nameof(QuoteSnapshot.Volume), nameof(QuoteSnapshot.Amount), nameof(QuoteSnapshot.Turnover),
+                nameof(QuoteSnapshot.VolRatio), nameof(QuoteSnapshot.Open), nameof(QuoteSnapshot.High),
+                nameof(QuoteSnapshot.Low), nameof(QuoteSnapshot.PrevClose), nameof(QuoteSnapshot.MarketCap),
+                nameof(QuoteSnapshot.FloatCap), nameof(QuoteSnapshot.Pe), nameof(QuoteSnapshot.PeTtm),
+                nameof(QuoteSnapshot.Pb)
+            })
+            {
+                entity.Property(property).HasConversion<double>();
+            }
+
+            entity.Property(e => e.AsOf).HasConversion(dateConverter);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+
+            // 排行榜与行业聚合按成交额 / 涨跌幅排序，建立覆盖索引避免全表排序
+            entity.HasIndex(e => e.Amount);
+            entity.HasIndex(e => e.Pct);
+        });
+
+        modelBuilder.Entity<IndexQuote>(entity =>
+        {
+            entity.ToTable("IndexQuote");
+            entity.HasKey(e => e.Code);
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.Name).HasMaxLength(32).IsRequired();
+
+            foreach (var property in new[]
+            {
+                nameof(IndexQuote.Price), nameof(IndexQuote.Change), nameof(IndexQuote.Pct),
+                nameof(IndexQuote.Volume), nameof(IndexQuote.Amount)
+            })
+            {
+                entity.Property(property).HasConversion<double>();
+            }
+
+            entity.Property(e => e.AsOf).HasConversion(dateConverter);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+        });
+
+        modelBuilder.Entity<Sector>(entity =>
+        {
+            entity.ToTable("Sector");
+            entity.HasKey(e => e.Code);
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.Name).HasMaxLength(64).IsRequired();
+            entity.Property(e => e.LeaderName).HasMaxLength(64);
+            entity.Property(e => e.LeaderCode).HasMaxLength(16);
+
+            foreach (var property in new[] { nameof(Sector.Pct), nameof(Sector.MainNet), nameof(Sector.Pe) })
+            {
+                entity.Property(property).HasConversion<double>();
+            }
+
+            entity.Property(e => e.AsOf).HasConversion(dateConverter);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+            entity.HasIndex(e => e.Pct);
+        });
+
+        modelBuilder.Entity<DataSourceStatus>(entity =>
+        {
+            entity.ToTable("DataSourceStatus");
+            entity.HasKey(e => e.Name);
+            entity.Property(e => e.Name).HasMaxLength(128);
+            entity.Property(e => e.Type).HasMaxLength(16);
+            entity.Property(e => e.Domains).HasMaxLength(128);
+            entity.Property(e => e.Status).HasMaxLength(8).IsRequired();
+            entity.Property(e => e.LastError).HasMaxLength(512);
+            entity.Property(e => e.LastOkAt).HasConversion(nullableTimeConverter);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+        });
+
+        modelBuilder.Entity<CollectTaskLog>(entity =>
+        {
+            entity.ToTable("CollectTaskLog");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.TaskName).HasMaxLength(64).IsRequired();
+            entity.Property(e => e.Source).HasMaxLength(128);
+            entity.Property(e => e.Status).HasMaxLength(8).IsRequired();
+            entity.Property(e => e.Error).HasMaxLength(512);
+            entity.Property(e => e.RetryResult).HasMaxLength(256);
+            entity.Property(e => e.StartedAt).HasConversion(timeConverter);
+            entity.HasIndex(e => e.StartedAt);
+        });
+
+        modelBuilder.Entity<TradingDay>(entity =>
+        {
+            entity.ToTable("TradingDay");
+            entity.HasKey(e => e.Date);
+            entity.Property(e => e.Date).HasConversion(dateConverter);
+        });
+
+        modelBuilder.Entity<MarketStat>(entity =>
+        {
+            entity.ToTable("MarketStat");
+            entity.HasKey(e => e.Date);
+            entity.Property(e => e.Date).HasConversion(dateConverter);
+            entity.Property(e => e.MarginDate).HasConversion(nullableDateConverter);
+            entity.Property(e => e.FundFlowDate).HasConversion(nullableDateConverter);
+
+            foreach (var property in new[]
+            {
+                nameof(MarketStat.MainNet), nameof(MarketStat.SuperLarge), nameof(MarketStat.Large),
+                nameof(MarketStat.Medium), nameof(MarketStat.Small),
+                nameof(MarketStat.FinanceBalance), nameof(MarketStat.LoanBalance)
+            })
+            {
+                entity.Property(property).HasConversion<double>();
+            }
+
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
         });
     }
 }

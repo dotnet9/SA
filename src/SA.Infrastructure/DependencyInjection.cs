@@ -4,9 +4,16 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SA.Application.Abstractions;
 using SA.Application.Auth;
+using SA.Infrastructure.Collect;
+using SA.Infrastructure.Collect.Adapters;
+using SA.Infrastructure.Collect.Hosting;
+using SA.Infrastructure.Collect.Http;
+using SA.Infrastructure.Collect.Jobs;
+using SA.Infrastructure.Collect.Registry;
 using SA.Infrastructure.Persistence;
 using SA.Infrastructure.Persistence.Seed;
 using SA.Infrastructure.Persistence.Stores;
+using SA.Infrastructure.Search;
 using SA.Infrastructure.Security;
 using SA.Infrastructure.Storage;
 
@@ -72,6 +79,73 @@ public static class DependencyInjection
         services.AddSingleton<ISecretProtector>(provider =>
             new DataProtectionSecretProtector(provider.GetRequiredService<Microsoft.AspNetCore.DataProtection.IDataProtectionProvider>()));
         services.AddSingleton<IAccessTokenIssuer, JwtAccessTokenIssuer>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 注册采集层：HTTP 出口、数据源适配器、降级注册表、执行外壳、采集任务与调度。
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 任务与调度宿主服务放在基础设施层而不是 <c>SA.Collector</c>，是为了让 SA.Api 能直接内嵌
+    /// （实施计划 §5.4 的「单进程是默认形态」）。若让 SA.Api 引用 <c>SA.Collector</c>，
+    /// 两个可执行工程会各自生成一个全局 <c>Program</c> 类型，集成测试里的
+    /// <c>WebApplicationFactory&lt;Program&gt;</c> 立刻产生 CS0433 二义性。
+    /// </para>
+    /// <para>
+    /// 适配器与注册表都是无状态单例；任务与执行外壳依赖 Scoped 的仓储，因此为 Scoped，
+    /// 由调度按轮次创建作用域。SA.Api 与 SA.Collector 共用本方法，两个宿主行为一致。
+    /// </para>
+    /// </remarks>
+    public static IServiceCollection AddSaCollect(this IServiceCollection services)
+    {
+        services.AddSingleton<CollectHttpClient>();
+
+        services.AddSingleton<EastMoneyMarketListSource>();
+        services.AddSingleton<IMarketListSource>(provider => provider.GetRequiredService<EastMoneyMarketListSource>());
+
+        services.AddSingleton<IIndexSource, EastMoneyIndexSource>();
+        services.AddSingleton<ISectorSource, EastMoneySectorSource>();
+        services.AddSingleton<ILimitPoolSource, EastMoneyLimitPoolSource>();
+        services.AddSingleton<IMarginMarketSource, EastMoneyMarginMarketSource>();
+        services.AddSingleton<IMarketFundFlowSource, EastMoneyMarketFundFlowSource>();
+        services.AddSingleton<ITradingCalendarSource, EastMoneyTradingCalendarSource>();
+
+        // 多标的快照源按注册顺序构成降级链：东财主源 → 腾讯备源
+        services.AddSingleton<IQuoteSnapshotSource, EastMoneyQuoteSnapshotSource>();
+        services.AddSingleton<IQuoteSnapshotSource, TencentQuoteSource>();
+
+        services.AddSingleton<SourceRegistry>();
+        services.AddScoped<CollectExecutor>();
+        services.AddScoped<SourceCooldown>();
+        services.AddScoped<MarketBusinessDate>();
+
+        services.AddScoped<UniverseJob>();
+        services.AddScoped<QuoteSnapshotJob>();
+        services.AddScoped<IndexJob>();
+        services.AddScoped<SectorJob>();
+        services.AddScoped<MarketStatJob>();
+        services.AddScoped<TradingCalendarJob>();
+
+        services.AddHostedService<SchedulerHostedService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 注册采集仓储：股票池、快照、板块、指数、市场统计、数据源状态与交易日历。
+    /// </summary>
+    public static IServiceCollection AddSaMarketStores(this IServiceCollection services)
+    {
+        services.AddScoped<IInstrumentStore, InstrumentStore>();
+        services.AddScoped<IQuoteSnapshotStore, QuoteSnapshotStore>();
+        services.AddScoped<ISectorStore, SectorStore>();
+        services.AddScoped<IIndexStore, IndexStore>();
+        services.AddScoped<IMarketStatStore, MarketStatStore>();
+        services.AddScoped<ICollectStatusStore, CollectStatusStore>();
+        services.AddScoped<ITradingCalendarStore, TradingCalendarStore>();
+        services.AddSingleton<IPinyinIndexer, ToolGoodPinyinIndexer>();
 
         return services;
     }

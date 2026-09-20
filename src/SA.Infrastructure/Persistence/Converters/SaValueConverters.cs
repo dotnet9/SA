@@ -62,3 +62,19 @@ public sealed class SaDateOnlyConverter : ValueConverter<DateOnly, string>
     {
     }
 }
+
+/// <summary>
+/// 可空业务日期转换器（如「两融口径日」可能与行情口径日不同，未采集时为 null）。
+/// </summary>
+public sealed class SaNullableDateOnlyConverter : ValueConverter<DateOnly?, string?>
+{
+    /// <summary>构造转换器。</summary>
+    public SaNullableDateOnlyConverter()
+        : base(
+            value => value == null ? null : value.Value.ToString(SaDateOnlyConverter.Format, CultureInfo.InvariantCulture),
+            text => string.IsNullOrWhiteSpace(text)
+                ? null
+                : DateOnly.ParseExact(text, SaDateOnlyConverter.Format, CultureInfo.InvariantCulture))
+    {
+    }
+}

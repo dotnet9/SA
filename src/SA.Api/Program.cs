@@ -24,7 +24,11 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddMemoryCache();
 builder.Services.AddSaDataPaths(builder.Configuration, builder.Environment.ContentRootPath);
 builder.Services.AddSaApplication(builder.Configuration);
+builder.Services.AddSaMarket(builder.Configuration);
 builder.Services.AddSaPersistence();
+builder.Services.AddSaMarketStores();
+// 采集适配器、任务与调度宿主服务（实施计划 §5.4：单进程是默认形态）
+builder.Services.AddSaCollect();
 builder.Services.AddSaSecurity();
 
 // 访问令牌校验。签名密钥要到启动初始化才确定（配置 → 库 → 生成），因此这里用延迟配置：
@@ -69,6 +73,8 @@ app.UseAuthorization();
 app.MapSystemEndpoints();
 app.MapAuthEndpoints();
 app.MapMeEndpoints();
+app.MapMarketEndpoints();
+app.MapSearchEndpoints();
 
 app.Run();
 

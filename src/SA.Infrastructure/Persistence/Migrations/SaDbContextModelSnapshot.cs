@@ -16,6 +16,108 @@ namespace SA.Infrastructure.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
 
+            modelBuilder.Entity("SA.Domain.Entities.Collect.CollectTaskLog", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("CostMs")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RetryResult")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("RowsWritten")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("StartedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TaskName")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StartedAt");
+
+                    b.ToTable("CollectTaskLog", (string)null);
+                });
+
+            modelBuilder.Entity("SA.Domain.Entities.Collect.DataSourceStatus", b =>
+                {
+                    b.Property<string>("Name")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Domains")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("FailCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastOkAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("LatencyMs")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Type")
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UpdatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("UptimePct")
+                        .HasColumnType("REAL");
+
+                    b.HasKey("Name");
+
+                    b.ToTable("DataSourceStatus", (string)null);
+                });
+
+            modelBuilder.Entity("SA.Domain.Entities.Collect.TradingDay", b =>
+                {
+                    b.Property<string>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsOpen")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Date");
+
+                    b.ToTable("TradingDay", (string)null);
+                });
+
             modelBuilder.Entity("SA.Domain.Entities.Identity.FunctionPointRow", b =>
                 {
                     b.Property<string>("Code")
@@ -295,6 +397,266 @@ namespace SA.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("User", (string)null);
+                });
+
+            modelBuilder.Entity("SA.Domain.Entities.Market.IndexQuote", b =>
+                {
+                    b.Property<string>("Code")
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Amount")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("AsOf")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Change")
+                        .HasColumnType("REAL");
+
+                    b.Property<bool>("Displayed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Market")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Pct")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Price")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UpdatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Volume")
+                        .HasColumnType("REAL");
+
+                    b.HasKey("Code");
+
+                    b.ToTable("IndexQuote", (string)null);
+                });
+
+            modelBuilder.Entity("SA.Domain.Entities.Market.Instrument", b =>
+                {
+                    b.Property<string>("Code")
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Board")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Industry")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsSt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Market")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Pinyin")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UpdatedOn")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Code");
+
+                    b.HasIndex("Industry");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("Pinyin");
+
+                    b.ToTable("Instrument", (string)null);
+                });
+
+            modelBuilder.Entity("SA.Domain.Entities.Market.MarketStat", b =>
+                {
+                    b.Property<string>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("FinanceBalance")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("FundFlowDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Large")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("LimitDown")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("LimitUp")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("LoanBalance")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("MainNet")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("MarginDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Medium")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Small")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("SuperLarge")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("UpdatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Date");
+
+                    b.ToTable("MarketStat", (string)null);
+                });
+
+            modelBuilder.Entity("SA.Domain.Entities.Market.QuoteSnapshot", b =>
+                {
+                    b.Property<string>("Code")
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Amount")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("AsOf")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Change")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("FloatCap")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("High")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Low")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("MarketCap")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Open")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Pb")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Pct")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Pe")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("PeTtm")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("PrevClose")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Price")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Turnover")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("UpdatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("VolRatio")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Volume")
+                        .HasColumnType("REAL");
+
+                    b.HasKey("Code");
+
+                    b.HasIndex("Amount");
+
+                    b.HasIndex("Pct");
+
+                    b.ToTable("QuoteSnapshot", (string)null);
+                });
+
+            modelBuilder.Entity("SA.Domain.Entities.Market.Sector", b =>
+                {
+                    b.Property<string>("Code")
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AsOf")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DownCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LeaderCode")
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LeaderName")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("MainNet")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Pct")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Pe")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("UpCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UpdatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Code");
+
+                    b.HasIndex("Pct");
+
+                    b.ToTable("Sector", (string)null);
                 });
 
             modelBuilder.Entity("SA.Domain.Entities.System.AppSetting", b =>

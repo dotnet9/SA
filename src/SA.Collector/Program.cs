@@ -1,10 +1,15 @@
 using System.Text;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using SA.Application;
 using SA.Collector.Probe;
+using SA.Infrastructure;
+using SA.Infrastructure.Persistence;
 using SA.Infrastructure.Storage;
 
-// 采集器当前提供两种运行形态：
+// 采集器提供两种运行形态：
 //   1) 诊断模式：--probe / --duckdb-smoke，用于实施首日实测与后续上游漂移排障；
-//   2) 调度模式：默认形态，第 2 批接入 SchedulerHostedService 后实现。
+//   2) 调度模式：默认形态，与 SA.Api 内嵌的调度共用同一套注册（AddSaCollect）。
 
 Console.OutputEncoding = Encoding.UTF8;
 
@@ -61,8 +66,40 @@ if (options.Probe is not null)
     return failed.Count == 0 ? 0 : 1;
 }
 
-Console.WriteLine(CommandLineOptions.HelpText);
-return 0;
+// 默认形态：独立运行的采集调度。
+return await RunSchedulerAsync(args).ConfigureAwait(false);
+
+/// <summary>
+/// 以独立进程运行采集调度，便于排障时把采集与 API 分开观察。
+/// </summary>
+static async Task<int> RunSchedulerAsync(string[] args)
+{
+    var builder = Host.CreateApplicationBuilder(args);
+
+    builder.Services.AddSaDataPaths(builder.Configuration, Directory.GetCurrentDirectory());
+    builder.Services.AddSaApplication(builder.Configuration);
+    builder.Services.AddSaMarket(builder.Configuration);
+    builder.Services.AddSaPersistence();
+    builder.Services.AddSaMarketStores();
+    builder.Services.AddSaCollect();
+    // 与 API 宿主一致：PersistenceInitializer 需要签名密钥与敏感字段保护
+    builder.Services.AddSaSecurity();
+
+    var host = builder.Build();
+
+    // 与 API 宿主一致：先把库建好、身份数据播种完，再开始采集
+    using (var scope = host.Services.CreateScope())
+    {
+        var paths = scope.ServiceProvider.GetRequiredService<DataPaths>();
+        paths.EnsureCreated();
+
+        var initializer = scope.ServiceProvider.GetRequiredService<PersistenceInitializer>();
+        await initializer.InitializeAsync().ConfigureAwait(false);
+    }
+
+    await host.RunAsync().ConfigureAwait(false);
+    return 0;
+}
 
 /// <summary>
 /// 命令行参数。刻意保持极简，避免在诊断路径上引入配置框架。
@@ -85,7 +122,8 @@ internal sealed class CommandLineOptions
           --duckdb-smoke            DuckDB 最小读写样例（验证 net11.0 兼容性）
           --help                    显示本帮助
 
-        无选项时进入调度模式（第 2 批实现）。
+        无选项时进入调度模式：按交易日历与市场时段驱动采集任务。
+        采集配置见 appsettings.json 的 Sa:Collector 节（SA.Api 内嵌运行时同样读取该节）。
         """;
 
     /// <summary>探针选择器；为 null 表示未指定。</summary>

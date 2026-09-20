@@ -133,10 +133,13 @@ public static class CurrentUser
 public static class AuthorizationEndpointExtensions
 {
     /// <summary>
-    /// 要求调用方具备全部给定功能点。
+    /// 要求调用方具备全部给定功能点。对单个端点与路由分组都适用
+    /// （分组的约束会向下传递到组内每个端点）。
     /// </summary>
-    public static RouteHandlerBuilder RequireFunctionPoint(this RouteHandlerBuilder builder, params string[] codes)
+    public static TBuilder RequireFunctionPoint<TBuilder>(this TBuilder builder, params string[] codes)
+        where TBuilder : IEndpointConventionBuilder
     {
+        ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(codes);
         if (codes.Length == 0)
         {
