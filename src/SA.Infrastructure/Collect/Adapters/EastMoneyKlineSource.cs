@@ -61,7 +61,9 @@ public sealed class EastMoneyKlineSource(CollectHttpClient http) : IKlineSource
         int period = PeriodDaily,
         CancellationToken cancellationToken = default)
     {
-        var url = $"{BaseUrl}?secid={Domain.Common.MarketCodes.SecId(code)}&{Fields}" +
+        // 用 ResolveSecId 而不是 SecId：指数（沪深300 = 1.000300）与板块（90.BKxxxx）的前缀
+        // 都不能按代码首位推断，拼错会静默返回空 data
+        var url = $"{BaseUrl}?secid={Domain.Common.MarketCodes.ResolveSecId(code)}&{Fields}" +
                   $"&klt={period}&fqt={adjust}&beg={from:yyyyMMdd}&end={to:yyyyMMdd}";
 
         using var document = await http.GetJsonAsync(url, Name, cancellationToken: cancellationToken).ConfigureAwait(false);

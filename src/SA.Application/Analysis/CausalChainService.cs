@@ -29,7 +29,8 @@ public sealed class CausalChainService(
     IInstrumentStore instruments,
     IQuoteSnapshotStore quotes,
     ISectorStore sectors,
-    EventTimelineService events)
+    EventTimelineService events,
+    IOnDemandQueue onDemand)
 {
     /// <summary>相关性/贝塔的回看天数。</summary>
     private const int LookbackDays = 60;
@@ -56,6 +57,9 @@ public sealed class CausalChainService(
         var bars = await daily.GetLatestAsync(code, LookbackDays + 120, cancellationToken).ConfigureAwait(false);
         if (bars.Count < 10)
         {
+            // 把标的入队，由按需采集在下一拍补齐日线（含其所属行业的指数日线）；
+            // 前端按 1003 的既有约定自动重试，用户不必手动刷新
+            onDemand.TryEnqueue(code);
             return ServiceResult<CausalChainDto>.Fail(ErrorCode.DataNotReady, "日线数据正在采集，请稍后重试");
         }
 
@@ -84,6 +88,19 @@ public sealed class CausalChainService(
             benchmark.Select(bar => bar.Close).ToList(),
             industryCode,
             industryName);
+
+        // 行业指数日线缺失时把标的入队：按需采集会顺带补齐其所属行业（90.BKxxxx）的日线，
+        // 否则带宽会一直是「样本不足」而用户不知道该等什么
+        if (industryCode is not null && sectorBars.Count < MinSamples)
+        {
+            onDemand.TryEnqueue(code);
+        }
+
+        // 基准（沪深300）缺失同理：没有基准就算不出相对强弱与带宽的对照
+        if (benchmark.Count < MinSamples)
+        {
+            onDemand.TryEnqueue("000300");
+        }
 
         var links = await BuildLinksAsync(code, instrument.Name, bars, sectorBars, benchmark, cancellationToken)
             .ConfigureAwait(false);

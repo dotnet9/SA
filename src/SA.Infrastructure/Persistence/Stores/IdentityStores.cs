@@ -244,12 +244,17 @@ public sealed class SettingsStore(SaDbContext db) : ISettingsStore
             await _db.AppSettings.AddAsync(
                 new AppSetting { Key = key, Value = value, UpdatedAt = SaTime.Now },
                 cancellationToken).ConfigureAwait(false);
-            return;
+        }
+        else
+        {
+            row.Value = value;
+            row.UpdatedAt = SaTime.Now;
         }
 
-        row.Value = value;
-        row.UpdatedAt = SaTime.Now;
-        _db.AppSettings.Update(row);
+        // 写入方法自己承担持久化，不依赖同一请求里后续某个无关的 SaveChanges。
+        // 早期实现漏了这一步：只有「同请求里还有其它写操作」时改动才会被顺带保存，
+        // 于是「只改设置」的请求（如保存提醒偏好）返回 200 却什么都没改（实测过）。
+        await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -268,12 +273,15 @@ public sealed class SettingsStore(SaDbContext db) : ISettingsStore
             await _db.UserSettings.AddAsync(
                 new UserSetting { UserId = userId, Json = json, UpdatedAt = SaTime.Now },
                 cancellationToken).ConfigureAwait(false);
-            return;
+        }
+        else
+        {
+            row.Json = json;
+            row.UpdatedAt = SaTime.Now;
         }
 
-        row.Json = json;
-        row.UpdatedAt = SaTime.Now;
-        _db.UserSettings.Update(row);
+        // 同上：这里也必须自己保存
+        await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 }
 

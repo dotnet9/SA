@@ -74,6 +74,8 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
     });
 
 // 默认要求已登录，避免新增端点时忘记声明认证而意外裸奔（需求规格 §7.3）
+// 注意：PWA 的静态资源（/sw.js、/manifest.webmanifest、/icon-*.png）由前端服务器提供
+// （文件在 web/public 下），不经过本 API，因此不需要在这里为它们开白名单。
 builder.Services.AddAuthorizationBuilder()
     .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
 

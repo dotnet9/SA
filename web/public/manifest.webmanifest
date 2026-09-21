@@ -1,0 +1,37 @@
+{
+  "name": "股析 SA · 股票分析工作台",
+  "short_name": "股析 SA",
+  "description": "本地自建的 A 股分析工作台：市场概览、自选盯盘、趋势、财务、资金面、行业与事件。",
+  "lang": "zh-CN",
+  "start_url": "/market",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    { "name": "市场概览", "url": "/market" },
+    { "name": "自选盯盘", "url": "/watchlist" },
+    { "name": "通知中心", "url": "/notifications" }
+  ]
+}

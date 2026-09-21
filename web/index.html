@@ -2,9 +2,19 @@
 <html lang="zh-CN" data-theme="dark" data-updown="red-up">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- viewport-fit=cover：iOS 刘海屏下让底部 Tab 与安全区配合（配合 app.css 的 safe-area padding） -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>股析 SA</title>
 <meta name="color-scheme" content="dark light">
+<!-- 影响 Android 状态栏与 PWA 启动画面底色 -->
+<meta name="theme-color" content="#0b1220">
+<!-- PWA：manifest 提供安装信息；iOS 不读 manifest 的 icons，因此另给 apple-touch-icon -->
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="股析 SA">
 </head>
 <body>
 <div id="root"></div>

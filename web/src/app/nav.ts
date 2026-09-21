@@ -89,13 +89,17 @@ export const Nav: NavGroup[] = [
       { key: 'stock-capital', text: '资金面与筹码', icon: '◐', path: '/stock', fp: 'stock.capital', module: 'capital' },
       { key: 'stock-industry', text: '行业与同业对比', icon: '◫', path: '/stock', fp: 'stock.industry', module: 'industry' },
       { key: 'stock-events', text: '事件时间线与影响', icon: '◈', path: '/stock', fp: 'stock.events', module: 'events' },
+      { key: 'stock-causal', text: '因果链与传导带宽', icon: '⇄', path: '/stock', fp: 'stock.trend', module: 'causal' },
       { key: 'stock-risk', text: '风险与舆情监控', icon: '⚠', path: '/stock', fp: 'stock.risk', module: 'risk' },
       { key: 'stock-rating', text: '机构评级与预测', icon: '◎', path: '/stock', fp: 'stock.rating', module: 'rating' }
     ]
   },
   {
     group: '拓扑图',
-    items: [{ key: 'topology', text: '四种拓扑图总览', icon: '⁂', path: '/topology', fp: 'topology.view' }]
+    items: [
+      { key: 'topology', text: '四种拓扑图总览', icon: '⁂', path: '/topology', fp: 'topology.view' },
+      { key: 'prosperity', text: '行业景气度', icon: '◮', path: '/prosperity', fp: 'stock.industry' }
+    ]
   },
   {
     group: '选股与提醒',

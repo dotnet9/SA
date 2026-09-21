@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { EmptyState, ErrorState, FreshnessNote } from '@/components/ui/States';
 import { errorText } from '@/lib/errorText';
 import { useToast } from '@/providers/ToastProvider';
@@ -11,6 +11,7 @@ import {
   type ScreenerCondition,
   type ScreenerResult
 } from './api';
+import { ScreenerDistributionPanel, ScreenerHistoryPanel, ScreenerStrategiesPanel } from './ScreenerPanels';
 
 /**
  * 条件选股器。
@@ -53,12 +54,14 @@ export function ScreenerPage() {
 
 function Content({ meta }: { meta: Awaited<ReturnType<typeof fetchScreenerMeta>> }) {
   const toast = useToast();
+  const queryClient = useQueryClient();
   const [preset, setPreset] = useState<string | null>(null);
   const [values, setValues] = useState<Record<string, { min: string; max: string }>>({});
   const [board, setBoard] = useState('');
   const [excludeSt, setExcludeSt] = useState(true);
   const [sortBy, setSortBy] = useState('amount');
   const [result, setResult] = useState<ScreenerResult | null>(null);
+  const [distributionField, setDistributionField] = useState('pct');
 
   const condition: ScreenerCondition = useMemo(
     () => ({
@@ -95,6 +98,18 @@ function Content({ meta }: { meta: Awaited<ReturnType<typeof fetchScreenerMeta>>
       } else {
         toast.toast(outcome.message ?? '导出失败', 'error');
       }
+    },
+    onError: (mutationError) => toast.toast(errorText(mutationError), 'error')
+  });
+
+  /** 存为策略：直接用当前条件创建（不依赖某条日志）。 */
+  const saveStrategyMutation = useMutation({
+    mutationFn: (name: string) =>
+      import('@/features/analysis/api').then((module) => module.saveScreenerStrategy(name)),
+    onSuccess: async () => {
+      toast.toast('已存为策略', 'ok');
+      await queryClient.invalidateQueries({ queryKey: ['screener', 'strategies'] });
+      await queryClient.invalidateQueries({ queryKey: ['screener', 'history'] });
     },
     onError: (mutationError) => toast.toast(errorText(mutationError), 'error')
   });
@@ -273,6 +288,35 @@ function Content({ meta }: { meta: Awaited<ReturnType<typeof fetchScreenerMeta>>
             <span className="card-sub">
               命中 {result.total} 只 · 显示前 {result.rows.length} 只
             </span>
+            <div className="card-tools">
+              <span className="row gap-2">
+                <select
+                  className="input input-sm"
+                  style={{ width: 130 }}
+                  value={distributionField}
+                  onChange={(event) => setDistributionField(event.target.value)}
+                >
+                  {meta.fields.map((field) => (
+                    <option key={field.field} value={field.field}>
+                      {field.name}分布
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline"
+                  disabled={saveStrategyMutation.isPending}
+                  onClick={() => {
+                    const name = window.prompt('策略名（保存当前条件，便于以后一键回放）', '');
+                    if (name && name.trim()) {
+                      saveStrategyMutation.mutate(name.trim());
+                    }
+                  }}
+                >
+                  存为策略
+                </button>
+              </span>
+            </div>
           </div>
           <div className="card-body is-flush">
             {/* 回显实际生效的条件 */}
@@ -337,6 +381,35 @@ function Content({ meta }: { meta: Awaited<ReturnType<typeof fetchScreenerMeta>>
           </div>
         </div>
       ) : null}
+
+      {/* 分布统计：同一结果集上换字段看「这批股票长什么样」 */}
+      {result && result.total > 0 ? (
+        <div className="card mt-4">
+          <div className="card-head">
+            <span className="card-title">{distributionField} 分布</span>
+            <span className="card-sub">分位数 + 直方图 · 与上方结果同一条件</span>
+          </div>
+          <div className="card-body">
+            <ScreenerDistributionPanel condition={condition} field={distributionField} />
+          </div>
+        </div>
+      ) : null}
+
+      {/* 我的策略 */}
+      <div className="card mt-4">
+        <div className="card-head">
+          <span className="card-title">我的策略</span>
+          <span className="card-sub">保存后可一键回放；策略不会被日志裁剪清掉</span>
+        </div>
+        <div className="card-body is-flush">
+          <ScreenerStrategiesPanel />
+        </div>
+      </div>
+
+      {/* 筛选日志与导出记录 */}
+      <div className="card mt-4">
+        <ScreenerHistoryPanel />
+      </div>
 
       <FreshnessNote asOf={result?.asOf} source="全市场快照（同一时点横截面）" />
 

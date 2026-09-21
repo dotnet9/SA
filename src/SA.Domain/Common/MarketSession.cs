@@ -79,6 +79,60 @@ public static class MarketCodes
     }
 
     /// <summary>
+    /// 已登记指数的 <c>secid</c> 映射。
+    /// </summary>
+    /// <remarks>
+    /// <b>为什么需要这张表</b>：指数代码与个股代码会有重叠的形态，而惯例的市场前缀是按代码首位推的
+    /// （见 <see cref="MarketOf"/>）。沪深300 的代码是 <c>000300</c>，按首位推会得到 <c>0.000300</c>——
+    /// 那是深市，而沪深300 实际在沪市（<c>1.000300</c>）。用错前缀不会报错，只会返回空 data，
+    /// 表现为「基准指数日线一直没有数据」（实测过：文件根本没生成）。
+    /// 因此把已知指数逐一登记，避免再靠推断。
+    /// </remarks>
+    private static readonly Dictionary<string, string> IndexSecIds = new(StringComparer.Ordinal)
+    {
+        ["000001"] = "1.000001",   // 上证指数
+        ["000300"] = "1.000300",   // 沪深300
+        ["000688"] = "1.000688",   // 科创50
+        ["000905"] = "1.000905",   // 中证500
+        ["000852"] = "1.000852",   // 中证1000
+        ["399001"] = "0.399001",   // 深证成指
+        ["399006"] = "0.399006",   // 创业板指
+        ["399005"] = "0.399005",   // 中小100
+        ["899050"] = "0.899050"    // 北证50
+    };
+
+    /// <summary>
+    /// 判断是否为已登记的指数代码。
+    /// </summary>
+    public static bool IsIndexCode(string? code) =>
+        !string.IsNullOrEmpty(code) && IndexSecIds.ContainsKey(code.Trim());
+
+    /// <summary>
+    /// 解析任意标的的 <c>secid</c>：板块走 <c>90.</c>、指数查表、其余按市场前缀推断。
+    /// </summary>
+    /// <remarks>
+    /// 采集侧统一调用本方法，而不是各自拼 <see cref="SecId"/>：
+    /// 拼错的后果是「静默拿到空数据」，而不是一个能看见的异常。
+    /// </remarks>
+    public static string ResolveSecId(string code)
+    {
+        var trimmed = code.Trim();
+
+        if (trimmed.Contains('.'))
+        {
+            // 调用方已经给全了 secid
+            return trimmed;
+        }
+
+        if (IsSectorCode(trimmed))
+        {
+            return SectorSecId(trimmed);
+        }
+
+        return IndexSecIds.TryGetValue(trimmed, out var indexSecId) ? indexSecId : SecId(trimmed);
+    }
+
+    /// <summary>
     /// 拼出带市场后缀的 <c>SECUCODE</c>，形如 <c>300750.SZ</c>。
     /// </summary>
     /// <remarks>

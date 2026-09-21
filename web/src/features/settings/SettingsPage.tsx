@@ -1,32 +1,39 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useToast } from '@/providers/ToastProvider';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useRealtime } from '@/providers/RealtimeProvider';
 import { useAuth } from '@/providers/AuthProvider';
+import { apiGet, apiPut } from '@/lib/api';
+import { errorText } from '@/lib/errorText';
 import { readBool, readJson, readString, StorageKeys, writeBool, writeJson, writeString } from '@/lib/storage';
 import { fetchWatchlist } from '@/features/watchlist/api';
 import { fetchAlertRules } from '@/features/alerts/api';
-import { fetchNotifications } from '@/features/alerts/api';
+import { fetchNotifications, type NotifySettings } from '@/features/alerts/api';
+import { usePwa } from './usePwa';
 
 /**
  * 个人设置。
  *
- * 结构与 `design/web/settings.html` 对应：外观 → 刷新与推送 → 指标参数 → 通知偏好 → PWA 安装，
+ * 结构与 `design/web/settings.html` 对应：外观 → 刷新与推送 → 指标参数 → 通知偏好 → 安装与通知能力，
  * 右侧为账号、我的数据、数据口径与关于。
  *
- * 三处与原型不同的处理，都是「不写假的」：
- * 1. PWA 区不显示「HTTPS 已就绪 / Service Worker 已注册」的绿色标签——本轮未实现 Service Worker，
- *    因此只展示浏览器的真实能力（安全上下文、通知权限）并说明安装前置条件；
+ * 三处与原型不同、且都是「不写假的」：
+ * 1. 安装与通知能力区展示<b>浏览器与服务端的真实状态</b>（Service Worker 是否注册、
+ *    推送是否已订阅、通知权限），并提供可用的订阅/取消/测试按钮；
  * 2. 「邮件通知」标注未接入并禁用，不给出可点的开关；
  * 3. 数据口径区写本实现的实际口径（全市场扫描周期、北向不提供等），而不是原型里的演示文案。
+ *
+ * 另外：<b>免打扰与推送开关存在服务端</b>（而不是只存浏览器本地）——
+ * 浏览器关掉时前端没有机会判断「现在该不该响」，免打扰必须在服务端执行才有意义。
  */
 export function SettingsPage() {
   const toast = useToast();
   const theme = useTheme();
   const realtime = useRealtime();
   const { me } = useAuth();
+  const pwa = usePwa();
 
   /* --- 外观 --- */
   const [numFont, setNumFont] = useState<'mono' | 'ui'>(() => (readString(StorageKeys.NumFont, 'mono') === 'ui' ? 'ui' : 'mono'));
@@ -43,19 +50,47 @@ export function SettingsPage() {
   const [fundFlowCaliber, setFundFlowCaliber] = useState(() => readString(StorageKeys.FundFlowCaliber, 'super+large'));
 
   /* --- 通知偏好 --- */
-  const [channels, setChannels] = useState<Record<string, boolean>>(() =>
-    readJson(StorageKeys.NotifyChannels, { site: true, browser: true, vibrate: true, mail: false })
-  );
-  const [dnd, setDnd] = useState(() =>
-    readJson(StorageKeys.DoNotDisturb, { enabled: true, from: '23:00', to: '08:30', dailyDigest: true })
-  );
+  // 服务端的免打扰与推送开关：浏览器关掉时前端无从判断，因此这份配置必须存在服务端
+  const { data: serverNotify } = useQuery({
+    queryKey: ['notify', 'settings'],
+    queryFn: () => apiGet<NotifySettings>('/api/notifications/settings')
+  });
 
-  /** 浏览器通知权限（真实值，不是原型里的固定文案）。 */
-  const [notifyPermission, setNotifyPermission] = useState<string>('unsupported');
+  const [dnd, setDnd] = useState({ enabled: true, from: '23:00', to: '08:30', keepInbox: true });
 
+  // 首次拿到服务端配置后填充表单；之后以本地编辑为准（避免覆盖用户正在改的内容）
+  const [dndLoaded, setDndLoaded] = useState(false);
   useEffect(() => {
-    setNotifyPermission(typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported');
-  }, []);
+    if (!serverNotify || dndLoaded) {
+      return;
+    }
+
+    setDnd({
+      enabled: serverNotify.dndEnabled,
+      from: serverNotify.dndFrom,
+      to: serverNotify.dndTo,
+      keepInbox: serverNotify.dndKeepInbox
+    });
+    setDndLoaded(true);
+  }, [serverNotify, dndLoaded]);
+
+  const notifyMutation = useMutation({
+    mutationFn: (value: { enabled: boolean; from: string; to: string; keepInbox: boolean; pushEnabled: boolean }) =>
+      apiPut<number>('/api/notifications/settings', {
+        dndEnabled: value.enabled,
+        dndFrom: value.from,
+        dndTo: value.to,
+        dndKeepInbox: value.keepInbox,
+        pushEnabled: value.pushEnabled
+      }),
+    onSuccess: () => toast.toast('提醒偏好已保存到服务端（免打扰在服务端生效）', 'ok'),
+    onError: (mutationError) => toast.toast(errorText(mutationError), 'error')
+  });
+
+  /** 渠道开关（本地）：站内与震动是浏览器侧行为，浏览器推送由服务端开关控制。 */
+  const [channels, setChannels] = useState<Record<string, boolean>>(() =>
+    readJson(StorageKeys.NotifyChannels, { site: true, vibrate: true, mail: false })
+  );
 
   /** 数字字体：通过根节点属性切换，样式在 app.css 里按属性选择。 */
   useEffect(() => {
@@ -81,8 +116,15 @@ export function SettingsPage() {
     writeString(StorageKeys.MacdParams, macdParams);
     writeString(StorageKeys.FundFlowCaliber, fundFlowCaliber);
     writeJson(StorageKeys.NotifyChannels, channels);
-    writeJson(StorageKeys.DoNotDisturb, dnd);
-    toast.toast('设置已保存到本机', 'ok');
+
+    // 免打扰与推送开关存服务端：它们决定「服务端要不要发推送」，存本地等于没生效
+    notifyMutation.mutate({
+      enabled: dnd.enabled,
+      from: dnd.from,
+      to: dnd.to,
+      keepInbox: dnd.keepInbox,
+      pushEnabled: true
+    });
   };
 
   const reset = () => {
@@ -97,25 +139,27 @@ export function SettingsPage() {
     setAdjust('qfq');
     setMacdParams('12,26,9');
     setFundFlowCaliber('super+large');
-    setChannels({ site: true, browser: true, vibrate: true, mail: false });
-    setDnd({ enabled: true, from: '23:00', to: '08:30', dailyDigest: true });
+    setChannels({ site: true, vibrate: true, mail: false });
+    setDnd({ enabled: true, from: '23:00', to: '08:30', keepInbox: true });
     writeString(StorageKeys.NumFont, 'mono');
     writeString(StorageKeys.HomePath, '/market');
-    toast.toast('已恢复默认设置', 'info');
+    toast.toast('已恢复默认设置（服务端偏好需点「保存设置」）', 'info');
   };
 
-  const requestBrowserPermission = async () => {
-    if (!('Notification' in window)) {
-      toast.toast('当前环境不支持浏览器通知', 'warn');
-      return;
-    }
+  /** 订阅浏览器推送（走 usePwa：注册 SW → 申请权限 → pushManager.subscribe → 存服务端）。 */
+  const subscribePush = async () => {
+    const error = await pwa.subscribe();
+    toast.toast(error ?? '已订阅浏览器推送（页面关闭后也能收到提醒）', error ? 'warn' : 'ok');
+  };
 
-    const permission = await Notification.requestPermission();
-    setNotifyPermission(permission);
-    toast.toast(
-      permission === 'granted' ? '浏览器通知已授权' : '未获得通知权限，仅保留站内通知',
-      permission === 'granted' ? 'ok' : 'warn'
-    );
+  const unsubscribePush = async () => {
+    const error = await pwa.unsubscribe();
+    toast.toast(error ?? '已取消浏览器推送订阅', error ? 'warn' : 'ok');
+  };
+
+  const sendTestPush = async () => {
+    const error = await pwa.sendTestNotification();
+    toast.toast(error ?? '已发送一条测试通知（由浏览器本地发出）', error ? 'warn' : 'ok');
   };
 
   const activeAlerts = alerts?.rules.filter((rule) => rule.enabled).length ?? 0;
@@ -351,8 +395,11 @@ export function SettingsPage() {
             <div className="card-head">
               <span className="card-title">通知偏好</span>
               <div className="card-tools">
-                <span className={`tag ${notifyPermission === 'granted' ? 'tag-up' : 'tag-outline'}`}>
-                  浏览器通知：{notifyPermission === 'granted' ? '已授权' : notifyPermission === 'denied' ? '已拒绝' : notifyPermission === 'unsupported' ? '环境不支持' : '未授权'}
+                <span className={`tag ${pwa.state.permission === 'granted' ? 'tag-up' : 'tag-outline'}`}>
+                  浏览器通知：{describePermission(pwa.state.permission)}
+                </span>
+                <span className={`tag ${pwa.state.subscribed ? 'tag-up' : 'tag-outline'}`}>
+                  推送订阅：{pwa.state.subscribed ? `已订阅（${pwa.state.endpointHost ?? '—'}）` : '未订阅'}
                 </span>
               </div>
             </div>
@@ -366,15 +413,7 @@ export function SettingsPage() {
                       checked={channels.site ?? true}
                       onChange={(event) => setChannels({ ...channels, site: event.target.checked })}
                     />
-                    站内通知中心
-                  </label>
-                  <label className="check">
-                    <input
-                      type="checkbox"
-                      checked={channels.browser ?? false}
-                      onChange={(event) => setChannels({ ...channels, browser: event.target.checked })}
-                    />
-                    浏览器通知栏
+                    站内通知中心（不依赖任何权限，始终可用）
                   </label>
                   <label className="check">
                     <input
@@ -382,16 +421,17 @@ export function SettingsPage() {
                       checked={channels.vibrate ?? false}
                       onChange={(event) => setChannels({ ...channels, vibrate: event.target.checked })}
                     />
-                    震动（移动端）
+                    震动（移动端；iOS Safari 不支持）
                   </label>
                   <label className="check">
                     <input type="checkbox" checked={false} disabled />
                     邮件（未接入）
                   </label>
                 </div>
-                <button type="button" className="btn btn-sm btn-outline mt-3" onClick={() => void requestBrowserPermission()}>
-                  请求浏览器通知权限
-                </button>
+                <span className="hint">
+                  浏览器推送由下方的「安装与通知能力」区管理：它需要 Service Worker 与通知权限，
+                  不能只用一个复选框表示。
+                </span>
               </div>
 
               <div className="field">
@@ -438,53 +478,96 @@ export function SettingsPage() {
             </div>
           </div>
 
-          {/* PWA：只展示真实能力，不写「已就绪」 */}
-          <div className="card">
+          {/* 安装与通知能力：状态全部来自浏览器与服务端的真实查询 */}
+          <div className="card is-accent">
             <div className="card-head">
               <span className="card-title">安装与通知能力</span>
-              <span className="card-sub">手机端获得通知栏提醒的前提</span>
+              <span className="card-sub">先注册 Service Worker，再订阅推送</span>
+              <div className="card-tools">
+                <button type="button" className="btn btn-sm btn-ghost" onClick={() => void pwa.refresh()}>
+                  重新检测
+                </button>
+              </div>
             </div>
             <div className="card-body grid grid-2">
               <div className="col gap-3">
                 <div className="row gap-2 wrap">
-                  <span className={`tag ${window.isSecureContext ? 'tag-up' : 'tag-warn'}`}>
-                    安全上下文：{window.isSecureContext ? '满足' : '不满足'}
+                  <span className={`tag ${pwa.state.secureContext ? 'tag-up' : 'tag-warn'}`}>
+                    安全上下文：{pwa.state.secureContext ? '满足' : '不满足（需 HTTPS 或 localhost）'}
                   </span>
-                  <span className="tag tag-outline">Service Worker：未注册</span>
+                  <span className={`tag ${pwa.state.serviceWorkerRegistered ? 'tag-up' : 'tag-outline'}`}>
+                    Service Worker：{pwa.state.serviceWorkerRegistered ? '已注册' : '未注册'}
+                  </span>
+                  <span className={`tag ${pwa.state.subscribed ? 'tag-up' : 'tag-outline'}`}>
+                    推送订阅：{pwa.state.subscribed ? '已订阅' : '未订阅'}
+                  </span>
                 </div>
+
+                <div className="col gap-2">
+                  {!pwa.state.serviceWorkerRegistered ? (
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      disabled={pwa.busy || !pwa.state.secureContext}
+                      onClick={async () => {
+                        const error = await pwa.registerServiceWorker();
+                        toast.toast(error ?? 'Service Worker 已注册（支持离线打开应用外壳）', error ? 'warn' : 'ok');
+                      }}
+                    >
+                      注册 Service Worker
+                    </button>
+                  ) : null}
+
+                  {pwa.state.serviceWorkerRegistered && !pwa.state.subscribed ? (
+                    <button type="button" className="btn btn-primary" disabled={pwa.busy} onClick={() => void subscribePush()}>
+                      订阅浏览器推送
+                    </button>
+                  ) : null}
+
+                  {pwa.state.subscribed ? (
+                    <div className="row gap-2 wrap">
+                      <button type="button" className="btn btn-outline btn-sm" disabled={pwa.busy} onClick={() => void sendTestPush()}>
+                        发送测试通知
+                      </button>
+                      <button type="button" className="btn btn-ghost btn-sm" disabled={pwa.busy} onClick={() => void unsubscribePush()}>
+                        取消订阅
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+
                 <div className="fold">
                   <div className="fold-head">
-                    Android（Chrome / Edge）<span className="caret">▼</span>
+                    Android（Chrome / Edge）与 iOS（Safari）<span className="caret">▼</span>
                   </div>
                   <div className="fold-body hint">
-                    本轮未实现 Service Worker 与 Web Push，因此浏览器不会弹出「添加到主屏幕」提示，
-                    也无法在页面关闭后收到通知。当前的实时提醒只在页面打开时经 SignalR 送达。
-                  </div>
-                </div>
-                <div className="fold is-collapsed">
-                  <div className="fold-head">
-                    iOS（Safari）<span className="caret">▼</span>
-                  </div>
-                  <div className="fold-body hint">
-                    同上：iOS 的 Web Push 依赖 Service Worker + 主屏启动，本轮不提供。
+                    <b>Android</b>：注册 Service Worker 并订阅后，页面关闭也能收到通知栏提醒；
+                    Chrome 还会在满足安装条件时提供「添加到主屏幕」。
+                    <br />
+                    <b>iOS</b>：Web Push 要求先在 Safari 里「添加到主屏幕」，再从主屏图标启动页面订阅；
+                    在 Safari 标签页里请求权限会被系统忽略。
                   </div>
                 </div>
               </div>
+
               <div className="col gap-3">
                 <div className="kpi">
-                  <span className="kpi-label">推送通道</span>
+                  <span className="kpi-label">实时通道（页面打开时）</span>
                   <span className="kpi-value is-sm">
                     {realtime.status === 'connected' ? 'SignalR 已连接' : 'SignalR 未连接'}
                   </span>
-                  <span className="kpi-delta t-3">仅在页面打开期间有效</span>
+                  <span className="kpi-delta t-3">
+                    页面内即时到达；关闭页面后由浏览器推送接力
+                  </span>
                 </div>
-                <button type="button" className="btn btn-outline" onClick={() => void requestBrowserPermission()}>
-                  请求通知权限
-                </button>
                 <div className="legend-block">
-                  <b>为什么需要 HTTPS</b>
+                  <b>两条通道的分工</b>
                   <br />
-                  Service Worker、Web Push、通知栏 API、震动 API 都只在安全上下文（HTTPS 或 localhost）下可用。
+                  SignalR 负责页面打开时的秒级到达（自选行情与提醒）；
+                  浏览器推送（Web Push）负责页面关闭后的到达。
+                  免打扰期间服务端只写站内通知、不发起推送，因此「不打扰」不等于「丢消息」。
+                  <br />
+                  <b>为什么需要 HTTPS</b>：Service Worker、Web Push、通知与震动 API 都只在安全上下文下可用；
                   本机调试用 http://localhost 即可，手机访问必须走域名 HTTPS。
                 </div>
               </div>
@@ -611,9 +694,26 @@ export function SettingsPage() {
         本页大部分设置保存在浏览器本地（<code>sa.*</code> 键），换设备或清缓存后会恢复默认；
         推送间隔、数据范围、权限等功能性设置由服务端按账号生效。
         <br />
+        <b>免打扰与推送开关存在服务端</b>：浏览器关掉时前端无从判断「现在该不该响」，
+        因此这两个开关必须在服务端执行才有意义（页面上点「保存设置」即写入服务端）。
+        <br />
         「复权方式」与「MACD 参数」记录的是阅读偏好：服务端已按前复权与 12/26/9 统一计算，
         本地不做第二套计算，避免同一份指标出现两个口径。
       </div>
     </>
   );
+}
+
+/** 通知权限的中文描述。 */
+function describePermission(permission: string): string {
+  switch (permission) {
+    case 'granted':
+      return '已授权';
+    case 'denied':
+      return '已拒绝';
+    case 'unsupported':
+      return '环境不支持';
+    default:
+      return '未授权';
+  }
 }

@@ -49,6 +49,47 @@ export interface NotificationList {
   total: number;
 }
 
+/**
+ * 提醒偏好（免打扰与推送开关）。
+ *
+ * 存在服务端而不是浏览器本地：浏览器关掉时前端没有机会判断「现在该不该响」，
+ * 因此免打扰必须由服务端执行。
+ */
+export interface NotifySettings {
+  dndEnabled: boolean;
+  dndFrom: string;
+  dndTo: string;
+  dndKeepInbox: boolean;
+  pushEnabled: boolean;
+}
+
+/** 一条推送订阅（服务端视角；端点是长 URL，只回主机名）。 */
+export interface PushSubscriptionRow {
+  id: number;
+  host: string;
+  userAgent: string | null;
+  enabled: boolean;
+  failCount: number;
+  lastOkAt: string | null;
+  lastError: string | null;
+  createdAt: string;
+}
+
+/** 取提醒偏好。 */
+export function fetchNotifySettings(): Promise<NotifySettings> {
+  return apiGet<NotifySettings>('/api/notifications/settings');
+}
+
+/** 保存提醒偏好。 */
+export function saveNotifySettings(settings: NotifySettings): Promise<number> {
+  return apiPut<number>('/api/notifications/settings', settings);
+}
+
+/** 取当前账号的推送订阅（界面展示「哪台设备还收得到」）。 */
+export function fetchPushSubscriptions(): Promise<PushSubscriptionRow[]> {
+  return apiGet<PushSubscriptionRow[]>('/api/notifications/push/subscriptions');
+}
+
 /** 取提醒规则列表。 */
 export function fetchAlertRules(): Promise<AlertRuleList> {
   return apiGet<AlertRuleList>('/api/alerts');

@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate, Outlet, useLocation, useParams } from 'react-router';
 import { AppShell } from '@/app/layout/AppShell';
+import { MobileShell } from '@/app/mobile/MobileShell';
 import { DefaultStockCode, landingPath, StockModuleFunctionPoints, StockModuleNames } from '@/app/nav';
 import { PlaceholderPage } from '@/app/PlaceholderPage';
 import { readLastStock } from '@/app/useCurrentStock';
@@ -113,6 +114,30 @@ const NotifyPreviewPage = lazy(() =>
   import('@/features/alerts/NotifyPreviewPage').then((module) => ({ default: module.NotifyPreviewPage }))
 );
 
+/** 行业景气度（规则引擎打分）。 */
+const ProsperityPage = lazy(() =>
+  import('@/features/analysis/AnalysisPages').then((module) => ({ default: module.ProsperityPage }))
+);
+
+/** 因果链与传导带宽（规则引擎推算）。 */
+const CausalChainPage = lazy(() =>
+  import('@/features/analysis/AnalysisPages').then((module) => ({ default: module.CausalChainPage }))
+);
+
+/** 移动端页面（与桌面端共用接口与口径，只换排布）。 */
+const MobilePages = {
+  Home: lazy(() => import('@/app/mobile/MobilePages').then((module) => ({ default: module.MobileHomePage }))),
+  Watchlist: lazy(() => import('@/app/mobile/MobilePages').then((module) => ({ default: module.MobileWatchlistPage }))),
+  Search: lazy(() => import('@/app/mobile/MobilePages').then((module) => ({ default: module.MobileSearchPage }))),
+  Alerts: lazy(() => import('@/app/mobile/MobilePages').then((module) => ({ default: module.MobileAlertsPage }))),
+  Notifications: lazy(() =>
+    import('@/app/mobile/MobilePages').then((module) => ({ default: module.MobileNotificationsPage }))
+  ),
+  Screener: lazy(() => import('@/app/mobile/MobilePages').then((module) => ({ default: module.MobileScreenerPage }))),
+  Settings: lazy(() => import('@/app/mobile/MobilePages').then((module) => ({ default: module.MobileSettingsPage }))),
+  About: lazy(() => import('@/app/mobile/MobilePages').then((module) => ({ default: module.MobileAboutPage })))
+};
+
 /** 自选股（含实时推送）。 */
 const WatchlistPage = lazy(() =>
   import('@/features/watchlist/WatchlistPage').then((module) => ({ default: module.WatchlistPage }))
@@ -150,6 +175,115 @@ function ProtectedShell() {
     <AppShell>
       <Outlet />
     </AppShell>
+  );
+}
+
+/**
+ * 移动端外壳布局（`/m/*`）。
+ *
+ * 守卫与桌面壳逐条一致（登录态、强制改密），只是外层容器换成底部 Tab 的形态。
+ * 两侧的判断必须保持同源语义：移动端不该变成「另一套权限体系」。
+ */
+function ProtectedMobileShell() {
+  const { status, me } = useAuth();
+  const location = useLocation();
+
+  if (status === 'loading') {
+    return <div className="sa-boot">正在恢复会话…</div>;
+  }
+
+  if (status !== 'authenticated' || !me) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  }
+
+  if (me.mustChangePwd && location.pathname !== '/change-password') {
+    return <Navigate to="/change-password" replace />;
+  }
+
+  return (
+    <MobileShell>
+      <Outlet />
+    </MobileShell>
+  );
+}
+
+/**
+ * 移动端路由派发。
+ *
+ * 路由里用小写页面名（与 URL 段一致），这里映射到懒加载组件，
+ * 避免为 8 个移动页面各写一段重复的 Suspense 包裹。
+ */
+type MobilePageName = 'home' | 'search' | 'watchlist' | 'alerts' | 'notifications' | 'screener' | 'settings' | 'about';
+
+function MobileRoute({ page }: { page: MobilePageName }) {
+  const Component =
+    page === 'home'
+      ? MobilePages.Home
+      : page === 'search'
+        ? MobilePages.Search
+        : page === 'watchlist'
+          ? MobilePages.Watchlist
+          : page === 'alerts'
+            ? MobilePages.Alerts
+            : page === 'notifications'
+              ? MobilePages.Notifications
+              : page === 'screener'
+                ? MobilePages.Screener
+                : page === 'settings'
+                  ? MobilePages.Settings
+                  : MobilePages.About;
+
+  return (
+    <Suspense fallback={<RouteFallback />}>
+      <Component />
+    </Suspense>
+  );
+}
+
+/**
+ * 移动端个股模块页。
+ *
+ * 直接复用桌面组件：这些页面本身就是卡片式布局（K 线、指标、表格都是自适应的），
+ * 为移动端再写一遍只会产生两份需要同步维护的实现。
+ */
+function MobileStockModulePage() {
+  const params = useParams();
+  const code = params.code ?? DefaultStockCode;
+  const module = params.module ?? 'overview';
+  const name = StockModuleNames[module];
+
+  if (!name) {
+    return <NotFoundPage />;
+  }
+
+  return (
+    <RequireFunctionPoint codes={[StockModuleFunctionPoints[module] ?? 'stock.trend']}>
+      <Suspense fallback={<RouteFallback />}>
+        {module === 'overview' ? (
+          <StockOverviewPage />
+        ) : module === 'trend' ? (
+          <StockTrendPage />
+        ) : module === 'finance' ? (
+          <StockFinancePage />
+        ) : module === 'equity' ? (
+          <StockEquityPage />
+        ) : module === 'capital' ? (
+          <StockCapitalPage />
+        ) : module === 'industry' ? (
+          <StockIndustryPage />
+        ) : module === 'events' ? (
+          <StockEventsPage />
+        ) : module === 'causal' ? (
+          <CausalChainPage />
+        ) : module === 'risk' ? (
+          <StockRiskPage />
+        ) : module === 'rating' ? (
+          <StockRatingPage />
+        ) : (
+          <PlaceholderPage title={`${name} · ${code}`} batch="后续批次" />
+        )}
+      </Suspense>
+    </RequireFunctionPoint>
   );
 }
 
@@ -228,6 +362,8 @@ function StockModulePage() {
           <StockIndustryPage />
         ) : module === 'events' ? (
           <StockEventsPage />
+        ) : module === 'causal' ? (
+          <CausalChainPage />
         ) : module === 'risk' ? (
           <StockRiskPage />
         ) : module === 'rating' ? (
@@ -277,6 +413,40 @@ function RootRedirect() {
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   { path: '/change-password', element: <ChangePasswordPage /> },
+  /**
+   * 移动端路由（对应原型 `design/app/` 的 18 个页面）。
+   *
+   * 与桌面端共用登录与强制改密的守卫，只是外壳换成底部 Tab；
+   * 数据接口与口径完全相同，因此不存在「移动端看到的是另一套数字」。
+   */
+  {
+    path: '/m',
+    element: <ProtectedMobileShell />,
+    children: [
+      { index: true, element: <MobileRoute page="home" /> },
+      // 原型里有 index.html（移动入口）与 home.html 两个页面，这里都指向首页
+      { path: 'index', element: <MobileRoute page="home" /> },
+      { path: 'home', element: <MobileRoute page="home" /> },
+      { path: 'search', element: <MobileRoute page="search" /> },
+      { path: 'watchlist', element: <MobileRoute page="watchlist" /> },
+      { path: 'alerts', element: <MobileRoute page="alerts" /> },
+      { path: 'notifications', element: <MobileRoute page="notifications" /> },
+      { path: 'screener', element: <MobileRoute page="screener" /> },
+      { path: 'settings', element: <MobileRoute page="settings" /> },
+      { path: 'about', element: <MobileRoute page="about" /> },
+      // 提醒形态预览是移动端独有的页面（FR-ALERT-09），直接复用桌面实现
+      {
+        path: 'notify-preview',
+        element: (
+          <Suspense fallback={<RouteFallback />}>
+            <NotifyPreviewPage />
+          </Suspense>
+        )
+      },
+      { path: 'stock/:code', element: <MobileStockModulePage /> },
+      { path: 'stock/:code/:module', element: <MobileStockModulePage /> }
+    ]
+  },
   {
     path: '/',
     element: <ProtectedShell />,
@@ -373,6 +543,26 @@ export const router = createBrowserRouter([
           <RequireFunctionPoint codes={['topology.view']}>
             <Suspense fallback={<RouteFallback />}>
               <TopologyPage />
+            </Suspense>
+          </RequireFunctionPoint>
+        )
+      },
+      {
+        path: 'prosperity',
+        element: (
+          <RequireFunctionPoint codes={['stock.industry']}>
+            <Suspense fallback={<RouteFallback />}>
+              <ProsperityPage />
+            </Suspense>
+          </RequireFunctionPoint>
+        )
+      },
+      {
+        path: 'stock/:code/causal',
+        element: (
+          <RequireFunctionPoint codes={['stock.trend']}>
+            <Suspense fallback={<RouteFallback />}>
+              <CausalChainPage />
             </Suspense>
           </RequireFunctionPoint>
         )

@@ -27,6 +27,38 @@ public class MarketCodesTests
     public void 拼出secid(string code, string expected) =>
         Assert.Equal(expected, MarketCodes.SecId(code));
 
+    /// <summary>
+    /// 指数与板块的 secid 不能按代码首位推断。
+    /// </summary>
+    /// <remarks>
+    /// 这是一条<b>回归测试</b>：沪深300 的代码是 000300，按首位推会得到 <c>0.000300</c>（深市），
+    /// 而它实际在沪市（<c>1.000300</c>）。用错前缀不会报错，只会返回空 data，
+    /// 实测表现为「基准指数日线一直采不到、文件根本不生成」。
+    /// </remarks>
+    [Theory]
+    [InlineData("000300", "1.000300")]
+    [InlineData("000001", "1.000001")]
+    [InlineData("000905", "1.000905")]
+    [InlineData("399001", "0.399001")]
+    [InlineData("399006", "0.399006")]
+    [InlineData("899050", "0.899050")]
+    [InlineData("BK1033", "90.BK1033")]
+    [InlineData("600519", "1.600519")]
+    [InlineData("300750", "0.300750")]
+    public void 解析secid区分指数板块与个股(string code, string expected) =>
+        Assert.Equal(expected, MarketCodes.ResolveSecId(code));
+
+    [Fact]
+    public void 已登记的指数不被当作个股()
+    {
+        Assert.True(MarketCodes.IsIndexCode("000300"));
+
+        // 同时注意：000001 既是上证指数也是平安银行，按代码无法区分，
+        // 因此指数用哪一侧由调用方语境决定——采集指数时走 ResolveSecId（取沪市 1.000001）
+        Assert.True(MarketCodes.IsIndexCode("000001"));
+        Assert.False(MarketCodes.IsIndexCode("300750"));
+    }
+
     [Theory]
     [InlineData("600519", "沪市主板")]
     [InlineData("601318", "沪市主板")]

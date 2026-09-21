@@ -1,0 +1,248 @@
+/* 移动端外壳与页面样式：只补桌面壳没有的部分（粘性页头、底部 Tab、安全区）。
+   配色与卡片体系全部沿用 tokens/components，因此这里只有布局与尺寸。 */
+
+.m-shell {
+  min-height: 100dvh;
+  background: var(--bg-root);
+  display: flex;
+  flex-direction: column;
+}
+
+.m-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg-glass);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  /* 刘海屏：顶部安全区由容器 padding 承担，避免页头被状态栏压住 */
+  padding-top: calc(10px + env(safe-area-inset-top));
+}
+
+.m-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.m-logo {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--brand);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-num);
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.m-brand-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.m-header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.m-icon-btn {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  color: var(--text-2);
+  font-size: 16px;
+  text-decoration: none;
+}
+
+.m-icon-btn:active {
+  background: var(--bg-sunken);
+}
+
+.m-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: var(--down);
+  color: #fff;
+  font-family: var(--font-num);
+  font-size: 9px;
+  line-height: 15px;
+  text-align: center;
+}
+
+.m-notice {
+  margin: 10px 14px 0;
+}
+
+.m-main {
+  flex: 1;
+  padding: 12px 14px 0;
+  min-width: 0;
+}
+
+.m-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  background: var(--bg-glass);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid var(--border);
+  /* 底部安全区：iPhone 的横条区域 */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.m-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 7px 0 5px;
+  text-decoration: none;
+  color: var(--text-3);
+}
+
+.m-tab.is-active {
+  color: var(--brand);
+}
+
+.m-tab-icon {
+  position: relative;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.m-tab-text {
+  font-size: 10px;
+}
+
+.m-tabbar-space {
+  height: calc(56px + env(safe-area-inset-bottom));
+}
+
+.m-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border-soft);
+  background: var(--bg-root);
+}
+
+.m-pagehead {
+  margin-bottom: 12px;
+}
+
+.m-back {
+  display: inline-block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--text-3);
+  text-decoration: none;
+}
+
+.m-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.m-sub {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.7;
+}
+
+/* 移动端的卡片内边距更紧：一屏要放下更多信息 */
+.m-shell .card-body {
+  padding: 12px;
+}
+
+.m-shell .card-head {
+  padding: 10px 12px;
+}
+
+/* 移动端表格一律改为横向可滚动；号码列不换行，避免挤成一团 */
+.m-shell .tbl-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.m-shell .tbl th,
+.m-shell .tbl td {
+  white-space: nowrap;
+}
+
+/* 指标行：手机上竖排显示，标签在左、数值在右 */
+.m-kpi-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.m-kpi-row:last-child {
+  border-bottom: none;
+}
+
+.m-kpi-label {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.m-kpi-value {
+  font-family: var(--font-num);
+  font-size: 13px;
+  color: var(--text-1);
+}
+
+/* 指数卡在移动端一行两个 */
+.m-index-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.m-index-card {
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  padding: 10px;
+  background: var(--bg-panel);
+}
+
+.m-index-name {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.m-index-value {
+  font-family: var(--font-num);
+  font-size: 17px;
+  font-weight: 700;
+  margin-top: 4px;
+}
