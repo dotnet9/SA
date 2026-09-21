@@ -9,10 +9,22 @@ namespace SA.Domain.History;
 /// <param name="Low">最低价（元）。</param>
 /// <param name="Close">收盘价（元，前复权口径）。</param>
 /// <param name="Volume">成交量（手）。</param>
-/// <param name="Amount">成交额（元）。</param>
-/// <param name="Turnover">换手率（百分数）。</param>
+/// <param name="Amount">
+/// 成交额（元）；<c>null</c> 表示<b>该源不提供</b>（腾讯 K 线每行只有 6 段，无成交额）。
+/// </param>
+/// <param name="Turnover">
+/// 换手率（百分数）；<c>null</c> 表示<b>该源不提供</b>（同 <paramref name="Amount"/>）。
+/// </param>
 /// <param name="VolRatio">量比。</param>
 /// <param name="AdjFactor">复权因子；前复权序列为 1.0，仅作口径标记。</param>
+/// <remarks>
+/// <b><paramref name="Amount"/> 与 <paramref name="Turnover"/> 为什么是可空的</b>：
+/// 腾讯 K 线（<c>web.ifzq.gtimg.cn</c>）每行只有 <c>[日期, 开, 收, 高, 低, 量]</c> 六段，
+/// 既没有成交额也没有换手率。参考实现把它写成 <c>parseFloat(item[6] || '0')</c>，
+/// 于是成交额被<b>静默变成 0</b>——这是数据失真，会污染「成交额均值」这类计算。
+/// 本项目按实施计划 §1.3/§10 的要求留 <c>null</c> 并在界面标注「该源不提供」，
+/// 绝不用 0 顶替。
+/// </remarks>
 public readonly record struct DailyBar(
     DateOnly Date,
     decimal Open,
@@ -20,8 +32,8 @@ public readonly record struct DailyBar(
     decimal Low,
     decimal Close,
     decimal Volume,
-    decimal Amount,
-    decimal Turnover,
+    decimal? Amount,
+    decimal? Turnover,
     decimal VolRatio,
     decimal AdjFactor);
 

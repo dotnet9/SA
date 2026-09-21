@@ -38,14 +38,41 @@ public sealed class CollectOptions
     public int MaxConcurrency { get; set; } = 4;
 
     /// <summary>
-    /// 限速：每秒允许的请求数。
+    /// 同一域名两次请求之间的最小间隔（毫秒）。按域名各自计时，互不占用配额。
     /// </summary>
     /// <remarks>
-    /// 默认 4 而非更高：实测东财 <c>push2</c> 主机在被高频连续请求后开始返回截断响应，
-    /// 一轮全市场扫描（60 次请求）按 4 req/s 约 15 秒完成，对 60 秒的扫描周期足够，
-    /// 且明显降低了被限流的概率。
+    /// <para>
+    /// 取代了原先的全局令牌桶（<c>RequestsPerSecond</c>）。全局桶的问题是
+    /// 「查财务」会把「查行情」的配额吃掉：一轮全市场扫描（约 60 次）之后，
+    /// 同一秒内的指数刷新只能排队等待。
+    /// </para>
+    /// <para>
+    /// 默认 700ms（约 1.4 req/s/域名），取值参考 <c>edge_riches</c> 的 <c>fetch_data.py</c>。
+    /// 全市场扫描因此约 42 秒，仍在 60 秒的扫描周期内；比原来的 4 req/s 保守，
+    /// 而实测 <c>push2</c> 主机正是被高频连续请求触发拒服的。
+    /// </para>
     /// </remarks>
-    public double RequestsPerSecond { get; set; } = 4;
+    public int PerHostMinIntervalMs { get; set; } = 700;
+
+    /// <summary>
+    /// 轮换用的 User-Agent 池。
+    /// </summary>
+    /// <remarks>
+    /// 固定单一 UA 是实测被风控的特征之一（实施计划 §4.1）。池内覆盖
+    /// Chrome / Firefox / Safari / Edge 与 Windows / macOS / Linux，每次请求随机取一个。
+    /// 留空则回退到 <see cref="FallbackUserAgent"/>，保证请求始终带 UA。
+    /// </remarks>
+    public string[] UserAgents { get; set; } = [];
+
+    /// <summary>UA 池为空时的兜底 UA。</summary>
+    public string FallbackUserAgent { get; set; } =
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36";
+
+    /// <summary>同一域名连续失败达到该次数即熔断（进入冷却）。</summary>
+    public int BreakerThreshold { get; set; } = 3;
+
+    /// <summary>熔断后的冷却时长（秒）；到期放行一次试探（半开）。</summary>
+    public int BreakerCooldownSeconds { get; set; } = 60;
 
     /// <summary>单请求超时（秒）。</summary>
     public int TimeoutSeconds { get; set; } = 20;

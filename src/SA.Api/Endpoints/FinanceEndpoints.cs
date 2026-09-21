@@ -17,7 +17,7 @@ public static class FinanceEndpoints
     {
         app.MapGet("/api/stocks/{code}/finance", GetAsync)
             .WithTags("finance")
-            .RequireFunctionPoint(FunctionPointCatalog.StockFinance);
+            .AllowPublicRead();
 
         return app;
     }

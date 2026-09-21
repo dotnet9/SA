@@ -17,7 +17,7 @@ public static class RiskEndpoints
     {
         app.MapGet("/api/stocks/{code}/risk", GetAsync)
             .WithTags("risk")
-            .RequireFunctionPoint(FunctionPointCatalog.StockRisk);
+            .AllowPublicRead();
 
         return app;
     }

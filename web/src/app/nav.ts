@@ -69,6 +69,38 @@ export const StockModuleFunctionPoints: Record<string, string> = {
 /** 尚未选择股票时的兜底代码（与原型主演示股一致）。 */
 export const DefaultStockCode = '300750';
 
+/**
+ * 公开功能点：对应接口匿名即可访问，因此前端也不得据此拦截。
+ *
+ * 必须与后端 `SA.Domain.Authorization.FunctionPointCatalog.PublicCodes` 保持一致
+ * （那里是唯一事实来源）。前端这份拷贝只用于「菜单显隐」：
+ * 后端已经放开这些接口，若菜单还按功能点隐藏，就会出现
+ * 「有权限但看不到入口」的怪象——受限角色明明能读到财务数据，菜单里却没有那一项。
+ */
+export const PublicFunctionPoints: readonly string[] = [
+  'market.view',
+  'stock.search',
+  'stock.trend',
+  'stock.finance',
+  'stock.equity',
+  'stock.capital',
+  'stock.industry',
+  'stock.events',
+  'stock.risk',
+  'stock.rating',
+  'topology.view'
+];
+
+/** 导航项是否公开（不登录即可访问）。 */
+export function isPublicNavItem(item: NavItem): boolean {
+  return item.fp !== null && PublicFunctionPoints.includes(item.fp);
+}
+
+/** 导航项是否需要登录：公开项不需要，其余（含「登录即可见」）都需要。 */
+export function requiresLogin(item: NavItem): boolean {
+  return !isPublicNavItem(item);
+}
+
 /** 全部导航分组。 */
 export const Nav: NavGroup[] = [
   {
@@ -135,20 +167,57 @@ export const MobileTabs: NavItem[] = [
 /** 全部导航项（扁平）。 */
 export const AllNavItems: NavItem[] = Nav.flatMap((group) => group.items);
 
+/** 导航裁剪结果。 */
+export interface NavVisibility {
+  /** 可见的导航分组（含锁定项）。 */
+  groups: NavGroup[];
+  /** 因当前角色功能点不足而隐藏的项数（登录后才会出现）。 */
+  hidden: number;
+  /** 因未登录而锁定显示的项数（登录后才能进入）。 */
+  locked: number;
+}
+
 /**
- * 按功能点裁剪导航分组。与原型 `renderNav()` 行为一致：
- * 组内无可见项则整组不渲染，并返回被隐藏的数量用于提示文案。
+ * 按登录态与功能点裁剪导航分组。与原型 `renderNav()` 的取舍不同之处在于
+ * <b>未登录时不再把需登录的菜单藏起来，而是锁定显示</b>：
+ * 藏起来会让访客无从知道这个站有什么，锁定显示则在保留入口的同时明确告知「登录后可用」。
+ *
+ * @param functionPoints 当前角色的功能点；<c>null</c> 表示未登录。
  */
-export function filterNav(functionPoints: readonly string[]): { groups: NavGroup[]; hidden: number } {
+export function filterNav(functionPoints: readonly string[] | null): NavVisibility {
+  const anonymous = functionPoints === null;
   let hidden = 0;
+  let locked = 0;
 
   const groups = Nav.map((group) => {
-    const items = group.items.filter((item) => item.fp === null || functionPoints.includes(item.fp));
-    hidden += group.items.length - items.length;
+    const items: NavItem[] = [];
+
+    for (const item of group.items) {
+      // 公开项对所有人可见：后端已放开这些接口，隐藏只会造成「有权限却看不到入口」
+      if (isPublicNavItem(item)) {
+        items.push(item);
+        continue;
+      }
+
+      if (anonymous) {
+        // 需登录：锁定显示，点击回登录页
+        locked += 1;
+        items.push(item);
+        continue;
+      }
+
+      if (item.fp === null || functionPoints.includes(item.fp)) {
+        items.push(item);
+        continue;
+      }
+
+      hidden += 1;
+    }
+
     return { group: group.group, items };
   }).filter((group) => group.items.length > 0);
 
-  return { groups, hidden };
+  return { groups, hidden, locked };
 }
 
 /**
@@ -158,7 +227,9 @@ export function filterNav(functionPoints: readonly string[]): { groups: NavGroup
  */
 export function landingPath(functionPoints: readonly string[]): string {
   const preferred = functionPoints.includes('admin.users') ? '/admin/users' : '/market';
-  const allowed = AllNavItems.filter((item) => item.fp === null || functionPoints.includes(item.fp));
+  const allowed = AllNavItems.filter(
+    (item) => isPublicNavItem(item) || item.fp === null || functionPoints.includes(item.fp)
+  );
 
   if (allowed.some((item) => item.path === preferred)) {
     return preferred;
@@ -166,6 +237,9 @@ export function landingPath(functionPoints: readonly string[]): string {
 
   return allowed[0]?.path ?? '/settings';
 }
+
+/** 未登录时的落地路由：公开首页（市场概览）。 */
+export const AnonymousLandingPath = '/market';
 
 /**
  * 导航项的实际目标地址。个股模块需要拼上当前股票代码

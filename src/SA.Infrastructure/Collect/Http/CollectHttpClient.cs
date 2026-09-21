@@ -8,38 +8,51 @@ using SA.Application.Abstractions;
 namespace SA.Infrastructure.Collect.Http;
 
 /// <summary>
-/// 上游请求的统一出口：令牌桶限速 + 并发上限 + 指数退避重试 + 统一 UA/Referer/超时。
+/// 上游请求的统一出口：按域名限速 + 并发上限 + 域名熔断 + 指数退避重试 + UA 轮换。
 /// </summary>
 /// <remarks>
+/// <para>
 /// 所有适配器都必须经由此类发请求，避免各处自行 <c>new HttpClient</c> 造成
 /// 连接池耗尽、限速失效或超时不可控（实施计划 §5.4）。
 /// 退避策略见详细设计 §6.2：429/5xx 走 1s → 2s → 4s，最多 <see cref="CollectOptions.MaxRetry"/> 次。
+/// </para>
+/// <para>
+/// <b>UA 按请求设置</b>而不是挂在 <c>DefaultRequestHeaders</c> 上：后者是进程级共享的，
+/// 多线程同时改会互相覆盖，也无法做到「每个请求随机取一个」。
+/// </para>
 /// </remarks>
 public sealed class CollectHttpClient : IDisposable
 {
-    private const string UserAgent =
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36";
-
     private readonly HttpClient _http;
     private readonly CollectOptions _options;
     private readonly ILogger<CollectHttpClient> _logger;
+    private readonly HostRateLimiter _limiter;
+    private readonly HostCircuitBreaker _breaker;
 
-    /// <summary>并发闸门。</summary>
+    /// <summary>UA 池；为空时退化为单元素池。</summary>
+    private readonly string[] _userAgents;
+
+    /// <summary>并发闸门（全局：限制本机同时出网的请求数）。</summary>
     private readonly SemaphoreSlim _concurrency;
-
-    /// <summary>令牌桶：下一次可以发请求的时间点。</summary>
-    private readonly Lock _bucketLock = new();
-
-    private long _nextSlotTicks;
 
     /// <summary>
     /// 构造客户端。
     /// </summary>
-    public CollectHttpClient(CollectOptions options, ILogger<CollectHttpClient> logger)
+    public CollectHttpClient(
+        CollectOptions options,
+        ILogger<CollectHttpClient> logger,
+        HostRateLimiter limiter,
+        HostCircuitBreaker breaker)
     {
         _options = options;
         _logger = logger;
+        _limiter = limiter;
+        _breaker = breaker;
         _concurrency = new SemaphoreSlim(Math.Max(1, options.MaxConcurrency));
+
+        _userAgents = options.UserAgents is { Length: > 0 }
+            ? options.UserAgents
+            : [options.FallbackUserAgent];
 
         // 腾讯与新浪源为 GBK（实施计划 §5.4）
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -58,7 +71,6 @@ public sealed class CollectHttpClient : IDisposable
             Timeout = TimeSpan.FromSeconds(Math.Max(3, options.TimeoutSeconds))
         };
 
-        _http.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
         _http.DefaultRequestHeaders.Accept.ParseAdd("*/*");
         _http.DefaultRequestHeaders.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9");
     }
@@ -137,8 +149,20 @@ public sealed class CollectHttpClient : IDisposable
     }
 
     /// <summary>
-    /// 带限速与退避的实际发送逻辑。
+    /// 带限速、熔断与退避的实际发送逻辑。
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 熔断判定放在重试循环<b>之外</b>：冷却期内一次请求都不发，直接抛给上层降级到备源。
+    /// 失败计数按<b>请求</b>记（重试耗尽才算一次），否则阈值 3 与重试 3 次会让
+    /// 「一个请求就把域名打死」。
+    /// </para>
+    /// <para>
+    /// <b>并发闸门只罩住请求本身</b>，不罩退避等待：否则一个失败的请求会在退避的 1s+2s+4s 里
+    /// 一直占着名额，4 个并发位被少数失败请求占满后，其余所有域名都被堵住
+    /// （闸门是全局的，这是实测中会放大故障的形态）。
+    /// </para>
+    /// </remarks>
     private async Task<T> SendAsync<T>(
         string url,
         string source,
@@ -146,17 +170,28 @@ public sealed class CollectHttpClient : IDisposable
         Func<HttpResponseMessage, CancellationToken, Task<T>> read,
         CancellationToken cancellationToken)
     {
+        var host = ResolveHost(url);
+        _breaker.EnsureAvailable(host);
+
         var attempts = Math.Max(1, _options.MaxRetry);
         Exception? last = null;
 
         for (var attempt = 1; attempt <= attempts; attempt++)
         {
-            await ThrottleAsync(cancellationToken).ConfigureAwait(false);
+            var waited = await _limiter.WaitAsync(host, cancellationToken).ConfigureAwait(false);
+
+            // 全局并发闸门：限制本机同时出网的请求数。它在按域名限速之外，
+            // 因为「同时开多少连接」是本机资源，与具体上游无关。
+            await _concurrency.WaitAsync(cancellationToken).ConfigureAwait(false);
             var stopwatch = Stopwatch.StartNew();
 
             try
             {
                 using var request = new HttpRequestMessage(HttpMethod.Get, url);
+
+                // UA 按请求轮换：DefaultRequestHeaders 是进程级共享的，多线程写会互相覆盖
+                request.Headers.UserAgent.ParseAdd(_userAgents[Random.Shared.Next(_userAgents.Length)]);
+
                 if (!string.IsNullOrEmpty(referer))
                 {
                     request.Headers.Referrer = new Uri(referer);
@@ -173,22 +208,28 @@ public sealed class CollectHttpClient : IDisposable
                         (int)response.StatusCode,
                         null);
                     _logger.LogWarning(
-                        "{Source} HTTP {Status}，第 {Attempt}/{Total} 次尝试耗时 {Cost}ms",
-                        source, (int)response.StatusCode, attempt, attempts, stopwatch.ElapsedMilliseconds);
-                    await BackoffAsync(attempt, cancellationToken).ConfigureAwait(false);
+                        "{Source} HTTP {Status}，第 {Attempt}/{Total} 次尝试耗时 {Cost}ms（限速等待 {Wait}ms）",
+                        source, (int)response.StatusCode, attempt, attempts, stopwatch.ElapsedMilliseconds, waited.TotalMilliseconds);
                     continue;
                 }
 
                 if (!response.IsSuccessStatusCode)
                 {
                     stopwatch.Stop();
+                    _breaker.RecordFailure(host);
                     throw new CollectHttpException(
                         $"{source} 返回 HTTP {(int)response.StatusCode}",
                         (int)response.StatusCode,
                         null);
                 }
 
-                return await read(response, cancellationToken).ConfigureAwait(false);
+                var value = await read(response, cancellationToken).ConfigureAwait(false);
+                _breaker.RecordSuccess(host);
+                return value;
+            }
+            catch (HostBlockedException)
+            {
+                throw;
             }
             catch (CollectHttpException)
             {
@@ -198,49 +239,34 @@ public sealed class CollectHttpClient : IDisposable
             {
                 throw;
             }
-            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
+            catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or OperationCanceledException)
             {
+                // IOException 也要重试：上游截断响应时抛的是 HttpIOException
+                // （"The response ended prematurely"），它不是 HttpRequestException
                 stopwatch.Stop();
                 last = ex;
                 _logger.LogWarning(
                     ex, "{Source} 请求失败（第 {Attempt}/{Total} 次，耗时 {Cost}ms）", source, attempt, attempts, stopwatch.ElapsedMilliseconds);
-                await BackoffAsync(attempt, cancellationToken).ConfigureAwait(false);
             }
+            finally
+            {
+                // continue / return / throw 都会走到这里，闸门不会泄漏
+                _concurrency.Release();
+            }
+
+            // 退避在闸门之外：等待期间让出并发名额
+            await BackoffAsync(attempt, cancellationToken).ConfigureAwait(false);
         }
 
+        _breaker.RecordFailure(host);
         throw new CollectHttpException($"{source} 重试 {attempts} 次后仍失败：{last?.Message}", null, last);
     }
 
     /// <summary>
-    /// 令牌桶限速：按 <see cref="CollectOptions.RequestsPerSecond"/> 给出下一个可用时间片。
+    /// 取 URL 的域名（熔断与限速的键）。URL 非法时退化为整串，避免抛异常打断采集。
     /// </summary>
-    private async Task ThrottleAsync(CancellationToken cancellationToken)
-    {
-        var intervalTicks = (long)(TimeSpan.TicksPerSecond / Math.Max(0.5, _options.RequestsPerSecond));
-
-        long waitTicks;
-        lock (_bucketLock)
-        {
-            var now = DateTimeOffset.UtcNow.UtcTicks;
-            var slot = Math.Max(now, _nextSlotTicks);
-            _nextSlotTicks = slot + intervalTicks;
-            waitTicks = slot - now;
-        }
-
-        await _concurrency.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            if (waitTicks > 0)
-            {
-                await Task.Delay(TimeSpan.FromTicks(waitTicks), cancellationToken).ConfigureAwait(false);
-            }
-        }
-        finally
-        {
-            // 闸门只覆盖「等到自己的时间片」这一段，真正的耗时不受并发限制
-            _concurrency.Release();
-        }
-    }
+    internal static string ResolveHost(string url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var uri) ? uri.Host : url;
 
     /// <summary>
     /// 指数退避 + 抖动，避免多个任务在同一时刻齐步重试。

@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using SA.Api.Auth;
 using SA.Api.Endpoints;
+using SA.Api.Http;
 using SA.Api.Middleware;
 using SA.Application;
 using SA.Application.Auth;
+using SA.Contracts.Common;
 using SA.Infrastructure;
 using SA.Infrastructure.Persistence;
 using SA.Infrastructure.Security;
@@ -99,6 +101,11 @@ app.UseMiddleware<TraceIdMiddleware>();
 app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseAuthentication();
+
+// 带了令牌但校验失败的请求直接拒掉，不退回匿名——公开读接口允许匿名访问，
+// 若放行则「仅自选」角色的过期令牌会在公开页上看到全市场数据（数据范围被绕过）。
+app.UseMiddleware<RejectInvalidTokenMiddleware>();
+
 app.UseAuthorization();
 
 app.MapSystemEndpoints();

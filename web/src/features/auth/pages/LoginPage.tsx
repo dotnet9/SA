@@ -1,10 +1,24 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { landingPath } from '@/app/nav';
 import { ApiError } from '@/lib/errors';
 import { useAuth } from '@/providers/AuthProvider';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useToast } from '@/providers/ToastProvider';
+
+/**
+ * 取出 `?next=` 并只接受站内路径。
+ *
+ * 导航里点「需登录」的菜单会带上目标地址，登录后直接回到那一项，而不是被丢到落地页。
+ * 必须挡掉 `//evil.com` 与绝对地址：那会变成开放重定向（登录页被人拿去当跳板）。
+ */
+function safeNextPath(raw: string | null): string | null {
+  if (!raw || !raw.startsWith('/') || raw.startsWith('//')) {
+    return null;
+  }
+
+  return raw;
+}
 
 /**
  * 登录页。版式与文案沿用原型 `design/web/index.html` 的左右分栏（hero + panel）。
@@ -18,6 +32,8 @@ export function LoginPage() {
   const { toggleTheme, toggleUpdown } = useTheme();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const nextPath = safeNextPath(searchParams.get('next'));
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -26,12 +42,12 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // 已登录（含刷新页面后自动恢复）时直接进落地页
+  // 已登录（含刷新页面后自动恢复）时直接进目标页；带 ?next= 时优先回到原目标
   useEffect(() => {
     if (status === 'authenticated' && me) {
-      navigate(landingPath(me.functionPoints), { replace: true });
+      navigate(nextPath ?? landingPath(me.functionPoints), { replace: true });
     }
-  }, [status, me, navigate]);
+  }, [status, me, navigate, nextPath]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -41,7 +57,7 @@ export function LoginPage() {
     try {
       const signedIn = await signIn(username, password, { totpCode: totpCode || undefined, rememberMe });
       toast(`已登录：${signedIn.nickname}（${signedIn.roleName}）`, 'ok');
-      navigate(landingPath(signedIn.functionPoints), { replace: true });
+      navigate(nextPath ?? landingPath(signedIn.functionPoints), { replace: true });
     } catch (caught) {
       const message = caught instanceof ApiError ? caught.message : '登录失败，请稍后重试';
       setError(message);
@@ -111,6 +127,9 @@ export function LoginPage() {
         <div className="login-box">
           <h2 style={{ fontSize: 22, fontWeight: 700 }}>登录</h2>
           <p className="hint mt-2">使用管理员分配的账号登录</p>
+          <p className="hint mt-1">
+            行情与个股资料<b>无需登录</b>即可查看；自选、条件选股、提醒与后台需登录。
+          </p>
 
           <form className="col gap-4" style={{ marginTop: 20 }} onSubmit={onSubmit}>
             <div className="field">

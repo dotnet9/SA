@@ -102,13 +102,22 @@ public sealed class SectorKlineJob(
 
         var result = await executor.ExecuteAsync(
             $"{TaskName}:{sectorCode}",
-            registry.Kline,
+            registry.Klines[0],
             "主源",
             async ct =>
             {
-                bars = (await registry.Kline
-                    .GetSectorDailyAsync(sectorCode, from, today, ct)
-                    .ConfigureAwait(false)).ToList();
+                // 板块日线只有东财提供（腾讯不支持板块码，会抛异常让链条继续往下走）
+                var hit = await registry
+                    .GetSectorDailyWithFallbackAsync(sectorCode, from, today, ct)
+                    .ConfigureAwait(false);
+
+                if (hit is null)
+                {
+                    return (0, 0);
+                }
+
+                logger.LogInformation("{Sector} 板块日线命中数据源：{Source}", sectorCode, hit.Value.Source);
+                bars = hit.Value.Bars.ToList();
                 return (bars.Count, bars.Count);
             },
             cancellationToken).ConfigureAwait(false);

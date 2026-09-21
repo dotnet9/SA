@@ -84,17 +84,29 @@ public sealed class DailyKlineJob(
 
         var result = await executor.ExecuteAsync(
             $"{TaskName}:{code}",
-            registry.Kline,
+            registry.Klines[0],
             "主源",
             async ct =>
             {
-                front = (await registry.Kline
-                    .GetDailyAsync(code, from, to, EastMoneyKlineSource.AdjustFront, EastMoneyKlineSource.PeriodDaily, ct)
-                    .ConfigureAwait(false)).ToList();
+                // 走降级链：腾讯主源 → 东财备源，并记录实际命中的源
+                var frontHit = await registry
+                    .GetDailyWithFallbackAsync(code, from, to, EastMoneyKlineSource.AdjustFront, EastMoneyKlineSource.PeriodDaily, ct)
+                    .ConfigureAwait(false);
 
-                raw = (await registry.Kline
-                    .GetDailyAsync(code, from, to, EastMoneyKlineSource.AdjustNone, EastMoneyKlineSource.PeriodDaily, ct)
-                    .ConfigureAwait(false)).ToList();
+                if (frontHit is null)
+                {
+                    return (0, 0);
+                }
+
+                logger.LogInformation("{Code} 日线命中数据源：{Source}", code, frontHit.Value.Source);
+                front = frontHit.Value.Bars.ToList();
+
+                var rawHit = await registry
+                    .GetDailyWithFallbackAsync(code, from, to, EastMoneyKlineSource.AdjustNone, EastMoneyKlineSource.PeriodDaily, ct)
+                    .ConfigureAwait(false);
+
+                // 不复权只用于除权检测：拿不到就跳过检测（而不是当成「无除权」）
+                raw = rawHit?.Bars.ToList() ?? [];
 
                 return (front.Count, front.Count);
             },
@@ -221,7 +233,7 @@ public sealed class IndicatorJob(
 
         var result = await executor.ExecuteAsync(
             $"{TaskName}:{code}",
-            registry.Kline,
+            registry.Klines[0],
             "本地计算",
             async ct =>
             {

@@ -17,7 +17,7 @@ public static class RatingEndpoints
     {
         app.MapGet("/api/stocks/{code}/rating", GetAsync)
             .WithTags("rating")
-            .RequireFunctionPoint(FunctionPointCatalog.StockRating);
+            .AllowPublicRead();
 
         return app;
     }

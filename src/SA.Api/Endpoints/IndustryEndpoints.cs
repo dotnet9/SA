@@ -17,7 +17,7 @@ public static class IndustryEndpoints
     {
         app.MapGet("/api/stocks/{code}/industry", GetAsync)
             .WithTags("industry")
-            .RequireFunctionPoint(FunctionPointCatalog.StockIndustry);
+            .AllowPublicRead();
 
         return app;
     }

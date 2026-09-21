@@ -1,9 +1,8 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, Navigate, Outlet, useLocation, useParams } from 'react-router';
+import { createBrowserRouter, Navigate, Outlet, useLocation, useMatches, useParams } from 'react-router';
 import { AppShell } from '@/app/layout/AppShell';
 import { MobileShell } from '@/app/mobile/MobileShell';
-import { DefaultStockCode, landingPath, StockModuleFunctionPoints, StockModuleNames } from '@/app/nav';
-import { PlaceholderPage } from '@/app/PlaceholderPage';
+import { DefaultStockCode, landingPath, AnonymousLandingPath, StockModuleNames } from '@/app/nav';
 import { readLastStock } from '@/app/useCurrentStock';
 import { ChangePasswordPage } from '@/features/auth/pages/ChangePasswordPage';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
@@ -153,58 +152,77 @@ function RouteFallback() {
   return <div className="sa-boot">正在载入页面…</div>;
 }
 
-/** 会话恢复中或未登录时的处理。 */
-function ProtectedShell() {
+/**
+ * 路由元信息。挂在路由对象上，由 {@link Shell} 经 `useMatches()` 读取。
+ */
+interface RouteHandle {
+  /** 该路由需要登录后才能访问。 */
+  auth?: boolean;
+}
+
+/** 声明「需登录」的路由元信息（放在路由对象上，紧邻它约束的那条路由）。 */
+const RequireLogin: RouteHandle = { auth: true };
+
+/**
+ * 当前匹配链上是否有路由要求登录。
+ *
+ * 用路由元信息而不是在守卫里硬编码路径清单：约束与被约束的路由写在一起，
+ * 新增页面时不会出现「加了路由却忘了加进守卫名单」的漏网情况。
+ */
+function useRouteNeedsAuth(): boolean {
+  const matches = useMatches();
+  return matches.some((match) => (match.handle as RouteHandle | undefined)?.auth === true);
+}
+
+/**
+ * 应用外壳（桌面与移动共用）。守卫规则：
+ *
+ * - 会话未恢复完 → 启动态；
+ * - <b>仅当当前路由声明了 `auth` 且未登录</b> → 回登录页；
+ *   公开路由（行情、搜索、个股、拓扑、景气度）匿名照常渲染，这正是「不登录也能看」的落点；
+ * - 已登录但首登未改密 → 锁在改密页（与后端 MustChangePwd 语义一致）。
+ *
+ * 未登录时 `me` 为 null，`can()` 一律返回 false，因此个人数据相关的按钮会自然消失，
+ * 不需要在各个页面里重复判断登录态。
+ */
+function Shell({ mobile }: { mobile: boolean }) {
   const { status, me } = useAuth();
   const location = useLocation();
+  const needsAuth = useRouteNeedsAuth();
 
   if (status === 'loading') {
     return <div className="sa-boot">正在恢复会话…</div>;
   }
 
-  if (status !== 'authenticated' || !me) {
+  const authenticated = status === 'authenticated' && me !== null;
+
+  if (needsAuth && !authenticated) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
-  // 强制改密：除改密页外一律重定向（与后端 MustChangePwd 语义一致）
-  if (me.mustChangePwd && location.pathname !== '/change-password') {
+  if (authenticated && me.mustChangePwd && location.pathname !== '/change-password') {
     return <Navigate to="/change-password" replace />;
   }
 
-  return (
+  return mobile ? (
+    <MobileShell>
+      <Outlet />
+    </MobileShell>
+  ) : (
     <AppShell>
       <Outlet />
     </AppShell>
   );
 }
 
-/**
- * 移动端外壳布局（`/m/*`）。
- *
- * 守卫与桌面壳逐条一致（登录态、强制改密），只是外层容器换成底部 Tab 的形态。
- * 两侧的判断必须保持同源语义：移动端不该变成「另一套权限体系」。
- */
-function ProtectedMobileShell() {
-  const { status, me } = useAuth();
-  const location = useLocation();
+/** 桌面外壳。 */
+function DesktopShell() {
+  return <Shell mobile={false} />;
+}
 
-  if (status === 'loading') {
-    return <div className="sa-boot">正在恢复会话…</div>;
-  }
-
-  if (status !== 'authenticated' || !me) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
-  }
-
-  if (me.mustChangePwd && location.pathname !== '/change-password') {
-    return <Navigate to="/change-password" replace />;
-  }
-
-  return (
-    <MobileShell>
-      <Outlet />
-    </MobileShell>
-  );
+/** 移动端外壳布局（`/m/*`）：守卫与桌面逐条同源，只换外层形态。 */
+function MobileShellGuard() {
+  return <Shell mobile={true} />;
 }
 
 /**
@@ -245,10 +263,10 @@ function MobileRoute({ page }: { page: MobilePageName }) {
  *
  * 直接复用桌面组件：这些页面本身就是卡片式布局（K 线、指标、表格都是自适应的），
  * 为移动端再写一遍只会产生两份需要同步维护的实现。
+ * 与桌面同样不套功能点守卫——个股模块是公开数据。
  */
 function MobileStockModulePage() {
   const params = useParams();
-  const code = params.code ?? DefaultStockCode;
   const module = params.module ?? 'overview';
   const name = StockModuleNames[module];
 
@@ -257,37 +275,39 @@ function MobileStockModulePage() {
   }
 
   return (
-    <RequireFunctionPoint codes={[StockModuleFunctionPoints[module] ?? 'stock.trend']}>
-      <Suspense fallback={<RouteFallback />}>
-        {module === 'overview' ? (
-          <StockOverviewPage />
-        ) : module === 'trend' ? (
-          <StockTrendPage />
-        ) : module === 'finance' ? (
-          <StockFinancePage />
-        ) : module === 'equity' ? (
-          <StockEquityPage />
-        ) : module === 'capital' ? (
-          <StockCapitalPage />
-        ) : module === 'industry' ? (
-          <StockIndustryPage />
-        ) : module === 'events' ? (
-          <StockEventsPage />
-        ) : module === 'causal' ? (
-          <CausalChainPage />
-        ) : module === 'risk' ? (
-          <StockRiskPage />
-        ) : module === 'rating' ? (
-          <StockRatingPage />
-        ) : (
-          <PlaceholderPage title={`${name} · ${code}`} batch="后续批次" />
-        )}
-      </Suspense>
-    </RequireFunctionPoint>
+    <Suspense fallback={<RouteFallback />}>
+      {module === 'overview' ? (
+        <StockOverviewPage />
+      ) : module === 'trend' ? (
+        <StockTrendPage />
+      ) : module === 'finance' ? (
+        <StockFinancePage />
+      ) : module === 'equity' ? (
+        <StockEquityPage />
+      ) : module === 'capital' ? (
+        <StockCapitalPage />
+      ) : module === 'industry' ? (
+        <StockIndustryPage />
+      ) : module === 'events' ? (
+        <StockEventsPage />
+      ) : module === 'causal' ? (
+        <CausalChainPage />
+      ) : module === 'risk' ? (
+        <StockRiskPage />
+      ) : (
+        <StockRatingPage />
+      )}
+    </Suspense>
   );
 }
 
-/** 功能点守卫：缺少所需功能点时展示明确的拒绝页，而不是空白。 */
+/**
+ * 功能点守卫：缺少所需功能点时展示明确的拒绝页，而不是空白。
+ *
+ * 只用在「需登录」的路由上（`handle: RequireLogin`）——那时外壳已经确保登录，
+ * 因此这里的 `me` 必然存在，判断的是「登录了但没有这个功能点」。
+ * 未登录不会走到这里：外壳会先送回登录页。
+ */
 function RequireFunctionPoint({ codes, children }: { codes: string[]; children: React.ReactNode }) {
   const { can, me } = useAuth();
 
@@ -324,10 +344,14 @@ function StockRedirect() {
   return <Navigate to={`/stock/${code}`} replace />;
 }
 
-/** 个股模块页：按模块分派到已实现的页面，未实现的仍显示占位并说明批次。 */
+/**
+ * 个股模块页。
+ *
+ * 不套功能点守卫：个股全部模块都是公开数据（后端 `AllowPublicRead`），
+ * 前端再拦一道就会出现「接口放行但页面拒绝」的自相矛盾。
+ */
 function StockModulePage() {
   const params = useParams();
-  const code = params.code ?? DefaultStockCode;
   const module = params.module ?? 'overview';
   const name = StockModuleNames[module];
 
@@ -335,44 +359,30 @@ function StockModulePage() {
     return <NotFoundPage />;
   }
 
-  const batches: Record<string, string> = {
-    finance: '第 5 批',
-    equity: '第 6 批',
-    capital: '第 7 批',
-    industry: '第 8 批',
-    events: '第 9 批',
-    risk: '第 10 批',
-    rating: '第 10 批'
-  };
-
   return (
-    <RequireFunctionPoint codes={[StockModuleFunctionPoints[module] ?? 'stock.trend']}>
-      <Suspense fallback={<RouteFallback />}>
-        {module === 'overview' ? (
-          <StockOverviewPage />
-        ) : module === 'trend' ? (
-          <StockTrendPage />
-        ) : module === 'finance' ? (
-          <StockFinancePage />
-        ) : module === 'equity' ? (
-          <StockEquityPage />
-        ) : module === 'capital' ? (
-          <StockCapitalPage />
-        ) : module === 'industry' ? (
-          <StockIndustryPage />
-        ) : module === 'events' ? (
-          <StockEventsPage />
-        ) : module === 'causal' ? (
-          <CausalChainPage />
-        ) : module === 'risk' ? (
-          <StockRiskPage />
-        ) : module === 'rating' ? (
-          <StockRatingPage />
-        ) : (
-          <PlaceholderPage title={`${name} · ${code}`} batch={batches[module] ?? '后续批次'} />
-        )}
-      </Suspense>
-    </RequireFunctionPoint>
+    <Suspense fallback={<RouteFallback />}>
+      {module === 'overview' ? (
+        <StockOverviewPage />
+      ) : module === 'trend' ? (
+        <StockTrendPage />
+      ) : module === 'finance' ? (
+        <StockFinancePage />
+      ) : module === 'equity' ? (
+        <StockEquityPage />
+      ) : module === 'capital' ? (
+        <StockCapitalPage />
+      ) : module === 'industry' ? (
+        <StockIndustryPage />
+      ) : module === 'events' ? (
+        <StockEventsPage />
+      ) : module === 'causal' ? (
+        <CausalChainPage />
+      ) : module === 'risk' ? (
+        <StockRiskPage />
+      ) : (
+        <StockRatingPage />
+      )}
+    </Suspense>
   );
 }
 
@@ -395,7 +405,7 @@ function NotFoundPage() {
   );
 }
 
-/** 根路由：已登录进落地页，未登录由 ProtectedShell 送回登录页。 */
+/** 根路由：已登录进落地页，未登录进公开首页（市场概览）。 */
 function RootRedirect() {
   const { status, me } = useAuth();
 
@@ -404,36 +414,50 @@ function RootRedirect() {
   }
 
   if (status !== 'authenticated' || !me) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={AnonymousLandingPath} replace />;
   }
 
   return <Navigate to={landingPath(me.functionPoints)} replace />;
 }
 
+/**
+ * 路由表。
+ *
+ * 公开（无需登录）与需登录的分界由每条路由自己的 `handle: RequireLogin` 声明，
+ * 与后端 `PublicEndpointExtensions` 的分区一一对应：
+ *
+ * - 公开：市场概览、搜索、个股全部模块、拓扑图、行业景气度、因果链、站点信息；
+ * - 需登录：自选、选股器、提醒、通知、个人设置、后台。
+ *
+ * 公开路由<b>不套</b> `RequireFunctionPoint`：对应功能点在后端已放开（公开数据），
+ * 前端再拦就会与接口行为不一致。
+ */
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   { path: '/change-password', element: <ChangePasswordPage /> },
   /**
    * 移动端路由（对应原型 `design/app/` 的 18 个页面）。
    *
-   * 与桌面端共用登录与强制改密的守卫，只是外壳换成底部 Tab；
-   * 数据接口与口径完全相同，因此不存在「移动端看到的是另一套数字」。
+   * 与桌面端共用同一个守卫与同一套接口，只是外壳换成底部 Tab；
+   * 公开页（首页、搜索、个股、关于）未登录可直接进入，其余回登录页。
    */
   {
     path: '/m',
-    element: <ProtectedMobileShell />,
+    element: <MobileShellGuard />,
     children: [
       { index: true, element: <MobileRoute page="home" /> },
       // 原型里有 index.html（移动入口）与 home.html 两个页面，这里都指向首页
       { path: 'index', element: <MobileRoute page="home" /> },
       { path: 'home', element: <MobileRoute page="home" /> },
       { path: 'search', element: <MobileRoute page="search" /> },
-      { path: 'watchlist', element: <MobileRoute page="watchlist" /> },
-      { path: 'alerts', element: <MobileRoute page="alerts" /> },
-      { path: 'notifications', element: <MobileRoute page="notifications" /> },
-      { path: 'screener', element: <MobileRoute page="screener" /> },
-      { path: 'settings', element: <MobileRoute page="settings" /> },
       { path: 'about', element: <MobileRoute page="about" /> },
+      { path: 'stock/:code', element: <MobileStockModulePage /> },
+      { path: 'stock/:code/:module', element: <MobileStockModulePage /> },
+      { path: 'watchlist', element: <MobileRoute page="watchlist" />, handle: RequireLogin },
+      { path: 'alerts', element: <MobileRoute page="alerts" />, handle: RequireLogin },
+      { path: 'notifications', element: <MobileRoute page="notifications" />, handle: RequireLogin },
+      { path: 'screener', element: <MobileRoute page="screener" />, handle: RequireLogin },
+      { path: 'settings', element: <MobileRoute page="settings" />, handle: RequireLogin },
       // 提醒形态预览是移动端独有的页面（FR-ALERT-09），直接复用桌面实现
       {
         path: 'notify-preview',
@@ -441,92 +465,31 @@ export const router = createBrowserRouter([
           <Suspense fallback={<RouteFallback />}>
             <NotifyPreviewPage />
           </Suspense>
-        )
-      },
-      { path: 'stock/:code', element: <MobileStockModulePage /> },
-      { path: 'stock/:code/:module', element: <MobileStockModulePage /> }
+        ),
+        handle: RequireLogin
+      }
     ]
   },
   {
     path: '/',
-    element: <ProtectedShell />,
+    element: <DesktopShell />,
     children: [
       { index: true, element: <RootRedirect /> },
+
+      // ---- 公开：行情、搜索、个股、拓扑、景气度 ----
       {
         path: 'market',
         element: (
-          <RequireFunctionPoint codes={['market.view']}>
-            <Suspense fallback={<RouteFallback />}>
-              <MarketPage />
-            </Suspense>
-          </RequireFunctionPoint>
+          <Suspense fallback={<RouteFallback />}>
+            <MarketPage />
+          </Suspense>
         )
       },
       {
         path: 'search',
         element: (
-          <RequireFunctionPoint codes={['stock.search']}>
-            <Suspense fallback={<RouteFallback />}>
-              <SearchPage />
-            </Suspense>
-          </RequireFunctionPoint>
-        )
-      },
-      {
-        path: 'watchlist',
-        element: (
-          <RequireFunctionPoint codes={['watchlist.view']}>
-            <Suspense fallback={<RouteFallback />}>
-              <WatchlistPage />
-            </Suspense>
-          </RequireFunctionPoint>
-        )
-      },
-      {
-        path: 'screener',
-        element: (
-          <RequireFunctionPoint codes={['screener.use']}>
-            <Suspense fallback={<RouteFallback />}>
-              <ScreenerPage />
-            </Suspense>
-          </RequireFunctionPoint>
-        )
-      },
-      {
-        path: 'alerts',
-        element: (
-          <RequireFunctionPoint codes={['alert.manage']}>
-            <Suspense fallback={<RouteFallback />}>
-              <AlertsPage />
-            </Suspense>
-          </RequireFunctionPoint>
-        )
-      },
-      {
-        path: 'notifications',
-        element: (
-          <RequireFunctionPoint codes={['notify.view']}>
-            <Suspense fallback={<RouteFallback />}>
-              <NotificationsPage />
-            </Suspense>
-          </RequireFunctionPoint>
-        )
-      },
-      {
-        path: 'notify-preview',
-        element: (
-          <RequireFunctionPoint codes={['alert.manage']}>
-            <Suspense fallback={<RouteFallback />}>
-              <NotifyPreviewPage />
-            </Suspense>
-          </RequireFunctionPoint>
-        )
-      },
-      {
-        path: 'settings',
-        element: (
           <Suspense fallback={<RouteFallback />}>
-            <SettingsPage />
+            <SearchPage />
           </Suspense>
         )
       },
@@ -540,32 +503,92 @@ export const router = createBrowserRouter([
       {
         path: 'topology/:code',
         element: (
-          <RequireFunctionPoint codes={['topology.view']}>
-            <Suspense fallback={<RouteFallback />}>
-              <TopologyPage />
-            </Suspense>
-          </RequireFunctionPoint>
+          <Suspense fallback={<RouteFallback />}>
+            <TopologyPage />
+          </Suspense>
         )
       },
       {
         path: 'prosperity',
         element: (
-          <RequireFunctionPoint codes={['stock.industry']}>
-            <Suspense fallback={<RouteFallback />}>
-              <ProsperityPage />
-            </Suspense>
-          </RequireFunctionPoint>
+          <Suspense fallback={<RouteFallback />}>
+            <ProsperityPage />
+          </Suspense>
         )
       },
       {
         path: 'stock/:code/causal',
         element: (
-          <RequireFunctionPoint codes={['stock.trend']}>
+          <Suspense fallback={<RouteFallback />}>
+            <CausalChainPage />
+          </Suspense>
+        )
+      },
+
+      // ---- 需登录：自选、选股、提醒、通知、设置、后台 ----
+      {
+        path: 'watchlist',
+        element: (
+          <RequireFunctionPoint codes={['watchlist.view']}>
             <Suspense fallback={<RouteFallback />}>
-              <CausalChainPage />
+              <WatchlistPage />
             </Suspense>
           </RequireFunctionPoint>
-        )
+        ),
+        handle: RequireLogin
+      },
+      {
+        path: 'screener',
+        element: (
+          <RequireFunctionPoint codes={['screener.use']}>
+            <Suspense fallback={<RouteFallback />}>
+              <ScreenerPage />
+            </Suspense>
+          </RequireFunctionPoint>
+        ),
+        handle: RequireLogin
+      },
+      {
+        path: 'alerts',
+        element: (
+          <RequireFunctionPoint codes={['alert.manage']}>
+            <Suspense fallback={<RouteFallback />}>
+              <AlertsPage />
+            </Suspense>
+          </RequireFunctionPoint>
+        ),
+        handle: RequireLogin
+      },
+      {
+        path: 'notifications',
+        element: (
+          <RequireFunctionPoint codes={['notify.view']}>
+            <Suspense fallback={<RouteFallback />}>
+              <NotificationsPage />
+            </Suspense>
+          </RequireFunctionPoint>
+        ),
+        handle: RequireLogin
+      },
+      {
+        path: 'notify-preview',
+        element: (
+          <RequireFunctionPoint codes={['alert.manage']}>
+            <Suspense fallback={<RouteFallback />}>
+              <NotifyPreviewPage />
+            </Suspense>
+          </RequireFunctionPoint>
+        ),
+        handle: RequireLogin
+      },
+      {
+        path: 'settings',
+        element: (
+          <Suspense fallback={<RouteFallback />}>
+            <SettingsPage />
+          </Suspense>
+        ),
+        handle: RequireLogin
       },
       {
         path: 'admin/users',
@@ -575,7 +598,8 @@ export const router = createBrowserRouter([
               <AdminUsersPage />
             </Suspense>
           </RequireFunctionPoint>
-        )
+        ),
+        handle: RequireLogin
       },
       {
         path: 'admin/permissions',
@@ -585,7 +609,8 @@ export const router = createBrowserRouter([
               <AdminUsersPage />
             </Suspense>
           </RequireFunctionPoint>
-        )
+        ),
+        handle: RequireLogin
       },
       {
         path: 'admin/datasource',
@@ -595,7 +620,8 @@ export const router = createBrowserRouter([
               <AdminDataSourcesPage />
             </Suspense>
           </RequireFunctionPoint>
-        )
+        ),
+        handle: RequireLogin
       },
       {
         path: 'admin/security',
@@ -605,7 +631,8 @@ export const router = createBrowserRouter([
               <AdminSecurityPage />
             </Suspense>
           </RequireFunctionPoint>
-        )
+        ),
+        handle: RequireLogin
       },
       { path: '*', element: <NotFoundPage /> }
     ]

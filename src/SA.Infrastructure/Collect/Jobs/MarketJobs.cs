@@ -38,11 +38,11 @@ public sealed class UniverseJob(
 
         var result = await executor.ExecuteAsync(
             TaskName,
-            registry.MarketList,
+            registry.MarketLists[0],
             "主源",
             async ct =>
             {
-                await registry.MarketList.GetMarketListAsync(
+                var hit = await registry.GetMarketListWithFallbackAsync(
                     rows =>
                     {
                         collected.AddRange(rows.Select(row => ToInstrument(row, today)));
@@ -50,6 +50,12 @@ public sealed class UniverseJob(
                     },
                     ct).ConfigureAwait(false);
 
+                if (hit is null)
+                {
+                    return (0, 0);
+                }
+
+                logger.LogInformation("股票池扫描命中数据源：{Source}", hit.Value.Source);
                 return (collected.Count, collected.Count);
             },
             cancellationToken).ConfigureAwait(false);
@@ -119,11 +125,11 @@ public sealed class QuoteSnapshotJob(
 
         var result = await executor.ExecuteAsync(
             TaskName,
-            registry.MarketList,
+            registry.MarketLists[0],
             "主源",
             async ct =>
             {
-                await registry.MarketList.GetMarketListAsync(
+                var hit = await registry.GetMarketListWithFallbackAsync(
                     page =>
                     {
                         foreach (var row in page)
@@ -150,6 +156,12 @@ public sealed class QuoteSnapshotJob(
                     },
                     ct).ConfigureAwait(false);
 
+                if (hit is null)
+                {
+                    return (0, 0);
+                }
+
+                logger.LogInformation("全市场快照命中数据源：{Source}", hit.Value.Source);
                 return (rows.Count, rows.Count);
             },
             cancellationToken).ConfigureAwait(false);

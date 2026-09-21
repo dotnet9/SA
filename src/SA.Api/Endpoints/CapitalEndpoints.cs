@@ -17,7 +17,7 @@ public static class CapitalEndpoints
     {
         app.MapGet("/api/stocks/{code}/capital", GetAsync)
             .WithTags("capital")
-            .RequireFunctionPoint(FunctionPointCatalog.StockCapital);
+            .AllowPublicRead();
 
         return app;
     }

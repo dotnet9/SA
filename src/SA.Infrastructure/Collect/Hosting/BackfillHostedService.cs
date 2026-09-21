@@ -254,13 +254,21 @@ public sealed class BenchmarkDailyJob(
 
         var result = await executor.ExecuteAsync(
             $"{TaskName}:{Code}",
-            registry.Kline,
+            registry.Klines[0],
             "主源",
             async ct =>
             {
-                bars = (await registry.Kline
-                    .GetDailyAsync(Code, from, today, EastMoneyKlineSource.AdjustNone, EastMoneyKlineSource.PeriodDaily, ct)
-                    .ConfigureAwait(false)).ToList();
+                var hit = await registry
+                    .GetDailyWithFallbackAsync(Code, from, today, EastMoneyKlineSource.AdjustNone, EastMoneyKlineSource.PeriodDaily, ct)
+                    .ConfigureAwait(false);
+
+                if (hit is null)
+                {
+                    return (0, 0);
+                }
+
+                logger.LogInformation("基准指数 {Code} 日线命中数据源：{Source}", Code, hit.Value.Source);
+                bars = hit.Value.Bars.ToList();
                 return (bars.Count, bars.Count);
             },
             cancellationToken).ConfigureAwait(false);

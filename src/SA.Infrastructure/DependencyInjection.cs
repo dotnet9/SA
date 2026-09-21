@@ -102,18 +102,37 @@ public static class DependencyInjection
     /// </remarks>
     public static IServiceCollection AddSaCollect(this IServiceCollection services)
     {
+        services.AddSingleton<HostRateLimiter>();
+        services.AddSingleton<HostCircuitBreaker>();
         services.AddSingleton<CollectHttpClient>();
 
+        // 主源为 push2delay：实测 push2 的 clist 连接被重置（2026-09-21 复核），
+        // 而 push2delay 的同一端点可用且带 f100 行业字段。
+        // 代价是行情有延迟，因此界面的数据时间仍以指数快照时间戳为准（见 CollectOptions.Push2BaseUrl）。
         services.AddSingleton<EastMoneyMarketListSource>();
+        services.AddSingleton<SinaMarketListSource>();
+        // 注册顺序即降级顺序：push2delay 主源 → 新浪备源
         services.AddSingleton<IMarketListSource>(provider => provider.GetRequiredService<EastMoneyMarketListSource>());
+        services.AddSingleton<IMarketListSource>(provider => provider.GetRequiredService<SinaMarketListSource>());
 
         services.AddSingleton<IIndexSource, EastMoneyIndexSource>();
         services.AddSingleton<ISectorSource, EastMoneySectorSource>();
         services.AddSingleton<ILimitPoolSource, EastMoneyLimitPoolSource>();
         services.AddSingleton<IMarginMarketSource, EastMoneyMarginMarketSource>();
         services.AddSingleton<IMarketFundFlowSource, EastMoneyMarketFundFlowSource>();
-        services.AddSingleton<ITradingCalendarSource, EastMoneyTradingCalendarSource>();
-        services.AddSingleton<IKlineSource, EastMoneyKlineSource>();
+        services.AddSingleton<EastMoneyTradingCalendarSource>();
+        services.AddSingleton<TencentTradingCalendarSource>();
+        // 日历与 K 线同源（指数日线），因此顺序保持一致：腾讯主源 → 东财备源
+        services.AddSingleton<ITradingCalendarSource>(provider => provider.GetRequiredService<TencentTradingCalendarSource>());
+        services.AddSingleton<ITradingCalendarSource>(provider => provider.GetRequiredService<EastMoneyTradingCalendarSource>());
+        // K 线：腾讯主源 → 东财备源。实测东财 push2his 的 kline 端点在本机被连接重置
+        // （同一主机的 fflow 端点正常，所以熔断必须按域名而非按数据源），
+        // 腾讯优先可避免每次请求都要先失败重试 3 次才降级。
+        services.AddSingleton<EastMoneyKlineSource>();
+        services.AddSingleton<TencentKlineSource>();
+        services.AddSingleton<IKlineSource>(provider => provider.GetRequiredService<TencentKlineSource>());
+        services.AddSingleton<IKlineSource>(provider => provider.GetRequiredService<EastMoneyKlineSource>());
+
         services.AddSingleton<IFinanceSource, EastMoneyFinanceSource>();
         services.AddSingleton<IEquitySource, EastMoneyEquitySource>();
         services.AddSingleton<ICapitalSource, EastMoneyCapitalSource>();

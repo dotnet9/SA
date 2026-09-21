@@ -8,9 +8,13 @@ using SA.Domain.Authorization;
 namespace SA.Api.Endpoints;
 
 /// <summary>
-/// 市场概览端点（需求规格 FR-MKT 系列）。全部要求 <c>market.view</c> 功能点，
-/// 前端裁剪只负责体验，权限判定以后端为准（需求规格 §7.3）。
+/// 市场概览端点（需求规格 FR-MKT 系列）。
 /// </summary>
+/// <remarks>
+/// <b>公开读接口</b>（见 <see cref="PublicEndpointExtensions"/>）：行情与指数是公开市场数据，
+/// 不登录也能看。已登录用户的可见标的仍受数据范围（<c>data.scope.*</c>）过滤，
+/// 因此「仅自选」角色在这里只会看到自选范围内的标的。
+/// </remarks>
 public static class MarketEndpoints
 {
     /// <summary>
@@ -20,7 +24,7 @@ public static class MarketEndpoints
     {
         var group = app.MapGroup("/api/market")
             .WithTags("market")
-            .RequireFunctionPoint(FunctionPointCatalog.MarketView);
+            .AllowPublicRead();
 
         group.MapGet("/overview", GetOverviewAsync);
         group.MapGet("/indices", GetIndicesAsync);
@@ -106,8 +110,11 @@ public static class MarketEndpoints
 }
 
 /// <summary>
-/// 搜索端点。要求 <c>stock.search</c> 功能点。
+/// 搜索端点。公开读接口：搜索是入口功能，不登录也能用。
 /// </summary>
+/// <remarks>
+/// 已登录用户的结果仍受数据范围过滤（「仅自选」角色只搜得到自选内的标的）。
+/// </remarks>
 public static class SearchEndpoints
 {
     /// <summary>
@@ -117,7 +124,7 @@ public static class SearchEndpoints
     {
         var group = app.MapGroup("/api/search")
             .WithTags("search")
-            .RequireFunctionPoint(FunctionPointCatalog.StockSearch);
+            .AllowPublicRead();
 
         group.MapGet(string.Empty, SearchAsync);
         group.MapGet("/suggest", SuggestAsync);

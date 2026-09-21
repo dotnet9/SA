@@ -31,6 +31,34 @@ public static class ApiResults
             ? Ok(context, result.Value)
             : Fail(context, result.Error, result.Message ?? "请求失败");
 
+    /// <summary>
+    /// 直接写出失败响应。用于中间件与认证事件等拿不到 <c>IResult</c> 返回值的场合
+    /// （它们必须自己写响应体）。
+    /// </summary>
+    /// <remarks>
+    /// 与 <see cref="Fail"/> 共用同一套错误码到 HTTP 状态码的映射，
+    /// 避免「中间件写的 401 与端点写的 401」出现两套格式。
+    /// </remarks>
+    public static async Task WriteFailAsync(
+        HttpContext context,
+        ErrorCode code,
+        string message,
+        CancellationToken cancellationToken = default)
+    {
+        if (context.Response.HasStarted)
+        {
+            // 响应已开始写出（例如流式端点），此刻无法再改状态码与响应体
+            return;
+        }
+
+        context.Response.Clear();
+        context.Response.StatusCode = code.ToHttpStatus();
+        context.Response.ContentType = "application/json; charset=utf-8";
+
+        var payload = ApiResponse.Fail<object>(code, message, TraceId(context));
+        await context.Response.WriteAsJsonAsync(payload, cancellationToken).ConfigureAwait(false);
+    }
+
     private static string TraceId(HttpContext context) =>
         context.Items[TraceIdMiddleware.ItemsKey] as string ?? context.TraceIdentifier;
 }

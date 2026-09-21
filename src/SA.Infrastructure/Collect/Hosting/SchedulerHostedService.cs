@@ -56,8 +56,9 @@ public sealed class SchedulerHostedService(
         await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken).ConfigureAwait(false);
 
         logger.LogInformation(
-            "采集调度启动：全市场扫描 {Scan}s / 限速 {Rps} req/s / 并发 {Concurrency}",
-            options.FullScanIntervalSeconds, options.RequestsPerSecond, options.MaxConcurrency);
+            "采集调度启动：全市场扫描 {Scan}s / 按域名限速 {Interval}ms / 并发 {Concurrency} / 熔断 {Threshold} 次 {Cooldown}s",
+            options.FullScanIntervalSeconds, options.PerHostMinIntervalMs, options.MaxConcurrency,
+            options.BreakerThreshold, options.BreakerCooldownSeconds);
 
         await RunStartupAsync(stoppingToken).ConfigureAwait(false);
 

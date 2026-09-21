@@ -11,8 +11,12 @@ using SA.Domain.Entities.Events;
 namespace SA.Api.Endpoints;
 
 /// <summary>
-/// 事件与影响端点。读取要求 <c>stock.events</c>，人工标注要求 <c>event.edit</c>。
+/// 事件与影响端点。
 /// </summary>
+/// <remarks>
+/// <b>读写分离</b>：事件时间线与拓扑图是公开读接口（不登录也能看）；
+/// 人工标注是写操作，仍然要求登录且具备 <c>event.edit</c>。
+/// </remarks>
 public static class EventEndpoints
 {
     /// <summary>
@@ -23,7 +27,7 @@ public static class EventEndpoints
         var group = app.MapGroup("/api/stocks/{code}").WithTags("events");
 
         group.MapGet("/events", GetAsync)
-            .RequireFunctionPoint(FunctionPointCatalog.StockEvents);
+            .AllowPublicRead();
 
         group.MapPut("/events/annotation", AnnotateAsync)
             .RequireFunctionPoint(FunctionPointCatalog.EventEdit);

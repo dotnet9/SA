@@ -109,7 +109,11 @@ public sealed record PasswordResetRequest(string? NewPassword);
 /// <param name="Code">功能点编码。</param>
 /// <param name="Name">名称。</param>
 /// <param name="Group">分组（权限矩阵的展示顺序）。</param>
-public sealed record FunctionPointDto(string Code, string Name, string Group);
+/// <param name="IsPublic">
+/// 是否公开功能点。公开功能点对应匿名即可访问的接口，因此不参与授权判定；
+/// 界面必须据此标注为「公开」，否则会呈现一个关不掉的假开关。
+/// </param>
+public sealed record FunctionPointDto(string Code, string Name, string Group, bool IsPublic);
 
 /// <summary>角色一行（含功能点与配额）。</summary>
 /// <param name="Id">角色 Id。</param>

@@ -132,8 +132,7 @@ public sealed class AdminService(
         return ServiceResult<PermissionMatrixDto>.Success(new PermissionMatrixDto(
             // 功能点清单来自目录常量：这是唯一来源，界面不会漏项也不会出现已废弃的项
             FunctionPoints: FunctionPointLookup.Describe()
-                .Select(item => new FunctionPointDto(item.Code, item.Name, item.Group))
-                .ToList()
+                .Select(item => new FunctionPointDto(item.Code, item.Name, item.Group, item.IsPublic))
                 .ToList(),
             Roles: roleDtos,
             QuotaKeys: QuotaKeys,
@@ -339,10 +338,19 @@ public sealed class AdminService(
             return ServiceResult<int>.Fail(ErrorCode.InvalidParameter, $"未知功能点：{string.Join('、', unknown)}");
         }
 
+        // 公开功能点强制保留：它们对应的接口匿名就能访问，关掉也不会改变任何行为。
+        // 若允许「关掉」，权限矩阵就会显示出与事实不符的状态，因此这里统一补回，
+        // 保证落库的功能点集合永远等于「实际生效的权限」。
+        // 按目录顺序重建（同时顺带去重与校验顺序），而不是直接存调用方给来的数组。
+        var effective = FunctionPointCatalog.AllCodes
+            .Where(code => FunctionPointCatalog.IsPublic(code)
+                || codes.Contains(code, StringComparer.Ordinal))
+            .ToList();
+
         // 管理员角色必须保留全部功能点：否则可能把自己锁死，系统再也无法管理
         if (roleId == BuiltInRoleIds.Admin)
         {
-            var missing = FunctionPointCatalog.AllCodes.Except(codes).ToList();
+            var missing = FunctionPointCatalog.AllCodes.Except(effective).ToList();
             if (missing.Count > 0)
             {
                 return ServiceResult<int>.Fail(
@@ -351,15 +359,20 @@ public sealed class AdminService(
             }
         }
 
-        await roles.ReplaceFunctionPointsAsync(roleId, codes, cancellationToken).ConfigureAwait(false);
+        await roles.ReplaceFunctionPointsAsync(roleId, effective, cancellationToken).ConfigureAwait(false);
         permissions.InvalidateRole(roleId);
 
+        // 审计里写「用户提交的」条数，并说明其中多少是自动补回的公开功能点：
+        // 否则事后核对时无法解释为什么落库数量比提交的多
+        var autoAdded = effective.Count - codes.Distinct(StringComparer.Ordinal).Count();
         await WriteAuditAsync(
             actorId, actorName, "role.functionpoints", roleId,
-            $"功能点数 {codes.Count}：{string.Join(',', codes.Take(8))}{(codes.Count > 8 ? "…" : string.Empty)}",
+            $"功能点数 {effective.Count}"
+            + (autoAdded > 0 ? $"（含自动保留的公开功能点 {autoAdded} 个）" : string.Empty)
+            + $"：{string.Join(',', effective.Take(8))}{(effective.Count > 8 ? "…" : string.Empty)}",
             cancellationToken).ConfigureAwait(false);
 
-        return ServiceResult<int>.Success(codes.Count);
+        return ServiceResult<int>.Success(effective.Count);
     }
 
     /// <summary>更新角色配额。</summary>

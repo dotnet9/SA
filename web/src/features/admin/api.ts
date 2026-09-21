@@ -55,6 +55,11 @@ export interface FunctionPoint {
   code: string;
   name: string;
   group: string;
+  /**
+   * 是否公开功能点（不登录即可访问）。公开功能点在后端没有挂校验，勾选与否都不改变行为，
+   * 因此矩阵里必须标注为「公开」并禁用开关——否则就是一个关不掉的假开关。
+   */
+  isPublic: boolean;
 }
 
 export interface RoleRow {

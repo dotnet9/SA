@@ -251,6 +251,15 @@ public class AuthFlowTests(ApiFactory factory) : IClassFixture<ApiFactory>
         Assert.Equal(2001, document.RootElement.GetProperty("code").GetInt32());
     }
 
+    /// <summary>
+    /// 令牌存在但校验失败：拒绝，且响应体是标准的 2001 失败信封。
+    /// </summary>
+    /// <remarks>
+    /// 公开读接口允许匿名访问，因此这里必须确保「坏令牌」不是被降级成匿名——
+    /// 否则受限角色的过期令牌会在公开页上拿到全市场数据（数据范围被绕过）。
+    /// 断言响应体而不只是状态码，是为了防止实现改动后悄悄变成「挑战式 401」而丢掉错误码，
+    /// 前端就无法据此触发令牌刷新。
+    /// </remarks>
     [Fact]
     public async Task 伪造令牌被拒绝()
     {
@@ -260,6 +269,24 @@ public class AuthFlowTests(ApiFactory factory) : IClassFixture<ApiFactory>
         using var response = await client.GetAsync("/api/me");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(2001, document.RootElement.GetProperty("code").GetInt32());
+    }
+
+    /// <summary>
+    /// 坏令牌打在公开接口上同样被拒，而不是「反正公开，就当匿名放行」。
+    /// </summary>
+    [Fact]
+    public async Task 伪造令牌访问公开接口也被拒绝()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "not.a.jwt");
+
+        using var response = await client.GetAsync("/api/market/overview");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(2001, document.RootElement.GetProperty("code").GetInt32());
     }
 
     [Fact]

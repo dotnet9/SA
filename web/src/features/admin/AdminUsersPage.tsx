@@ -381,10 +381,10 @@ function RolesPanel() {
 
   // 按分组组织功能点：矩阵按分组展示，阅读顺序与设计文档一致
   const grouped = useMemo(() => {
-    const map = new Map<string, { code: string; name: string }[]>();
+    const map = new Map<string, { code: string; name: string; isPublic: boolean }[]>();
     for (const point of data?.functionPoints ?? []) {
       const list = map.get(point.group) ?? [];
-      list.push({ code: point.code, name: point.name });
+      list.push({ code: point.code, name: point.name, isPublic: point.isPublic });
       map.set(point.group, list);
     }
 
@@ -494,8 +494,32 @@ function RolesPanel() {
                           <span className="mono fs-11 t-3" style={{ marginLeft: 6 }}>
                             {point.code}
                           </span>
+                          {point.isPublic ? (
+                            <span
+                              className="tag tag-accent"
+                              style={{ marginLeft: 6 }}
+                              title="公开功能点：对应接口不登录即可访问，因此不参与授权判定"
+                            >
+                              公开
+                            </span>
+                          ) : null}
                         </td>
                         {data.roles.map((role) => {
+                          // 公开功能点在后端没有挂校验，勾不勾都不改变行为。
+                          // 这里固定显示为「已开启且不可改」，避免出现一个关不掉、也看不出为什么的开关。
+                          if (point.isPublic) {
+                            return (
+                              <td key={role.id} className="num">
+                                <input
+                                  type="checkbox"
+                                  checked
+                                  disabled
+                                  title="公开功能点：不登录即可访问，无法关闭"
+                                />
+                              </td>
+                            );
+                          }
+
                           const checked = role.functionPoints.includes(point.code);
                           return (
                             <td key={role.id} className="num">
@@ -529,12 +553,22 @@ function RolesPanel() {
         <br />
         功能点目录是权限体系的唯一来源（与需求规格 §7.1 的 28 项一致），矩阵由它直接生成，因此不会漏项。
         <br />
+        <b>标「公开」的 11 个功能点不参与授权判定</b>
+        ：它们对应的接口匿名即可访问（行情、搜索、个股各模块、拓扑图），
+        因此固定显示为已开启且不可改。其余 17 个功能点照常生效。
+        <br />
         数据范围由 <code>{data.dataScopes.map((scope) => scope.code).join(' / ')}</code> 控制：
         {data.dataScopes.map((scope) => ` ${scope.name}=${scope.description}；`).join('')}
+        数据范围对<b>已登录用户</b>生效（决定其能看到多少标的）；匿名用户没有个人范围，看到的是全市场公开数据。
         <br />
         改动会立即使该角色的权限缓存失效，用户的下一次请求即按新权限判定（无需重新登录）。
         <br />
-        配额为 0 表示该操作对该角色完全关闭（例如 <code>export.daily=0</code> 即不允许导出）。
+        配额键共 {data.quotaKeys.length} 个：
+        <code>{data.quotaKeys.join(' / ')}</code>。
+        <b>注意 0 的含义目前不统一</b>
+        ：额度类（<code>quota.daily</code>、<code>export.rows</code>）按 <code>QuotaService</code> 的规定
+        「0 = 不限制」；而数量上限类（<code>watchlist.max</code>、<code>alert.max</code>、<code>strategy.max</code>）
+        在用例里按「0 = 不允许新增」判定。填 0 前请先确认该键走的是哪一种。
       </div>
     </>
   );

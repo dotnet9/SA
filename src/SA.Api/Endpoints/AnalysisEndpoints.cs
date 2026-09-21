@@ -9,8 +9,8 @@ namespace SA.Api.Endpoints;
 /// 规则引擎推算端点：行业景气度、个股因果链与传导带宽。
 /// </summary>
 /// <remarks>
-/// 这两个接口共用 <c>stock.industry</c>（行业）与 <c>stock.trend</c>（传导带宽依赖日线）的语义，
-/// 这里按更贴切的归属分别校验：景气度属行业视图，因果链属个股趋势视图。
+/// <b>公开读接口</b>：两者都是由公开数据算出的分析结果，不登录也能看。
+/// 返回体里每项都带权重、口径与置信度，因此公开不代表「不可核对」。
 /// </remarks>
 public static class AnalysisEndpoints
 {
@@ -21,11 +21,11 @@ public static class AnalysisEndpoints
     {
         app.MapGet("/api/industry/prosperity", GetProsperityAsync)
             .WithTags("analysis")
-            .RequireFunctionPoint(FunctionPointCatalog.StockIndustry);
+            .AllowPublicRead();
 
         app.MapGet("/api/stocks/{code}/causal", GetCausalAsync)
             .WithTags("analysis")
-            .RequireFunctionPoint(FunctionPointCatalog.StockTrend);
+            .AllowPublicRead();
 
         return app;
     }

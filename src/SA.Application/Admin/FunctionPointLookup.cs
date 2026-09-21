@@ -12,17 +12,21 @@ namespace SA.Application.Admin;
 public static class FunctionPointLookup
 {
     /// <summary>
-    /// 全部功能点及其名称与分组，顺序与目录中的分组顺序一致。
+    /// 全部功能点及其名称、分组与公开标记，顺序与目录中的分组顺序一致。
     /// </summary>
-    public static IReadOnlyList<(string Code, string Name, string Group)> Describe()
+    /// <remarks>
+    /// 公开标记来自目录（<see cref="FunctionPointCatalog.PublicCodes"/>），而不是前端硬编码：
+    /// 公开面调整时只改目录一处，矩阵与接口同步跟着变。
+    /// </remarks>
+    public static IReadOnlyList<(string Code, string Name, string Group, bool IsPublic)> Describe()
     {
-        var result = new List<(string, string, string)>(FunctionPointCatalog.AllCodes.Count);
+        var result = new List<(string, string, string, bool)>(FunctionPointCatalog.AllCodes.Count);
 
         foreach (var group in FunctionPointCatalog.Groups)
         {
             foreach (var point in group.Items)
             {
-                result.Add((point.Code, point.Name, group.Name));
+                result.Add((point.Code, point.Name, group.Name, FunctionPointCatalog.IsPublic(point.Code)));
             }
         }
 
@@ -33,7 +37,7 @@ public static class FunctionPointLookup
             if (!known.Contains(code))
             {
                 var name = FunctionPointCatalog.ByCode.TryGetValue(code, out var point) ? point.Name : code;
-                result.Add((code, name, "其他"));
+                result.Add((code, name, "其他", FunctionPointCatalog.IsPublic(code)));
             }
         }
 

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using SA.Api.Tests.Fakes;
 using SA.Application.Abstractions;
 using SA.Infrastructure.Collect.Hosting;
@@ -366,6 +367,11 @@ public sealed class TrendApiFactory : WebApplicationFactory<Program>
 
         builder.ConfigureTestServices(services =>
         {
+            // 采集层改为按 IEnumerable<T> 注入降级链，后注册不再能覆盖前面的注册：
+            // 必须先把真实源移除，再注册测试替身，否则真实源会排在链首并真的去打上游。
+            services.RemoveAll<IMarketListSource>();
+            services.RemoveAll<IKlineSource>();
+            services.RemoveAll<ITradingCalendarSource>();
             services.AddSingleton<IMarketListSource>(new FakeMarketListSource(FakeMarketListSource.DefaultRows));
             services.AddSingleton<IIndexSource, FakeIndexSource>();
             services.AddSingleton<ISectorSource, FakeSectorSource>();

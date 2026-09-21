@@ -461,3 +461,30 @@ html[data-numfont='ui'] {
   font-family: var(--font-num);
   color: var(--text-1);
 }
+
+/* 14. 未登录时的锁定导航。
+      原型只有 `.sa-navitem.is-locked { opacity: .4 }`（components.css:1129），
+      那是给「不可点的当前账号」用的。这里要表达的是「点得动，但会去登录页」，
+      0.4 太暗、也不像可点，因此对导航链接单独调亮，并补一个右侧锁形标记；
+      底部 Tab 没有 .is-locked 变体，一并补上（保持与侧边导航同样的视觉语言）。 */
+.sa-navitem.is-locked {
+  opacity: 0.62;
+}
+
+.sa-navitem.is-locked:hover {
+  opacity: 0.9;
+}
+
+.sa-navitem .ni-lock {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.app-tab.is-locked {
+  opacity: 0.62;
+}
+
+.app-tab.is-locked .at-icon {
+  color: var(--text-3);
+}

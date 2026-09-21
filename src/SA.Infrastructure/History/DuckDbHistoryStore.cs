@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using DuckDB.NET.Data;
 using Microsoft.Extensions.Logging;
 using SA.Application.Abstractions;
@@ -92,6 +92,10 @@ public sealed class DuckDbHistoryStore(ParquetPaths paths, ILogger<DuckDbHistory
     private const string Columns =
         "trade_date DATE, open DECIMAL(18,4), high DECIMAL(18,4), low DECIMAL(18,4), close DECIMAL(18,4), " +
         "volume DECIMAL(20,2), amount DECIMAL(20,2), turnover DECIMAL(10,4), vol_ratio DECIMAL(10,4), adj_factor DECIMAL(10,6)";
+
+    /// <summary>列名清单（读取时按序取，避免 SELECT * 的列序依赖）。</summary>
+    private const string DailySelect =
+        "trade_date, open, high, low, close, volume, amount, turnover, vol_ratio, adj_factor";
 
     /// <inheritdoc />
     public async Task<DateOnly?> GetLastDateAsync(string code, CancellationToken cancellationToken = default)
@@ -261,8 +265,8 @@ public sealed class DuckDbHistoryStore(ParquetPaths paths, ILogger<DuckDbHistory
             row.AppendValue(bar.Low);
             row.AppendValue(bar.Close);
             row.AppendValue(bar.Volume);
-            row.AppendValue(bar.Amount);
-            row.AppendValue(bar.Turnover);
+            DuckDbAppender.Nullable(row, bar.Amount);
+            DuckDbAppender.Nullable(row, bar.Turnover);
             row.AppendValue(bar.VolRatio);
             row.AppendValue(bar.AdjFactor);
             row.EndRow();
@@ -279,8 +283,9 @@ public sealed class DuckDbHistoryStore(ParquetPaths paths, ILogger<DuckDbHistory
             reader.GetDecimal(3),
             reader.GetDecimal(4),
             reader.GetDecimal(5),
-            reader.GetDecimal(6),
-            reader.GetDecimal(7),
+            // 腾讯源不提供成交额与换手率，库里就是 NULL：读回时保持 null 而不是 0
+            reader.IsDBNull(6) ? null : reader.GetDecimal(6),
+            reader.IsDBNull(7) ? null : reader.GetDecimal(7),
             reader.GetDecimal(8),
             reader.GetDecimal(9));
 
@@ -451,22 +456,22 @@ public sealed class DuckDbIndicatorStore(ParquetPaths paths, ILogger<DuckDbIndic
                 {
                     var appenderRow = appender.CreateRow();
                     appenderRow.AppendValue(row.Date);
-                    AppendNullable(appenderRow, row.Ma5);
-                    AppendNullable(appenderRow, row.Ma10);
-                    AppendNullable(appenderRow, row.Ma20);
-                    AppendNullable(appenderRow, row.Ma60);
-                    AppendNullable(appenderRow, row.Dif);
-                    AppendNullable(appenderRow, row.Dea);
-                    AppendNullable(appenderRow, row.Macd);
-                    AppendNullable(appenderRow, row.K);
-                    AppendNullable(appenderRow, row.D);
-                    AppendNullable(appenderRow, row.J);
-                    AppendNullable(appenderRow, row.Rsi6);
-                    AppendNullable(appenderRow, row.Rsi12);
-                    AppendNullable(appenderRow, row.Rsi24);
-                    AppendNullable(appenderRow, row.BollUp);
-                    AppendNullable(appenderRow, row.BollMid);
-                    AppendNullable(appenderRow, row.BollLow);
+                    DuckDbAppender.Nullable(appenderRow, row.Ma5);
+                    DuckDbAppender.Nullable(appenderRow, row.Ma10);
+                    DuckDbAppender.Nullable(appenderRow, row.Ma20);
+                    DuckDbAppender.Nullable(appenderRow, row.Ma60);
+                    DuckDbAppender.Nullable(appenderRow, row.Dif);
+                    DuckDbAppender.Nullable(appenderRow, row.Dea);
+                    DuckDbAppender.Nullable(appenderRow, row.Macd);
+                    DuckDbAppender.Nullable(appenderRow, row.K);
+                    DuckDbAppender.Nullable(appenderRow, row.D);
+                    DuckDbAppender.Nullable(appenderRow, row.J);
+                    DuckDbAppender.Nullable(appenderRow, row.Rsi6);
+                    DuckDbAppender.Nullable(appenderRow, row.Rsi12);
+                    DuckDbAppender.Nullable(appenderRow, row.Rsi24);
+                    DuckDbAppender.Nullable(appenderRow, row.BollUp);
+                    DuckDbAppender.Nullable(appenderRow, row.BollMid);
+                    DuckDbAppender.Nullable(appenderRow, row.BollLow);
                     appenderRow.EndRow();
                 }
             }
@@ -496,17 +501,11 @@ public sealed class DuckDbIndicatorStore(ParquetPaths paths, ILogger<DuckDbIndic
         }
     }
 
-    private static void AppendNullable(IDuckDBAppenderRow row, decimal? value)
-    {
-        if (value is null)
-        {
-            row.AppendNullValue();
-        }
-        else
-        {
-            row.AppendValue(value.Value);
-        }
-    }
+    /// <summary>
+    /// 写入可空小数列；<c>null</c> 写 SQL NULL（腾讯源不提供的成交额 / 换手率走这条路径）。
+    /// </summary>
+    internal static void AppendNullable(IDuckDBAppenderRow row, decimal? value) =>
+        DuckDbAppender.Nullable(row, value);
 
     private static IndicatorRow ReadIndicatorRow(DuckDBDataReader reader) =>
         new(
@@ -530,4 +529,27 @@ public sealed class DuckDbIndicatorStore(ParquetPaths paths, ILogger<DuckDbIndic
 
     private static decimal? Nullable(DuckDBDataReader reader, int ordinal) =>
         reader.IsDBNull(ordinal) ? null : reader.GetDecimal(ordinal);
+}
+
+/// <summary>
+/// DuckDB 追加器的小工具：日线与指标两个存储共用。
+/// </summary>
+/// <remarks>
+/// 独立成类而不是各自的私有方法，是因为它需要被两个存储类调用；
+/// 写 SQL NULL 与写 0 是两件事，腾讯 K 线不提供的成交额必须走前者。
+/// </remarks>
+internal static class DuckDbAppender
+{
+    /// <summary>写入可空小数列；<c>null</c> 写 SQL NULL。</summary>
+    internal static void Nullable(IDuckDBAppenderRow row, decimal? value)
+    {
+        if (value is null)
+        {
+            row.AppendNullValue();
+        }
+        else
+        {
+            row.AppendValue(value.Value);
+        }
+    }
 }

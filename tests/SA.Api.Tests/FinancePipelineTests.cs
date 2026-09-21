@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using SA.Api.Tests.Fakes;
 using SA.Application.Abstractions;
 using SA.Domain.Entities.Finance;
@@ -116,16 +117,37 @@ public class FinancePipelineTests : IClassFixture<FinanceApiFactory>
         Assert.Equal(1003, document.RootElement.GetProperty("code").GetInt32());
     }
 
+    /// <summary>
+    /// 财务是公开数据：即便角色的功能点里没有 <c>stock.finance</c>，也能读到（不登录同样能读）。
+    /// </summary>
+    /// <remarks>
+    /// 早期实现要求 <c>stock.finance</c>，返回 2002；改为公开读之后该功能点不再参与判定。
+    /// 这条用例把「不再拦截」固定下来，避免日后有人凭直觉把校验加回去，
+    /// 从而让公开页对该角色静默变成拒绝页。
+    /// </remarks>
     [Fact]
-    public async Task 无财务功能点的角色返回2002()
+    public async Task 无财务功能点的角色仍可读财务数据()
     {
+        await _factory.CollectAsync();
+
         using var client = await _factory.CreateNoFinanceClientAsync();
 
         using var response = await client.GetAsync("/api/stocks/300750/finance");
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Equal(2002, document.RootElement.GetProperty("code").GetInt32());
+        Assert.Equal(0, document.RootElement.GetProperty("code").GetInt32());
+
+        // 匿名同样可读，且拿到的是同一份数据
+        using var anonymous = _factory.CreateClient(
+            new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions { HandleCookies = false });
+        using var anonymousResponse = await anonymous.GetAsync("/api/stocks/300750/finance");
+
+        Assert.Equal(HttpStatusCode.OK, anonymousResponse.StatusCode);
+        using var anonymousDocument = JsonDocument.Parse(await anonymousResponse.Content.ReadAsStringAsync());
+        Assert.Equal(
+            document.RootElement.GetProperty("data").GetRawText(),
+            anonymousDocument.RootElement.GetProperty("data").GetRawText());
     }
 
     [Fact]
@@ -291,6 +313,11 @@ public sealed class FinanceApiFactory : WebApplicationFactory<Program>
 
         builder.ConfigureTestServices(services =>
         {
+            // 采集层改为按 IEnumerable<T> 注入降级链，后注册不再能覆盖前面的注册：
+            // 必须先把真实源移除，再注册测试替身，否则真实源会排在链首并真的去打上游。
+            services.RemoveAll<IMarketListSource>();
+            services.RemoveAll<IKlineSource>();
+            services.RemoveAll<ITradingCalendarSource>();
             services.AddSingleton<IMarketListSource>(new FakeMarketListSource(FakeMarketListSource.DefaultRows));
             services.AddSingleton<IIndexSource, FakeIndexSource>();
             services.AddSingleton<ISectorSource, FakeSectorSource>();

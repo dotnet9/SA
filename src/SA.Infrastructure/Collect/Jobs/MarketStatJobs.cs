@@ -159,11 +159,18 @@ public sealed class TradingCalendarJob(
 
         var result = await executor.ExecuteAsync(
             TaskName,
-            registry.Calendar,
+            registry.CalendarSources[0],
             "主源",
             async ct =>
             {
-                var days = await registry.Calendar.GetTradingDaysAsync(from, to, ct).ConfigureAwait(false);
+                var hit = await registry.GetTradingDaysWithFallbackAsync(from, to, ct).ConfigureAwait(false);
+                if (hit is null)
+                {
+                    return (0, 0);
+                }
+
+                logger.LogInformation("交易日历命中数据源：{Source}", hit.Value.Source);
+                var days = hit.Value.Days;
 
                 // 区间内全部日期先标记为休市，再把实际有日线的日期标为交易日：
                 // 这样「某天不是交易日」也有明确记录，不必靠「查不到」推断

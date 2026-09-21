@@ -98,6 +98,12 @@ public static class FunctionPointCatalog
     /// <summary>
     /// 全部功能点分组，顺序即权限矩阵的展示顺序。
     /// </summary>
+    /// <remarks>
+    /// <b>整组标记为公开</b>：需求要求「公开市场数据不登录也能看」，而「模块访问」一组
+    /// （大盘、搜索、个股各模块、拓扑）全是公开数据，对应接口匿名即可读取。
+    /// 因此这些功能点<b>不参与授权判定</b>——它们仍然保留在矩阵里，但会明确标注为「公开」，
+    /// 而不是做成点了没反应的开关（见 <see cref="PublicCodes"/>）。
+    /// </remarks>
     public static IReadOnlyList<FunctionPointGroup> Groups { get; } =
     [
         new("模块访问",
@@ -113,7 +119,7 @@ public static class FunctionPointCatalog
             new(StockRisk, "风险与舆情监控", "风险矩阵、告警、舆情情绪"),
             new(StockRating, "机构评级与盈利预测", "评级分布、目标价、一致预期"),
             new(TopologyView, "拓扑图总览", "四种拓扑图集中对照页")
-        ]),
+        ], IsPublic: true),
         new("自选与选股",
         [
             new(WatchlistView, "查看自选股", "查看自选股盯盘列表"),
@@ -158,13 +164,39 @@ public static class FunctionPointCatalog
         Groups.SelectMany(g => g.Items).Select(i => i.Code).ToArray();
 
     /// <summary>
+    /// 公开功能点：对应接口匿名即可访问，因此不参与授权判定。
+    /// </summary>
+    /// <remarks>
+    /// 它们仍然出现在权限矩阵里（用户需要知道有哪些模块），但界面必须标注为「公开」，
+    /// 否则会出现「关掉开关却依然能访问」的假开关。
+    /// </remarks>
+    public static IReadOnlySet<string> PublicCodes { get; } =
+        Groups.Where(g => g.IsPublic)
+            .SelectMany(g => g.Items)
+            .Select(i => i.Code)
+            .ToHashSet(StringComparer.Ordinal);
+
+    /// <summary>
+    /// 真正参与授权判定的功能点（公开面之外的）。
+    /// </summary>
+    public static IReadOnlyList<string> GatedCodes { get; } =
+        AllCodes.Where(code => !PublicCodes.Contains(code)).ToArray();
+
+    /// <summary>
     /// 编码到功能点的索引，用于校验与展示。
     /// </summary>
     public static IReadOnlyDictionary<string, FunctionPoint> ByCode { get; } =
-        Groups.SelectMany(g => g.Items).ToDictionary(i => i.Code, StringComparer.Ordinal);
+        Groups.SelectMany(g => g.Items)
+            .Select(i => i with { IsPublic = PublicCodes.Contains(i.Code) })
+            .ToDictionary(i => i.Code, StringComparer.Ordinal);
 
     /// <summary>
     /// 判断编码是否为受支持的功能点。
     /// </summary>
     public static bool Contains(string code) => ByCode.ContainsKey(code);
+
+    /// <summary>
+    /// 判断功能点是否属于公开面（不登录即可访问）。
+    /// </summary>
+    public static bool IsPublic(string code) => PublicCodes.Contains(code);
 }
