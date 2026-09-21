@@ -304,6 +304,79 @@ public class MarketPipelineTests : IClassFixture<MarketApiFactory>
         }
     }
 
+    /// <summary>
+    /// 降级到不含行业字段的备源时，不能把库里已有的行业抹成空。
+    /// </summary>
+    /// <remarks>
+    /// 全市场列表有降级链，备源（新浪）<b>完全没有行业字段</b>，解析结果是 <c>null</c>。
+    /// 若 upsert 无条件覆盖，一次降级扫描就会让全市场 5,564 只的行业全部变空——
+    /// 行业是搜索、行业页与同业对比的必需元数据，这是静默的数据丢失。
+    /// </remarks>
+    [Fact]
+    public async Task 备源缺少行业时不覆盖库里已有行业()
+    {
+        await _factory.RunCollectionAsync();
+
+        using var scope = _factory.Services.CreateScope();
+        var instruments = scope.ServiceProvider.GetRequiredService<IInstrumentStore>();
+
+        var before = await instruments.FindAsync("300750");
+        Assert.NotNull(before);
+        Assert.Equal("电池", before.Industry);
+
+        // 模拟备源扫描：同一代码，但行业为 null（新浪源的真实形态）
+        var today = SA.Domain.Common.SaTime.Today;
+        await instruments.UpsertAsync(
+        [
+            new SA.Domain.Entities.Market.Instrument
+            {
+                Code = "300750",
+                Name = "宁德时代",
+                Market = 0,
+                Board = "创业板",
+                Industry = null,
+                IsSt = false,
+                UpdatedOn = today
+            }
+        ]);
+
+        var after = await instruments.FindAsync("300750");
+
+        // 行业保留上一次已知值；其余可变字段仍按本次扫描更新
+        Assert.Equal("电池", after!.Industry);
+        Assert.Equal(today, after.UpdatedOn);
+    }
+
+    /// <summary>
+    /// 备源扫描仍能把新标的入库，只是行业为空。
+    /// </summary>
+    [Fact]
+    public async Task 备源扫描可以把新标的入库且行业为空()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var instruments = scope.ServiceProvider.GetRequiredService<IInstrumentStore>();
+
+        await instruments.UpsertAsync(
+        [
+            new SA.Domain.Entities.Market.Instrument
+            {
+                Code = "920001",
+                Name = "纬达光电",
+                Market = 0,
+                Board = "北交所",
+                Industry = null,
+                IsSt = false,
+                UpdatedOn = SA.Domain.Common.SaTime.Today
+            }
+        ]);
+
+        var row = await instruments.FindAsync("920001");
+        Assert.NotNull(row);
+        Assert.Null(row.Industry);
+        Assert.Equal("北交所", row.Board);
+    }
+
+
     /* ------------------------------------------------------------------
        工具
        ------------------------------------------------------------------ */

@@ -60,9 +60,18 @@ public sealed class InstrumentStore(SaDbContext db) : IInstrumentStore
                 row.Name = instrument.Name;
                 row.Market = instrument.Market;
                 row.Board = instrument.Board;
-                row.Industry = instrument.Industry;
                 row.IsSt = instrument.IsSt;
                 row.UpdatedOn = instrument.UpdatedOn;
+
+                // 行业只在本次来源确实提供了的时候才覆盖。
+                // 原因：全市场列表有降级链，备源（新浪）**完全没有行业字段**（解析为 null），
+                // 无条件赋值会让一次降级扫描把库里已有的行业全部抹成空——那是静默的数据丢失，
+                // 比「字段暂时陈旧」严重得多。东财对退市标的把 f100 解析成 null 时同理，
+                // 保留上一次已知行业比清空更有用。
+                if (!string.IsNullOrWhiteSpace(instrument.Industry))
+                {
+                    row.Industry = instrument.Industry;
+                }
 
                 // 拼音一旦算出来就不必重算，只有新代码或改名时才覆盖
                 if (!string.IsNullOrEmpty(instrument.Pinyin))
