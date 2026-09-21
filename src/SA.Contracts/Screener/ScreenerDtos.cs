@@ -18,9 +18,30 @@ public sealed record ScreenerEnum(string Field, IReadOnlyList<string> Values);
 /// <summary>
 /// 选股条件的布尔筛选项。
 /// </summary>
-/// <param name="Field">字段名：isSt。</param>
+/// <param name="Field">字段名：isSt / includeFinancials。</param>
 /// <param name="Value">是否保留该类标的。</param>
 public sealed record ScreenerFlag(string Field, bool Value);
+
+/// <summary>
+/// 连续性筛选项：「某字段连续 N 年落在区间内」（实施计划 §5.3）。
+/// </summary>
+/// <remarks>
+/// <para>
+/// 价值投资的核心是<b>持续性</b>而非单期数值——「连续 5 年 ROE &gt; 15%」比「今年 ROE 高」
+/// 有意义得多。判定只取<b>年报</b>（季报是累计口径，混在一条序列里比较无意义），
+/// 且相邻年份<b>不得跳年</b>：缺年报即中断。
+/// </para>
+/// <para>
+/// <paramref name="Years"/> 建议取 3 / 5 / 8。历史数据不足的标的<b>不静默排除</b>，
+/// 而是在结果行上标 <see cref="ScreenerRowDto.FundamentalYears"/> 供界面提示
+/// 「历史数据不足（已有 M/N 年）」。
+/// </para>
+/// </remarks>
+/// <param name="Field">字段名，取值见 <see cref="ScreenerFields"/> 的基本面字段。</param>
+/// <param name="Min">下限（含）；null 表示不限。</param>
+/// <param name="Max">上限（含）；null 表示不限。</param>
+/// <param name="Years">要求的连续年数。</param>
+public sealed record ScreenerContinuous(string Field, decimal? Min, decimal? Max, int Years);
 
 /// <summary>
 /// 条件选股请求（<c>POST /api/screener</c>）。
@@ -33,6 +54,7 @@ public sealed record ScreenerFlag(string Field, bool Value);
 /// <param name="Page">页码（1 起）。</param>
 /// <param name="PageSize">每页条数（上限 200）。</param>
 /// <param name="Preset">预设条件名（与自定义条件二选一，用预设时忽略其余条件）。</param>
+/// <param name="Continuous">连续性条件（连续 N 年）。</param>
 public sealed record ScreenerRequest(
     IReadOnlyList<ScreenerRange>? Ranges,
     IReadOnlyList<ScreenerEnum>? Enums,
@@ -41,7 +63,8 @@ public sealed record ScreenerRequest(
     bool SortDesc,
     int Page,
     int PageSize,
-    string? Preset);
+    string? Preset,
+    IReadOnlyList<ScreenerContinuous>? Continuous = null);
 
 /// <summary>
 /// 选股结果一行。
@@ -60,6 +83,33 @@ public sealed record ScreenerRequest(
 /// <param name="Cap">总市值（亿元）。</param>
 /// <param name="FloatCap">流通市值（亿元）。</param>
 /// <param name="IsSt">是否 ST。</param>
+/// <param name="HasFundamental">是否有财报数据（最新一期）。</param>
+/// <param name="FundamentalYears">
+/// 已采集的<b>年报</b>期数（连续，从最新年度往回数）。连续性条件据此提示「历史数据不足」。
+/// </param>
+/// <param name="FundamentalAsOf">基本面口径报告期。</param>
+/// <param name="IsFinancial">是否金融业（银行/保险/证券），其部分字段天然为空。</param>
+/// <param name="Roe">加权 ROE（百分数）。</param>
+/// <param name="RoeDeducted">扣非加权 ROE（百分数）。</param>
+/// <param name="GrossMargin">销售毛利率（百分数）。</param>
+/// <param name="NetMargin">销售净利率（百分数）。</param>
+/// <param name="Roic">投入资本回报率（百分数）。</param>
+/// <param name="DebtRatio">资产负债率（百分数）。</param>
+/// <param name="CurrentRatio">流动比率。</param>
+/// <param name="QuickRatio">速动比率。</param>
+/// <param name="InterestDebtRatio">有息负债率（百分数）。</param>
+/// <param name="InterestCoverageRatio">利息保障倍数。</param>
+/// <param name="OperatingCashFlowToRevenue">经营现金流 ÷ 营业总收入。</param>
+/// <param name="OperatingCashFlowToNetProfit">经营现金流 ÷ 净利润。</param>
+/// <param name="FreeCashFlow">自由现金流（亿元）。</param>
+/// <param name="InventoryTurnoverDays">存货周转天数。</param>
+/// <param name="ReceivableTurnoverDays">应收账款周转天数。</param>
+/// <param name="RevenueYoy">营收同比（百分数）。</param>
+/// <param name="NetProfitYoy">净利同比（百分数）。</param>
+/// <param name="DeductedNetProfitYoy">扣非净利同比（百分数）。</param>
+/// <param name="Eps">每股收益（元）。</param>
+/// <param name="Bps">每股净资产（元）。</param>
+/// <param name="DividendYield">股息率（百分数）；来自业绩报表（本报表不含股息率）。</param>
 public sealed record ScreenerRowDto(
     string Code,
     string Name,
@@ -74,7 +124,32 @@ public sealed record ScreenerRowDto(
     decimal? Pb,
     decimal Cap,
     decimal FloatCap,
-    bool IsSt);
+    bool IsSt,
+    bool HasFundamental = false,
+    int FundamentalYears = 0,
+    string? FundamentalAsOf = null,
+    bool IsFinancial = false,
+    decimal? Roe = null,
+    decimal? RoeDeducted = null,
+    decimal? GrossMargin = null,
+    decimal? NetMargin = null,
+    decimal? Roic = null,
+    decimal? DebtRatio = null,
+    decimal? CurrentRatio = null,
+    decimal? QuickRatio = null,
+    decimal? InterestDebtRatio = null,
+    decimal? InterestCoverageRatio = null,
+    decimal? OperatingCashFlowToRevenue = null,
+    decimal? OperatingCashFlowToNetProfit = null,
+    decimal? FreeCashFlow = null,
+    decimal? InventoryTurnoverDays = null,
+    decimal? ReceivableTurnoverDays = null,
+    decimal? RevenueYoy = null,
+    decimal? NetProfitYoy = null,
+    decimal? DeductedNetProfitYoy = null,
+    decimal? Eps = null,
+    decimal? Bps = null,
+    decimal? DividendYield = null);
 
 /// <summary>
 /// 选股结果。
@@ -122,13 +197,40 @@ public sealed record ScreenerFieldDto(string Field, string Name, string Unit, de
 /// <param name="ExportQuota">今日剩余导出次数；<c>-1</c> 表示未配置上限（不限）。</param>
 /// <param name="ExportRowLimit">单次导出的行数上限。</param>
 /// <param name="StrategyQuota">可保存的策略数量上限；<c>-1</c> 表示不限。</param>
+/// <param name="FieldGroups">字段分组（界面据此折叠展示，默认只展开「质量」组）。</param>
+/// <param name="CaliberNotes">
+/// 口径提示，由后端下发而不是前端硬编码（实施计划 §5.4）。
+/// </param>
+/// <param name="ContinuousFields">可用于连续性条件的字段名。</param>
+/// <param name="ContinuousYears">连续性条件可选年数（3 / 5 / 8）。</param>
+/// <param name="FundamentalAsOf">基本面口径报告期；未采集为 null。</param>
 public sealed record ScreenerMetaDto(
     IReadOnlyList<ScreenerFieldDto> Fields,
     IReadOnlyList<ScreenerPresetDto> Presets,
     IReadOnlyList<string> Boards,
     int ExportQuota,
     int ExportRowLimit,
-    int StrategyQuota);
+    int StrategyQuota,
+    IReadOnlyList<ScreenerFieldGroupDto> FieldGroups,
+    IReadOnlyList<string> CaliberNotes,
+    IReadOnlyList<string> ContinuousFields,
+    IReadOnlyList<int> ContinuousYears,
+    string? FundamentalAsOf);
+
+/// <summary>
+/// 字段分组。
+/// </summary>
+/// <param name="Key">分组键。</param>
+/// <param name="Name">中文名。</param>
+/// <param name="Fields">组内字段名。</param>
+/// <param name="DefaultExpanded">是否默认展开（其余折叠）。</param>
+/// <param name="Note">该组的口径说明；无则 null。</param>
+public sealed record ScreenerFieldGroupDto(
+    string Key,
+    string Name,
+    IReadOnlyList<string> Fields,
+    bool DefaultExpanded,
+    string? Note = null);
 
 /// <summary>
 /// 一次筛选的执行记录（同一张表同时承担筛选日志与「我的策略」）。
@@ -248,4 +350,74 @@ public static class ScreenerFields
 
     /// <summary>是否 ST。</summary>
     public const string IsSt = "isSt";
+
+    /// <summary>是否包含金融业（银行/保险/证券）。</summary>
+    public const string IncludeFinancials = "includeFinancials";
+
+    /* ------------------------------------------------------------------
+       基本面字段（实施计划 §5.2）。值来自 RPT_F10_FINANCE_MAINFINADATA。
+       ------------------------------------------------------------------ */
+
+    /// <summary>加权 ROE（百分数）。</summary>
+    public const string Roe = "roe";
+
+    /// <summary>扣非加权 ROE（百分数）。</summary>
+    public const string RoeDeducted = "roeDeducted";
+
+    /// <summary>销售毛利率（百分数）。</summary>
+    public const string GrossMargin = "grossMargin";
+
+    /// <summary>销售净利率（百分数）。</summary>
+    public const string NetMargin = "netMargin";
+
+    /// <summary>投入资本回报率（百分数）。</summary>
+    public const string Roic = "roic";
+
+    /// <summary>资产负债率（百分数）。</summary>
+    public const string DebtRatio = "debtRatio";
+
+    /// <summary>流动比率。</summary>
+    public const string CurrentRatio = "currentRatio";
+
+    /// <summary>速动比率。</summary>
+    public const string QuickRatio = "quickRatio";
+
+    /// <summary>有息负债率（百分数）。</summary>
+    public const string InterestDebtRatio = "interestDebtRatio";
+
+    /// <summary>利息保障倍数。</summary>
+    public const string InterestCoverageRatio = "interestCoverageRatio";
+
+    /// <summary>经营现金流 ÷ 营业总收入。</summary>
+    public const string OperatingCashFlowToRevenue = "operatingCashFlowToRevenue";
+
+    /// <summary>经营现金流 ÷ 净利润。</summary>
+    public const string OperatingCashFlowToNetProfit = "operatingCashFlowToNetProfit";
+
+    /// <summary>自由现金流（亿元）。</summary>
+    public const string FreeCashFlow = "freeCashFlow";
+
+    /// <summary>存货周转天数。</summary>
+    public const string InventoryTurnoverDays = "inventoryTurnoverDays";
+
+    /// <summary>应收账款周转天数。</summary>
+    public const string ReceivableTurnoverDays = "receivableTurnoverDays";
+
+    /// <summary>营收同比（百分数）。</summary>
+    public const string RevenueYoy = "revenueYoy";
+
+    /// <summary>净利同比（百分数）。</summary>
+    public const string NetProfitYoy = "netProfitYoy";
+
+    /// <summary>扣非净利同比（百分数）。</summary>
+    public const string DeductedNetProfitYoy = "deductedNetProfitYoy";
+
+    /// <summary>每股收益（元）。</summary>
+    public const string Eps = "eps";
+
+    /// <summary>每股净资产（元）。</summary>
+    public const string Bps = "bps";
+
+    /// <summary>股息率（百分数）。</summary>
+    public const string DividendYield = "dividendYield";
 }

@@ -74,6 +74,17 @@ public static class ScreenerRunCodec
             {
                 parts.Add(flag.Value ? "仅 ST" : "排除 ST");
             }
+            else if (flag.Field == ScreenerFields.IncludeFinancials && !flag.Value)
+            {
+                parts.Add("排除金融业");
+            }
+        }
+
+        foreach (var condition in request.Continuous ?? [])
+        {
+            var min = condition.Min?.ToString("0.##") ?? "不限";
+            var max = condition.Max?.ToString("0.##") ?? "不限";
+            parts.Add($"{condition.Field} 连续 {condition.Years} 年 ∈ [{min}, {max}]");
         }
 
         if (!string.IsNullOrWhiteSpace(request.SortBy))

@@ -131,6 +131,25 @@ public sealed class FinanceStore(SaDbContext db) : IFinanceStore
             .Select(report => (DateTimeOffset?)report.UpdatedAt)
             .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
+    /// <inheritdoc />
+    public async Task<IReadOnlyDictionary<string, decimal?>> GetLatestDividendYieldsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        // 每只标的取最新报告期的那一条。股息率随分红方案更新，
+        // 用旧报告期的值会得到明显过时的股息率。
+        var latestDates = _db.FinancialReports
+            .GroupBy(report => report.Code)
+            .Select(group => new { Code = group.Key, ReportDate = group.Max(report => report.ReportDate) });
+
+        var rows = await _db.FinancialReports
+            .AsNoTracking()
+            .Join(latestDates, report => new { report.Code, report.ReportDate }, latest => latest, (report, _) => report)
+            .Select(report => new { report.Code, report.DividendYield })
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        return rows.ToDictionary(row => row.Code, row => row.DividendYield, StringComparer.Ordinal);
+    }
+
     /// <summary>把新数据覆盖到已有行上（不新建实例，保持 EF 跟踪关系）。</summary>
     private static void Copy(FinancialReport source, FinancialReport target)
     {

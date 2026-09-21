@@ -472,6 +472,16 @@ internal sealed class FakeFinanceStore(
 
     public Task<DateTimeOffset?> GetLastUpdatedAtAsync(string code, CancellationToken cancellationToken = default) =>
         Task.FromResult<DateTimeOffset?>(DateTimeOffset.Now);
+
+    public Task<IReadOnlyDictionary<string, decimal?>> GetLatestDividendYieldsAsync(
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyDictionary<string, decimal?>>(
+            reports
+                .GroupBy(report => report.Code, StringComparer.Ordinal)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.OrderByDescending(report => report.ReportDate).First().DividendYield,
+                    StringComparer.Ordinal));
 }
 
 /// <summary>股权存储替身（事件模块只读）。</summary>

@@ -34,6 +34,16 @@ public sealed class SchedulerHostedService(
     /// <summary>市场统计的重跑间隔。</summary>
     private static readonly TimeSpan MarketStatInterval = TimeSpan.FromMinutes(5);
 
+    /// <summary>
+    /// 全市场基本面的重跑间隔。
+    /// </summary>
+    /// <remarks>
+    /// 6 小时而不是每天一次：披露季里同一报告期会持续有新的标的补披露，
+    /// 而一次扫描是 27 个请求（约 20 秒），成本远低于错过新披露的代价。
+    /// 主键是 upsert，重扫幂等。
+    /// </remarks>
+    private static readonly TimeSpan FundamentalInterval = TimeSpan.FromHours(6);
+
     /// <summary>非交易日的轮询间隔（只需偶尔确认是否进入新的交易日）。</summary>
     private static readonly TimeSpan IdleInterval = TimeSpan.FromMinutes(30);
 
@@ -42,6 +52,7 @@ public sealed class SchedulerHostedService(
     private DateTimeOffset _lastUniverseAt = DateTimeOffset.MinValue;
     private DateTimeOffset _lastCalendarAt = DateTimeOffset.MinValue;
     private DateTimeOffset _lastSectorKlineAt = DateTimeOffset.MinValue;
+    private DateTimeOffset _lastFundamentalAt = DateTimeOffset.MinValue;
 
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -123,6 +134,11 @@ public sealed class SchedulerHostedService(
 
         await RunAsync("市场统计", () => provider.GetRequiredService<MarketStatJob>().RunAsync(cancellationToken)).ConfigureAwait(false);
         _lastMarketStatAt = SaTime.Now;
+
+        // 全市场基本面：选股器的数据基础。放在最后，因为它最慢（27 次请求），
+        // 且首屏（市场概览）不依赖它。
+        await RunAsync("全市场基本面", () => provider.GetRequiredService<FundamentalJob>().RunMarketAsync(cancellationToken)).ConfigureAwait(false);
+        _lastFundamentalAt = SaTime.Now;
     }
 
     /// <summary>
@@ -183,6 +199,12 @@ public sealed class SchedulerHostedService(
         {
             await RunAsync("行业指数日线", () => provider.GetRequiredService<SectorKlineJob>().RunPriorityAsync(cancellationToken)).ConfigureAwait(false);
             _lastSectorKlineAt = now;
+        }
+
+        if (now - _lastFundamentalAt >= FundamentalInterval)
+        {
+            await RunAsync("全市场基本面", () => provider.GetRequiredService<FundamentalJob>().RunMarketAsync(cancellationToken)).ConfigureAwait(false);
+            _lastFundamentalAt = now;
         }
 
         // 按需采集不在这里：它由 OnDemandHostedService 以 3 秒节拍独立处理，

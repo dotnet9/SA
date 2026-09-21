@@ -16,6 +16,15 @@ export interface ScreenerPreset {
   description: string;
 }
 
+export interface ScreenerFieldGroup {
+  key: string;
+  name: string;
+  fields: string[];
+  /** 是否默认展开（其余折叠：一屏 30 个输入框会让用户无从下手）。 */
+  defaultExpanded: boolean;
+  note: string | null;
+}
+
 export interface ScreenerMeta {
   fields: ScreenerField[];
   presets: ScreenerPreset[];
@@ -24,6 +33,16 @@ export interface ScreenerMeta {
   exportQuota: number;
   /** 单次导出的行数上限。 */
   exportRowLimit: number;
+  /** 字段分组，界面据此折叠展示。 */
+  fieldGroups: ScreenerFieldGroup[];
+  /** 口径提示（由后端下发，不在前端硬编码）。 */
+  caliberNotes: string[];
+  /** 可用于连续性条件的字段。 */
+  continuousFields: string[];
+  /** 连续性条件可选年数。 */
+  continuousYears: number[];
+  /** 基本面口径报告期；未采集为 null。 */
+  fundamentalAsOf: string | null;
 }
 
 export interface ScreenerRow {
@@ -41,6 +60,34 @@ export interface ScreenerRow {
   cap: number;
   floatCap: number;
   isSt: boolean;
+  /** 是否有财报数据（最新一期）。 */
+  hasFundamental: boolean;
+  /** 已采集的连续年报期数。 */
+  fundamentalYears: number;
+  fundamentalAsOf: string | null;
+  /** 是否金融业：其毛利率/流动比率/ROIC 等字段为空属行业口径不同，不是数据缺失。 */
+  isFinancial: boolean;
+  roe: number | null;
+  roeDeducted: number | null;
+  grossMargin: number | null;
+  netMargin: number | null;
+  roic: number | null;
+  debtRatio: number | null;
+  currentRatio: number | null;
+  quickRatio: number | null;
+  interestDebtRatio: number | null;
+  interestCoverageRatio: number | null;
+  operatingCashFlowToRevenue: number | null;
+  operatingCashFlowToNetProfit: number | null;
+  freeCashFlow: number | null;
+  inventoryTurnoverDays: number | null;
+  receivableTurnoverDays: number | null;
+  revenueYoy: number | null;
+  netProfitYoy: number | null;
+  deductedNetProfitYoy: number | null;
+  eps: number | null;
+  bps: number | null;
+  dividendYield: number | null;
 }
 
 export interface ScreenerResult {
@@ -54,10 +101,19 @@ export interface ScreenerResult {
   scopeNote: string | null;
 }
 
+/** 连续性条件：「某字段连续 N 年落在区间内」。 */
+export interface ScreenerContinuous {
+  field: string;
+  min: number | null;
+  max: number | null;
+  years: number;
+}
+
 export interface ScreenerCondition {
   ranges: { field: string; min: number | null; max: number | null }[];
   enums: { field: string; values: string[] }[];
   flags: { field: string; value: boolean }[];
+  continuous: ScreenerContinuous[];
   sortBy: string;
   sortDesc: boolean;
   page: number;

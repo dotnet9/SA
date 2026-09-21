@@ -91,6 +91,7 @@ public sealed class OnDemandHostedService(
         var dailyJob = provider.GetRequiredService<DailyKlineJob>();
         var indicatorJob = provider.GetRequiredService<IndicatorJob>();
         var financeJob = provider.GetRequiredService<FinanceJob>();
+        var fundamentalJob = provider.GetRequiredService<FundamentalJob>();
         var equityJob = provider.GetRequiredService<EquityJob>();
         var capitalJob = provider.GetRequiredService<CapitalJob>();
         var ratingJob = provider.GetRequiredService<RatingJob>();
@@ -106,6 +107,9 @@ public sealed class OnDemandHostedService(
             await RunStepAsync(code, "日线", () => dailyJob.RunIncrementalAsync(code, cancellationToken)).ConfigureAwait(false);
             await RunStepAsync(code, "指标", () => indicatorJob.RunAsync(code, cancellationToken)).ConfigureAwait(false);
             await RunStepAsync(code, "财务", () => financeJob.RunAsync(code, cancellationToken)).ConfigureAwait(false);
+            // 基本面历史序列：价值研究的「周期位置」与连续性条件都要它，而它只对
+            // 被关注的标的按需拉取（全市场扫描只覆盖最新一期）
+            await RunStepAsync(code, "基本面历史", () => fundamentalJob.RunHistoryAsync(code, cancellationToken)).ConfigureAwait(false);
             await RunStepAsync(code, "股权", () => equityJob.RunAsync(code, cancellationToken)).ConfigureAwait(false);
             await RunStepAsync(code, "资金", () => capitalJob.RunAsync(code, cancellationToken)).ConfigureAwait(false);
             await RunStepAsync(code, "评级", () => ratingJob.RunAsync(code, cancellationToken)).ConfigureAwait(false);

@@ -43,6 +43,7 @@ public sealed class SourceRegistry
         IEnumerable<ITradingCalendarSource> calendars,
         IEnumerable<IKlineSource> klines,
         IFinanceSource finance,
+        IFundamentalSource fundamental,
         IEquitySource equity,
         ICapitalSource capital,
         IFundFlowSource fundFlow,
@@ -58,6 +59,7 @@ public sealed class SourceRegistry
         Margin = margin;
         MarketFundFlow = marketFundFlow;
         Finance = finance;
+        Fundamental = fundamental;
         Equity = equity;
         Capital = capital;
         FundFlow = fundFlow;
@@ -97,6 +99,9 @@ public sealed class SourceRegistry
 
     /// <summary>财务报表源。</summary>
     public IFinanceSource Finance { get; }
+
+    /// <summary>基本面指标源（按报告期扫全市场的横截面因子）。</summary>
+    public IFundamentalSource Fundamental { get; }
 
     /// <summary>股权结构源。</summary>
     public IEquitySource Equity { get; }

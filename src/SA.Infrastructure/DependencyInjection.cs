@@ -134,6 +134,7 @@ public static class DependencyInjection
         services.AddSingleton<IKlineSource>(provider => provider.GetRequiredService<EastMoneyKlineSource>());
 
         services.AddSingleton<IFinanceSource, EastMoneyFinanceSource>();
+        services.AddSingleton<IFundamentalSource, EastMoneyFundamentalSource>();
         services.AddSingleton<IEquitySource, EastMoneyEquitySource>();
         services.AddSingleton<ICapitalSource, EastMoneyCapitalSource>();
         services.AddSingleton<IFundFlowSource, EastMoneyFundFlowSource>();
@@ -158,6 +159,7 @@ public static class DependencyInjection
         services.AddScoped<IndicatorJob>();
         services.AddScoped<BenchmarkDailyJob>();
         services.AddScoped<FinanceJob>();
+        services.AddScoped<FundamentalJob>();
         services.AddScoped<EquityJob>();
         services.AddScoped<CapitalJob>();
         services.AddScoped<SectorKlineJob>();
@@ -187,6 +189,7 @@ public static class DependencyInjection
         services.AddSingleton<IPinyinIndexer, ToolGoodPinyinIndexer>();
         services.AddScoped<IWatchlistStore, WatchlistStore>();
         services.AddScoped<IFinanceStore, FinanceStore>();
+        services.AddScoped<IFundamentalStore, FundamentalStore>();
         services.AddScoped<IEquityStore, EquityStore>();
         services.AddScoped<ICapitalStore, CapitalStore>();
         services.AddScoped<IEventAnnotationStore, EventAnnotationStore>();

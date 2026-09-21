@@ -96,6 +96,9 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
     /// <summary>业绩预告。</summary>
     public DbSet<EarningsForecast> EarningsForecasts => Set<EarningsForecast>();
 
+    /// <summary>基本面指标（按报告期的全市场横截面因子 + 单只历史序列）。</summary>
+    public DbSet<FundamentalMetric> FundamentalMetrics => Set<FundamentalMetric>();
+
     /// <summary>十大股东（含流通口径）。</summary>
     public DbSet<TopHolder> TopHolders => Set<TopHolder>();
 
@@ -520,6 +523,63 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
             {
                 nameof(EarningsForecast.NetProfitMin), nameof(EarningsForecast.NetProfitMax),
                 nameof(EarningsForecast.ChangeMin), nameof(EarningsForecast.ChangeMax)
+            })
+            {
+                entity.Property(property).HasConversion<double?>();
+            }
+        });
+
+        modelBuilder.Entity<FundamentalMetric>(entity =>
+        {
+            entity.ToTable("FundamentalMetric");
+            entity.HasKey(e => new { e.Code, e.ReportDate });
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.ReportType).HasMaxLength(16);
+            entity.Property(e => e.OrgType).HasMaxLength(16);
+            entity.Property(e => e.ReportDate).HasConversion(dateConverter);
+            entity.Property(e => e.NoticeDate).HasConversion(nullableDateConverter);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+
+            // 选股器与价值研究都要「按代码取最新报告期」，没有这个索引会走全表扫描
+            entity.HasIndex(e => new { e.Code, e.ReportDate }).IsUnique();
+            entity.HasIndex(e => e.ReportDate);
+            // 连续性条件只取年报，单独给一个索引
+            entity.HasIndex(e => new { e.ReportType, e.ReportDate });
+
+            // 金额类：元级别的大数，double 承载足够（与 FinancialReport 的处理一致）
+            foreach (var property in new[]
+            {
+                nameof(FundamentalMetric.OperatingCashFlow), nameof(FundamentalMetric.FreeCashFlow),
+                nameof(FundamentalMetric.RndExpense), nameof(FundamentalMetric.Revenue),
+                nameof(FundamentalMetric.NetProfit), nameof(FundamentalMetric.TotalAssets),
+                nameof(FundamentalMetric.TotalEquity), nameof(FundamentalMetric.Liability),
+                nameof(FundamentalMetric.TotalShare), nameof(FundamentalMetric.FreeShare)
+            })
+            {
+                entity.Property(property).HasConversion<double?>();
+            }
+
+            // 比率 / 百分数类
+            foreach (var property in new[]
+            {
+                nameof(FundamentalMetric.RoeWeighted), nameof(FundamentalMetric.RoeDeducted),
+                nameof(FundamentalMetric.GrossMargin), nameof(FundamentalMetric.NetMargin),
+                nameof(FundamentalMetric.Roic),
+                nameof(FundamentalMetric.OperatingCashFlowToRevenue),
+                nameof(FundamentalMetric.OperatingCashFlowToNetProfit),
+                nameof(FundamentalMetric.OperatingCashFlowToOperatingProfit),
+                nameof(FundamentalMetric.DebtRatio), nameof(FundamentalMetric.CurrentRatio),
+                nameof(FundamentalMetric.QuickRatio), nameof(FundamentalMetric.InterestDebtRatio),
+                nameof(FundamentalMetric.InterestCoverageRatio), nameof(FundamentalMetric.LiquidationRatio),
+                nameof(FundamentalMetric.InventoryTurnoverDays),
+                nameof(FundamentalMetric.ReceivableTurnoverDays),
+                nameof(FundamentalMetric.AssetTurnoverDays),
+                nameof(FundamentalMetric.RevenueYoy), nameof(FundamentalMetric.NetProfitYoy),
+                nameof(FundamentalMetric.DeductedNetProfitYoy),
+                nameof(FundamentalMetric.Eps), nameof(FundamentalMetric.EpsDeducted),
+                nameof(FundamentalMetric.Bps), nameof(FundamentalMetric.OperatingCashFlowPerShare),
+                nameof(FundamentalMetric.RndExpenseRatio), nameof(FundamentalMetric.RndPersonnel),
+                nameof(FundamentalMetric.StaffNumber)
             })
             {
                 entity.Property(property).HasConversion<double?>();

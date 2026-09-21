@@ -6,6 +6,7 @@ using SA.Application.Market;
 using SA.Contracts.Common;
 using SA.Contracts.Screener;
 using SA.Domain.Common;
+using SA.Domain.Entities.Finance;
 using SA.Domain.Entities.Market;
 
 namespace SA.Application.Screener;
@@ -32,6 +33,8 @@ public sealed class ScreenerService(
     MarketSnapshotCache cache,
     IQuoteSnapshotStore quotes,
     IInstrumentStore instruments,
+    IFundamentalStore fundamentals,
+    IFinanceStore finance,
     DataScopeFilter scopeFilter,
     IScreenerRunStore runs,
     IExportLogStore exportLogs)
@@ -52,22 +55,61 @@ public sealed class ScreenerService(
     /// 预设条件。
     /// </summary>
     /// <remarks>
+    /// <para>
     /// 每个预设的说明都写清口径，用户不必猜「低估值」到底是 PE 低于多少。
+    /// </para>
+    /// <para>
+    /// 预设有两种表达方式：<see cref="Filter"/>（对已算好的行做谓词）与
+    /// <see cref="Ranges"/>/<see cref="Flags"/>/<see cref="Continuous"/>（条件片段）。
+    /// 基本面预设走后者，因为它必须复用<b>同一套</b>区间与连续性判定逻辑——
+    /// 若为预设另写一份判定，两处口径迟早会漂移。
+    /// </para>
     /// </remarks>
-    private static readonly (string Key, string Name, string Description, Func<ScreenerRowDto, bool> Filter)[] Presets =
+    private sealed record Preset(
+        string Key,
+        string Name,
+        string Description,
+        Func<ScreenerRowDto, bool>? Filter = null,
+        IReadOnlyList<ScreenerRange>? Ranges = null,
+        IReadOnlyList<ScreenerFlag>? Flags = null,
+        IReadOnlyList<ScreenerContinuous>? Continuous = null);
+
+    private static readonly Preset[] Presets =
     [
-        ("large-value", "大盘低估值", "总市值 ≥ 500 亿，PE(TTM) 在 0–15 之间，排除 ST 与停牌",
-            row => row.Cap >= 500m && row.PeTtm is > 0 and <= 15m && !row.IsSt && row.Price > 0),
-        ("active-turnover", "交投活跃", "换手率 ≥ 5% 且成交额 ≥ 5 亿，排除 ST 与停牌",
-            row => row.Turnover >= 5m && row.Amount >= 5m && !row.IsSt && row.Price > 0),
-        ("strong-today", "今日强势", "涨幅 ≥ 3% 且 量比 ≥ 1.5，排除 ST 与停牌",
-            row => row.Pct >= 3m && row.VolRatio >= 1.5m && !row.IsSt && row.Price > 0),
-        ("pullback", "今日回调", "跌幅 ≤ -3% 且换手率 ≥ 2%，排除 ST 与停牌（用于找错杀）",
-            row => row.Pct <= -3m && row.Turnover >= 2m && !row.IsSt && row.Price > 0),
-        ("small-cap", "小市值", "总市值 ≤ 100 亿、成交额 ≥ 1 亿、PE(TTM) > 0，排除 ST 与停牌",
-            row => row.Cap <= 100m && row.Amount >= 1m && row.PeTtm is > 0 && !row.IsSt && row.Price > 0),
-        ("volume-spike", "放量异动", "量比 ≥ 2 且换手率 ≥ 3%，排除 ST 与停牌",
-            row => row.VolRatio >= 2m && row.Turnover >= 3m && !row.IsSt && row.Price > 0)
+        new("large-value", "大盘低估值", "总市值 ≥ 500 亿，PE(TTM) 在 0–15 之间，排除 ST 与停牌",
+            Filter: row => row.Cap >= 500m && row.PeTtm is > 0 and <= 15m && !row.IsSt && row.Price > 0),
+        new("active-turnover", "交投活跃", "换手率 ≥ 5% 且成交额 ≥ 5 亿，排除 ST 与停牌",
+            Filter: row => row.Turnover >= 5m && row.Amount >= 5m && !row.IsSt && row.Price > 0),
+        new("strong-today", "今日强势", "涨幅 ≥ 3% 且 量比 ≥ 1.5，排除 ST 与停牌",
+            Filter: row => row.Pct >= 3m && row.VolRatio >= 1.5m && !row.IsSt && row.Price > 0),
+        new("pullback", "今日回调", "跌幅 ≤ -3% 且换手率 ≥ 2%，排除 ST 与停牌（用于找错杀）",
+            Filter: row => row.Pct <= -3m && row.Turnover >= 2m && !row.IsSt && row.Price > 0),
+        new("small-cap", "小市值", "总市值 ≤ 100 亿、成交额 ≥ 1 亿、PE(TTM) > 0，排除 ST 与停牌",
+            Filter: row => row.Cap <= 100m && row.Amount >= 1m && row.PeTtm is > 0 && !row.IsSt && row.Price > 0),
+        new("volume-spike", "放量异动", "量比 ≥ 2 且换手率 ≥ 3%，排除 ST 与停牌",
+            Filter: row => row.VolRatio >= 2m && row.Turnover >= 3m && !row.IsSt && row.Price > 0),
+
+        // 价值投资预设（实施计划 §5.5）：只是把条件填进去，不做任何隐藏加权、不打分排序。
+        // 排除金融业是显式的（Flags），不是隐式过滤——金融业的相关字段为空，
+        // 不排除的话「连续 5 年 ROE ≥ 15%」会把银行按 null 静默筛掉，用户看不出原因。
+        new("high-roe-low-debt", "高 ROE 低负债",
+            "连续 5 年 ROE ≥ 15%，且最新一期资产负债率 ≤ 50%；排除金融业、ST 与停牌",
+            Ranges: [new ScreenerRange(ScreenerFields.DebtRatio, null, 50m)],
+            Flags: [new ScreenerFlag(ScreenerFields.IsSt, false), new ScreenerFlag(ScreenerFields.IncludeFinancials, false)],
+            Continuous: [new ScreenerContinuous(ScreenerFields.Roe, 15m, null, 5)]),
+        new("high-dividend", "高股息",
+            "股息率 ≥ 4% 且连续 3 年 ROE ≥ 10%；排除金融业、ST 与停牌",
+            Ranges: [new ScreenerRange(ScreenerFields.DividendYield, 4m, null)],
+            Flags: [new ScreenerFlag(ScreenerFields.IsSt, false), new ScreenerFlag(ScreenerFields.IncludeFinancials, false)],
+            Continuous: [new ScreenerContinuous(ScreenerFields.Roe, 10m, null, 3)]),
+        new("steady-growth", "连续成长",
+            "连续 3 年营收同比 ≥ 0% 且净利同比 ≥ 0%，排除 ST 与停牌",
+            Flags: [new ScreenerFlag(ScreenerFields.IsSt, false)],
+            Continuous:
+            [
+                new ScreenerContinuous(ScreenerFields.RevenueYoy, 0m, null, 3),
+                new ScreenerContinuous(ScreenerFields.NetProfitYoy, 0m, null, 3)
+            ])
     ];
 
     /// <summary>可筛选字段。</summary>
@@ -81,7 +123,99 @@ public sealed class ScreenerService(
         new(ScreenerFields.FloatCap, "流通市值", "亿元", 0m, 5000m),
         new(ScreenerFields.PeTtm, "PE(TTM)", "倍", 0m, 100m),
         new(ScreenerFields.Pb, "PB", "倍", 0m, 20m),
-        new(ScreenerFields.Price, "现价", "元", 0m, 1000m)
+        new(ScreenerFields.Price, "现价", "元", 0m, 1000m),
+
+        // 价值投资字段（实施计划 §5.2 / §5.5）：分组见 FieldGroups，
+        // 默认只展开「质量」，其余折叠，避免一屏堆 30 个输入框
+        new(ScreenerFields.Roe, "加权 ROE", "%", 0m, 30m),
+        new(ScreenerFields.RoeDeducted, "扣非 ROE", "%", 0m, 30m),
+        new(ScreenerFields.GrossMargin, "毛利率", "%", 0m, 80m),
+        new(ScreenerFields.NetMargin, "净利率", "%", 0m, 50m),
+        new(ScreenerFields.Roic, "ROIC", "%", 0m, 30m),
+        new(ScreenerFields.DebtRatio, "资产负债率", "%", 0m, 100m),
+        new(ScreenerFields.CurrentRatio, "流动比率", "倍", 0m, 10m),
+        new(ScreenerFields.QuickRatio, "速动比率", "倍", 0m, 10m),
+        new(ScreenerFields.InterestDebtRatio, "有息负债率", "%", 0m, 100m),
+        new(ScreenerFields.InterestCoverageRatio, "利息保障倍数", "倍", 0m, 100m),
+        new(ScreenerFields.OperatingCashFlowToRevenue, "经营现金流/营收", "倍", 0m, 1m),
+        new(ScreenerFields.OperatingCashFlowToNetProfit, "经营现金流/净利", "倍", 0m, 2m),
+        new(ScreenerFields.FreeCashFlow, "自由现金流", "亿元", 0m, 500m),
+        new(ScreenerFields.InventoryTurnoverDays, "存货周转天数", "天", 0m, 365m),
+        new(ScreenerFields.ReceivableTurnoverDays, "应收周转天数", "天", 0m, 365m),
+        new(ScreenerFields.RevenueYoy, "营收同比", "%", -50m, 100m),
+        new(ScreenerFields.NetProfitYoy, "净利同比", "%", -100m, 200m),
+        new(ScreenerFields.DeductedNetProfitYoy, "扣非净利同比", "%", -100m, 200m),
+        new(ScreenerFields.Eps, "每股收益", "元", 0m, 10m),
+        new(ScreenerFields.Bps, "每股净资产", "元", 0m, 50m),
+        new(ScreenerFields.DividendYield, "股息率", "%", 0m, 10m)
+    ];
+
+    /// <summary>
+    /// 字段分组（实施计划 §5.5）。
+    /// </summary>
+    /// <remarks>
+    /// 默认只展开「质量」组：一屏 30 个输入框会让用户无从下手，
+    /// 而价值投资者最先看的就是 ROE 与毛利率。
+    /// </remarks>
+    private static readonly ScreenerFieldGroupDto[] FieldGroups =
+    [
+        new("quality", "质量",
+            [ScreenerFields.Roe, ScreenerFields.RoeDeducted, ScreenerFields.GrossMargin,
+             ScreenerFields.NetMargin, ScreenerFields.Roic],
+            DefaultExpanded: true,
+            Note: "ROE 为加权口径，扣非 ROE 剔除一次性损益。金融业的毛利率与 ROIC 不适用（上游不提供）。"),
+        new("safety", "安全",
+            [ScreenerFields.DebtRatio, ScreenerFields.CurrentRatio, ScreenerFields.QuickRatio,
+             ScreenerFields.InterestDebtRatio, ScreenerFields.InterestCoverageRatio,
+             ScreenerFields.OperatingCashFlowToNetProfit, ScreenerFields.FreeCashFlow],
+            DefaultExpanded: false,
+            Note: "资产负债率对金融业天然偏高（实测平安银行 90.91%），应与自身历史或同业比较，不宜套用统一阈值。"),
+        new("growth", "成长",
+            [ScreenerFields.RevenueYoy, ScreenerFields.NetProfitYoy, ScreenerFields.DeductedNetProfitYoy],
+            DefaultExpanded: false),
+        new("return", "回报",
+            [ScreenerFields.Eps, ScreenerFields.Bps, ScreenerFields.DividendYield],
+            DefaultExpanded: false,
+            Note: "股息率来自业绩报表（RPT_LICO_FN_CPD 的 ZXGXL），与基本面报表的其它字段不同源。"),
+        new("efficiency", "周转",
+            [ScreenerFields.InventoryTurnoverDays, ScreenerFields.ReceivableTurnoverDays],
+            DefaultExpanded: false),
+        new("valuation", "估值与行情",
+            [ScreenerFields.PeTtm, ScreenerFields.Pb, ScreenerFields.Cap, ScreenerFields.FloatCap,
+             ScreenerFields.Price, ScreenerFields.Pct, ScreenerFields.Turnover,
+             ScreenerFields.VolRatio, ScreenerFields.Amount],
+            DefaultExpanded: false)
+    ];
+
+    /// <summary>可用于连续性条件的字段（只列基本面字段：年报序列才有意义）。</summary>
+    private static readonly string[] ContinuousFields =
+    [
+        ScreenerFields.Roe, ScreenerFields.RoeDeducted, ScreenerFields.GrossMargin,
+        ScreenerFields.NetMargin, ScreenerFields.Roic, ScreenerFields.DebtRatio,
+        ScreenerFields.Eps, ScreenerFields.Bps,
+        ScreenerFields.RevenueYoy, ScreenerFields.NetProfitYoy
+    ];
+
+    /// <summary>连续性条件可选年数。</summary>
+    private static readonly int[] ContinuousYearOptions = [3, 5, 8];
+
+    /// <summary>
+    /// 口径提示，由后端下发（实施计划 §5.4）。
+    /// </summary>
+    private static readonly string[] CaliberNotes =
+    [
+        "金融业（银行/保险/证券）不适用毛利率、流动比率、速动比率、自由现金流、ROIC，这些字段上游返回空值；"
+            + "按这些字段筛选会默认排除金融业，需要显式勾选「包含金融业」。",
+        "资产负债率对金融业天然偏高（实测平安银行 90.91%，东芯股份 9.76%），"
+            + "两者不可用同一阈值判断：应与自身历史或同业比较。",
+        "退市与长期停牌标的在上游财报里仍有数据且数值异常"
+            + "（实测 PT金田A 资产负债率 268.02%、神城A退 1607.40%）。基本面表按事实保留这些行，"
+            + "但选股结果只包含有行情、且未被 ST/退市标记的标的，因此它们不会污染筛选结果。",
+        "无财报数据的标的在结果中标为「无财报数据」，不会被当成 0 参与筛选。",
+        "连续性条件只取年报，缺年报即中断（避免「2019 与 2025 都达标」被误判为连续）。",
+        "股息率来自业绩报表，与其它基本面字段不同源。",
+        "基本面按「最新已披露报告期」采集（实测 5,832 只上市 A 股；上游同一报告期另有约 7,600 行"
+            + "是新三板与 IPO 申报主体，已在上游侧过滤掉）。"
     ];
 
     /// <summary>
@@ -111,7 +245,14 @@ public sealed class ScreenerService(
             Boards: boards,
             ExportQuota: exportQuota,
             ExportRowLimit: exportRowLimit,
-            StrategyQuota: strategyQuota));
+            StrategyQuota: strategyQuota,
+            FieldGroups: FieldGroups,
+            CaliberNotes: CaliberNotes,
+            ContinuousFields: ContinuousFields,
+            ContinuousYears: ContinuousYearOptions,
+            FundamentalAsOf: cache.Current.Fundamentals.Count == 0
+                ? null
+                : SaTime.Format(cache.Current.Fundamentals.Values.Max(metric => metric.ReportDate))));
     }
 
     /// <summary>
@@ -447,9 +588,10 @@ public sealed class ScreenerService(
 
         var allowed = await scopeFilter.AllowedAsync(cancellationToken).ConfigureAwait(false);
 
+        var dividends = snapshot.Dividends;
         var rows = snapshot.Rows
             .Where(row => DataScopeFilter.IsVisible(allowed, row.Code))
-            .Select(row => ToRow(row, snapshot))
+            .Select(row => ToRow(row, snapshot, dividends))
             .Where(row => row is not null)
             .Select(row => row!)
             .ToList();
@@ -460,20 +602,31 @@ public sealed class ScreenerService(
         if (!string.IsNullOrWhiteSpace(request.Preset))
         {
             var preset = Presets.FirstOrDefault(item => item.Key == request.Preset);
-            if (preset.Filter is null)
+            if (preset is null)
             {
                 return ServiceResult<(List<ScreenerRowDto> Rows, List<string> Applied, string? AsOf, string? ScopeNote)>.Fail(
                     ErrorCode.InvalidParameter, $"未知的预设条件：{request.Preset}");
             }
 
-            rows = rows.Where(preset.Filter).ToList();
             applied.Add($"预设「{preset.Name}」：{preset.Description}");
+
+            if (preset.Filter is not null)
+            {
+                rows = rows.Where(preset.Filter).ToList();
+            }
+
+            // 预设里的条件片段走与自定义条件完全相同的代码路径：
+            // 另写一份判定会让两处口径迟早漂移
+            rows = ApplyRanges(rows, preset.Ranges, applied);
+            rows = ApplyFlags(rows, preset.Flags, applied);
+            rows = ApplyContinuous(rows, preset.Continuous, snapshot, applied);
         }
         else
         {
             rows = ApplyRanges(rows, request.Ranges, applied);
             rows = ApplyEnums(rows, request.Enums, applied);
             rows = ApplyFlags(rows, request.Flags, applied);
+            rows = ApplyContinuous(rows, request.Continuous, snapshot, applied);
         }
 
         var sortBy = string.IsNullOrWhiteSpace(request.SortBy) ? ScreenerFields.Amount : request.SortBy;
@@ -636,22 +789,117 @@ public sealed class ScreenerService(
 
         foreach (var flag in flags)
         {
-            if (flag.Field != ScreenerFields.IsSt)
+            switch (flag.Field)
             {
-                applied.Add($"忽略未知布尔字段：{flag.Field}");
-                continue;
+                case ScreenerFields.IsSt:
+                    // 默认行为是「排除 ST」：绝大多数选股场景都不想要 ST，因此勾选语义是「保留 ST」
+                    rows = flag.Value
+                        ? rows.Where(row => row.IsSt).ToList()
+                        : rows.Where(row => !row.IsSt).ToList();
+
+                    applied.Add(flag.Value ? "仅保留 ST 标的" : "排除 ST 标的");
+                    break;
+
+                case ScreenerFields.IncludeFinancials:
+                    // 显式开关而不是隐式过滤：金融业的毛利率/流动比率/ROIC 天然为空，
+                    // 按这些字段筛选会静默排除整个银行保险板块，用户看不出原因（实施计划 §2.3 第 1 条）
+                    var before = rows.Count;
+                    if (!flag.Value)
+                    {
+                        rows = rows.Where(row => !row.IsFinancial).ToList();
+                        applied.Add($"排除金融业（银行/保险/证券），筛掉 {before - rows.Count} 只");
+                    }
+                    else
+                    {
+                        applied.Add("包含金融业（其毛利率/流动比率/ROIC 等字段为空，属行业口径不同，不是数据缺失）");
+                    }
+
+                    break;
+
+                default:
+                    applied.Add($"忽略未知布尔字段：{flag.Field}");
+                    break;
             }
-
-            // 默认行为是「排除 ST」：绝大多数选股场景都不想要 ST，因此勾选语义是「保留 ST」
-            rows = flag.Value
-                ? rows.Where(row => row.IsSt).ToList()
-                : rows.Where(row => !row.IsSt).ToList();
-
-            applied.Add(flag.Value ? "仅保留 ST 标的" : "排除 ST 标的");
         }
 
         return rows;
     }
+
+    /// <summary>
+    /// 应用连续性条件（「连续 N 年 …」）。
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 三条规则（实施计划 §5.3）：只取年报、缺年报即中断、任一年缺值即不满足。
+    /// 判定本身在领域层 <see cref="ContinuousConditionRules"/>，这里只负责取序列与写回显。
+    /// </para>
+    /// <para>
+    /// 历史数据不足的标的<b>不静默排除</b>：那会让用户以为「全市场都筛过了」。
+    /// 这里照常排除（它确实不满足条件），但结果行带 <c>FundamentalYears</c>，
+    /// 界面据此提示「历史数据不足（已有 M/N 年）」。
+    /// </para>
+    /// </remarks>
+    private static List<ScreenerRowDto> ApplyContinuous(
+        List<ScreenerRowDto> rows,
+        IReadOnlyList<ScreenerContinuous>? conditions,
+        MarketSnapshotCache.Snapshot snapshot,
+        List<string> applied)
+    {
+        if (conditions is null || conditions.Count == 0)
+        {
+            return rows;
+        }
+
+        foreach (var condition in conditions)
+        {
+            var selector = ContinuousSelector(condition.Field);
+            if (selector is null)
+            {
+                applied.Add($"忽略不支持连续性的字段：{condition.Field}");
+                continue;
+            }
+
+            var years = Math.Clamp(condition.Years, 1, 20);
+            var before = rows.Count;
+            var insufficient = 0;
+
+            rows = rows.Where(row =>
+            {
+                var annual = snapshot.AnnualFundamentals.TryGetValue(row.Code, out var series) ? series : null;
+                var evaluation = ContinuousConditionRules.Evaluate(
+                    annual ?? [], selector, condition.Min, condition.Max, years);
+
+                if (evaluation.InsufficientHistory(years))
+                {
+                    insufficient++;
+                }
+
+                return evaluation.Satisfied;
+            }).ToList();
+
+            applied.Add(
+                $"{FieldName(condition.Field)} 连续 {years} 年 ∈ [{Format(condition.Min)}, {Format(condition.Max)}]"
+                + $"（命中 {rows.Count}，筛掉 {before - rows.Count}，其中 {insufficient} 只历史数据不足）");
+        }
+
+        return rows;
+    }
+
+    /// <summary>连续性条件支持的字段取值器；不支持的字段返回 null。</summary>
+    private static Func<FundamentalMetric, decimal?>? ContinuousSelector(string field) => field switch
+    {
+        ScreenerFields.Roe => metric => metric.RoeWeighted,
+        ScreenerFields.RoeDeducted => metric => metric.RoeDeducted,
+        ScreenerFields.GrossMargin => metric => metric.GrossMargin,
+        ScreenerFields.NetMargin => metric => metric.NetMargin,
+        ScreenerFields.Roic => metric => metric.Roic,
+        ScreenerFields.DebtRatio => metric => metric.DebtRatio,
+        ScreenerFields.Eps => metric => metric.Eps,
+        ScreenerFields.Bps => metric => metric.Bps,
+        ScreenerFields.RevenueYoy => metric => metric.RevenueYoy,
+        ScreenerFields.NetProfitYoy => metric => metric.NetProfitYoy,
+        _ => null
+    };
 
     private static List<ScreenerRowDto> Sort(List<ScreenerRowDto> rows, string sortBy, bool desc)
     {
@@ -666,6 +914,30 @@ public sealed class ScreenerService(
             ScreenerFields.PeTtm => row => row.PeTtm ?? -1m,
             ScreenerFields.Pb => row => row.Pb ?? -1m,
             ScreenerFields.Price => row => row.Price,
+
+            // 基本面字段：同样用 -1 占位，缺失的排到最后
+            ScreenerFields.Roe => row => row.Roe ?? -1m,
+            ScreenerFields.RoeDeducted => row => row.RoeDeducted ?? -1m,
+            ScreenerFields.GrossMargin => row => row.GrossMargin ?? -1m,
+            ScreenerFields.NetMargin => row => row.NetMargin ?? -1m,
+            ScreenerFields.Roic => row => row.Roic ?? -1m,
+            ScreenerFields.DebtRatio => row => row.DebtRatio ?? -1m,
+            ScreenerFields.CurrentRatio => row => row.CurrentRatio ?? -1m,
+            ScreenerFields.QuickRatio => row => row.QuickRatio ?? -1m,
+            ScreenerFields.InterestDebtRatio => row => row.InterestDebtRatio ?? -1m,
+            ScreenerFields.InterestCoverageRatio => row => row.InterestCoverageRatio ?? -1m,
+            ScreenerFields.OperatingCashFlowToRevenue => row => row.OperatingCashFlowToRevenue ?? -1m,
+            ScreenerFields.OperatingCashFlowToNetProfit => row => row.OperatingCashFlowToNetProfit ?? -1m,
+            ScreenerFields.FreeCashFlow => row => row.FreeCashFlow ?? -1m,
+            ScreenerFields.InventoryTurnoverDays => row => row.InventoryTurnoverDays ?? -1m,
+            ScreenerFields.ReceivableTurnoverDays => row => row.ReceivableTurnoverDays ?? -1m,
+            ScreenerFields.RevenueYoy => row => row.RevenueYoy ?? -1m,
+            ScreenerFields.NetProfitYoy => row => row.NetProfitYoy ?? -1m,
+            ScreenerFields.DeductedNetProfitYoy => row => row.DeductedNetProfitYoy ?? -1m,
+            ScreenerFields.Eps => row => row.Eps ?? -1m,
+            ScreenerFields.Bps => row => row.Bps ?? -1m,
+            ScreenerFields.DividendYield => row => row.DividendYield ?? -1m,
+
             _ => row => row.Amount
         };
 
@@ -677,10 +949,20 @@ public sealed class ScreenerService(
     private static bool IsRangeField(string field) =>
         field is ScreenerFields.Pct or ScreenerFields.Turnover or ScreenerFields.VolRatio
             or ScreenerFields.Amount or ScreenerFields.Cap or ScreenerFields.FloatCap
-            or ScreenerFields.PeTtm or ScreenerFields.Pb or ScreenerFields.Price;
+            or ScreenerFields.PeTtm or ScreenerFields.Pb or ScreenerFields.Price
+            or ScreenerFields.Roe or ScreenerFields.RoeDeducted or ScreenerFields.GrossMargin
+            or ScreenerFields.NetMargin or ScreenerFields.Roic or ScreenerFields.DebtRatio
+            or ScreenerFields.CurrentRatio or ScreenerFields.QuickRatio
+            or ScreenerFields.InterestDebtRatio or ScreenerFields.InterestCoverageRatio
+            or ScreenerFields.OperatingCashFlowToRevenue or ScreenerFields.OperatingCashFlowToNetProfit
+            or ScreenerFields.FreeCashFlow or ScreenerFields.InventoryTurnoverDays
+            or ScreenerFields.ReceivableTurnoverDays or ScreenerFields.RevenueYoy
+            or ScreenerFields.NetProfitYoy or ScreenerFields.DeductedNetProfitYoy
+            or ScreenerFields.Eps or ScreenerFields.Bps or ScreenerFields.DividendYield;
 
     /// <summary>
-    /// 取字段值。估值返回 null 而不是 0：亏损股的 PE 必须能区分于「PE = 0」。
+    /// 取字段值。缺失返回 null 而不是 0：亏损股的 PE、无财报标的的 ROE
+    /// 都必须能区分于「真的是 0」。
     /// </summary>
     private static decimal? Value(ScreenerRowDto row, string field) => field switch
     {
@@ -693,6 +975,28 @@ public sealed class ScreenerService(
         ScreenerFields.PeTtm => row.PeTtm,
         ScreenerFields.Pb => row.Pb,
         ScreenerFields.Price => row.Price,
+
+        ScreenerFields.Roe => row.Roe,
+        ScreenerFields.RoeDeducted => row.RoeDeducted,
+        ScreenerFields.GrossMargin => row.GrossMargin,
+        ScreenerFields.NetMargin => row.NetMargin,
+        ScreenerFields.Roic => row.Roic,
+        ScreenerFields.DebtRatio => row.DebtRatio,
+        ScreenerFields.CurrentRatio => row.CurrentRatio,
+        ScreenerFields.QuickRatio => row.QuickRatio,
+        ScreenerFields.InterestDebtRatio => row.InterestDebtRatio,
+        ScreenerFields.InterestCoverageRatio => row.InterestCoverageRatio,
+        ScreenerFields.OperatingCashFlowToRevenue => row.OperatingCashFlowToRevenue,
+        ScreenerFields.OperatingCashFlowToNetProfit => row.OperatingCashFlowToNetProfit,
+        ScreenerFields.FreeCashFlow => row.FreeCashFlow,
+        ScreenerFields.InventoryTurnoverDays => row.InventoryTurnoverDays,
+        ScreenerFields.ReceivableTurnoverDays => row.ReceivableTurnoverDays,
+        ScreenerFields.RevenueYoy => row.RevenueYoy,
+        ScreenerFields.NetProfitYoy => row.NetProfitYoy,
+        ScreenerFields.DeductedNetProfitYoy => row.DeductedNetProfitYoy,
+        ScreenerFields.Eps => row.Eps,
+        ScreenerFields.Bps => row.Bps,
+        ScreenerFields.DividendYield => row.DividendYield,
         _ => null
     };
 
@@ -730,7 +1034,10 @@ public sealed class ScreenerService(
         return $"\"{value.Replace("\"", "\"\"")}\"";
     }
 
-    private static ScreenerRowDto? ToRow(QuoteSnapshot row, MarketSnapshotCache.Snapshot snapshot)
+    private static ScreenerRowDto? ToRow(
+        QuoteSnapshot row,
+        MarketSnapshotCache.Snapshot snapshot,
+        IReadOnlyDictionary<string, decimal?> dividends)
     {
         // 无价格的标的（停牌 / 退市）不进入选股结果：它们的比率字段都是 0，会污染排序与统计
         if (row.Price <= 0)
@@ -739,6 +1046,12 @@ public sealed class ScreenerService(
         }
 
         snapshot.Instruments.TryGetValue(row.Code, out var instrument);
+
+        // 基本面可能缺失（新股、未采集）：此时各字段为 null，
+        // 区间筛选按「不满足」处理，结果行上标 HasFundamental=false 供界面提示
+        snapshot.Fundamentals.TryGetValue(row.Code, out var fundamental);
+        snapshot.AnnualFundamentals.TryGetValue(row.Code, out var annual);
+        var years = AnnualYears(annual);
 
         return new ScreenerRowDto(
             Code: row.Code,
@@ -754,23 +1067,99 @@ public sealed class ScreenerService(
             Pb: row.Pb > 0 ? Display.Round(row.Pb) : null,
             Cap: Display.ToYi(row.MarketCap),
             FloatCap: Display.ToYi(row.FloatCap),
-            IsSt: instrument?.IsSt ?? false);
+            IsSt: instrument?.IsSt ?? false,
+            HasFundamental: fundamental is not null,
+            FundamentalYears: years,
+            FundamentalAsOf: fundamental is null ? null : SaTime.Format(fundamental.ReportDate),
+            IsFinancial: FundamentalOrgTypes.IsFinancial(fundamental?.OrgType),
+            Roe: Round(fundamental?.RoeWeighted),
+            RoeDeducted: Round(fundamental?.RoeDeducted),
+            GrossMargin: Round(fundamental?.GrossMargin),
+            NetMargin: Round(fundamental?.NetMargin),
+            Roic: Round(fundamental?.Roic),
+            DebtRatio: Round(fundamental?.DebtRatio),
+            CurrentRatio: Round(fundamental?.CurrentRatio),
+            QuickRatio: Round(fundamental?.QuickRatio),
+            InterestDebtRatio: Round(fundamental?.InterestDebtRatio),
+            InterestCoverageRatio: Round(fundamental?.InterestCoverageRatio),
+            OperatingCashFlowToRevenue: Round(fundamental?.OperatingCashFlowToRevenue),
+            OperatingCashFlowToNetProfit: Round(fundamental?.OperatingCashFlowToNetProfit),
+            FreeCashFlow: fundamental?.FreeCashFlow is { } fcf ? Display.ToYi(fcf) : null,
+            InventoryTurnoverDays: Round(fundamental?.InventoryTurnoverDays),
+            ReceivableTurnoverDays: Round(fundamental?.ReceivableTurnoverDays),
+            RevenueYoy: Round(fundamental?.RevenueYoy),
+            NetProfitYoy: Round(fundamental?.NetProfitYoy),
+            DeductedNetProfitYoy: Round(fundamental?.DeductedNetProfitYoy),
+            Eps: Round(fundamental?.Eps),
+            Bps: Round(fundamental?.Bps),
+            // 股息率来自业绩报表（RPT_LICO_FN_CPD 的 ZXGXL），本报表不含该字段
+            DividendYield: dividends.TryGetValue(row.Code, out var dividend) ? Round(dividend) : null);
     }
 
+    /// <summary>
+    /// 从最新年度往回数「连续有年报」的年数。
+    /// </summary>
+    /// <remarks>
+    /// 与连续性条件同一口径（缺年报即中断），这样界面上的「已有 M/N 年」与判定结果一致，
+    /// 不会出现「显示有 8 年、但条件说不足 5 年」的自相矛盾。
+    /// </remarks>
+    private static int AnnualYears(IReadOnlyList<FundamentalMetric>? annual)
+    {
+        if (annual is null || annual.Count == 0)
+        {
+            return 0;
+        }
+
+        var years = new HashSet<int>();
+        foreach (var metric in annual)
+        {
+            years.Add(metric.ReportDate.Year);
+        }
+
+        var newest = years.Max();
+        var count = 0;
+        for (var year = newest; years.Contains(year); year--)
+        {
+            count++;
+        }
+
+        return count;
+    }
+
+    private static decimal? Round(decimal? value) => value is null ? null : Display.Round(value.Value);
+
+    /// <summary>
+    /// 确保行情快照与基本面都已载入内存。
+    /// </summary>
+    /// <remarks>
+    /// 两者分开判断：行情每 60 秒整体替换（<c>cache.Replace</c> 会保留基本面），
+    /// 而基本面是季频的、只加载一次。若合并判断，每轮行情刷新都会重新读万级基本面行。
+    /// </remarks>
     private async Task EnsureLoadedAsync(CancellationToken cancellationToken)
     {
-        if (!cache.IsEmpty)
+        if (cache.IsEmpty)
+        {
+            var rows = await quotes.GetAllAsync(cancellationToken).ConfigureAwait(false);
+            if (rows.Count == 0)
+            {
+                return;
+            }
+
+            var instrumentRows = await instruments.GetAllAsync(cancellationToken).ConfigureAwait(false);
+            cache.Replace(rows, instrumentRows.ToDictionary(item => item.Code, StringComparer.Ordinal));
+        }
+
+        if (cache.Current.FundamentalsLoaded)
         {
             return;
         }
 
-        var rows = await quotes.GetAllAsync(cancellationToken).ConfigureAwait(false);
-        if (rows.Count == 0)
-        {
-            return;
-        }
+        var latest = await fundamentals.GetLatestPerCodeAsync(cancellationToken).ConfigureAwait(false);
+        var annual = await fundamentals.GetAnnualByCodeAsync(null, cancellationToken).ConfigureAwait(false);
 
-        var instrumentRows = await instruments.GetAllAsync(cancellationToken).ConfigureAwait(false);
-        cache.Replace(rows, instrumentRows.ToDictionary(item => item.Code, StringComparer.Ordinal));
+        // 股息率只在业绩报表里，单独取一次（不分页，几千行）
+        var dividends = await finance.GetLatestDividendYieldsAsync(cancellationToken).ConfigureAwait(false);
+
+        cache.ReplaceFundamentals(latest, annual, dividends);
     }
 }

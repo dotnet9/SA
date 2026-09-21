@@ -764,6 +764,8 @@ export function MobileScreenerPage() {
         ],
         enums: [],
         flags: [{ field: 'isSt', value: false }],
+        // 移动端只做快速筛选，连续性条件留给桌面版（与「移动端不做拓扑页」同一取舍）
+        continuous: [],
         sortBy: 'amount',
         sortDesc: true,
         page: 1,
