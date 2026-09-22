@@ -2,7 +2,8 @@ import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate, Outlet, useLocation, useMatches, useParams } from 'react-router';
 import { AppShell } from '@/app/layout/AppShell';
 import { MobileShell } from '@/app/mobile/MobileShell';
-import { DefaultStockCode, landingPath, AnonymousLandingPath, StockModuleNames } from '@/app/nav';
+import { DefaultStockCode, landingPath, AnonymousLandingPath, StockModuleNames, tabOfModule } from '@/app/nav';
+import { StockTabbed } from '@/features/stock/StockTabBar';
 import { readLastStock } from '@/app/useCurrentStock';
 import { ChangePasswordPage } from '@/features/auth/pages/ChangePasswordPage';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
@@ -29,6 +30,10 @@ const SearchPage = lazy(() =>
 );
 
 /** 个股总览（8 张摘要卡）。 */
+const ValueResearchPage = lazy(() =>
+  import('@/features/research/ValueResearchPage').then((module) => ({ default: module.ValueResearchPage }))
+);
+
 const StockOverviewPage = lazy(() =>
   import('@/features/stock/StockOverviewPage').then((module) => ({ default: module.StockOverviewPage }))
 );
@@ -268,7 +273,8 @@ function MobileRoute({ page }: { page: MobilePageName }) {
 function MobileStockModulePage() {
   const params = useParams();
   const module = params.module ?? 'overview';
-  const name = StockModuleNames[module];
+  // 未知/已合并的旧 :module 值一律落到对应 Tab，不报 404（实施计划 §6.2）
+  const name = StockModuleNames[module] ?? StockModuleNames[tabOfModule(module)];
 
   if (!name) {
     return <NotFoundPage />;
@@ -276,7 +282,10 @@ function MobileStockModulePage() {
 
   return (
     <Suspense fallback={<RouteFallback />}>
-      {module === 'overview' ? (
+      <StockTabbed module={module}>
+      {module === 'value' ? (
+        <ValueResearchPage />
+      ) : module === 'overview' ? (
         <StockOverviewPage />
       ) : module === 'trend' ? (
         <StockTrendPage />
@@ -297,6 +306,7 @@ function MobileStockModulePage() {
       ) : (
         <StockRatingPage />
       )}
+      </StockTabbed>
     </Suspense>
   );
 }
@@ -353,7 +363,8 @@ function StockRedirect() {
 function StockModulePage() {
   const params = useParams();
   const module = params.module ?? 'overview';
-  const name = StockModuleNames[module];
+  // 未知/已合并的旧 :module 值一律落到对应 Tab，不报 404（实施计划 §6.2）
+  const name = StockModuleNames[module] ?? StockModuleNames[tabOfModule(module)];
 
   if (!name) {
     return <NotFoundPage />;
@@ -361,7 +372,10 @@ function StockModulePage() {
 
   return (
     <Suspense fallback={<RouteFallback />}>
-      {module === 'overview' ? (
+      <StockTabbed module={module}>
+      {module === 'value' ? (
+        <ValueResearchPage />
+      ) : module === 'overview' ? (
         <StockOverviewPage />
       ) : module === 'trend' ? (
         <StockTrendPage />
@@ -382,6 +396,7 @@ function StockModulePage() {
       ) : (
         <StockRatingPage />
       )}
+      </StockTabbed>
     </Suspense>
   );
 }

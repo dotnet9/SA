@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
+import { stockPathKeepingTab } from '@/app/useCurrentStock';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { EmptyState, ErrorState, FreshnessNote } from '@/components/ui/States';
 import { errorText } from '@/lib/errorText';
@@ -437,7 +438,7 @@ function WatchRow({
         </td>
       ) : null}
       <td>
-        <Link className="stock-cell" to={`/stock/${item.code}`}>
+        <Link className="stock-cell" to={stockPathKeepingTab(item.code)}>
           <span className="sc-name">
             {item.name}
             {item.isSt ? <span className="tag tag-danger" style={{ marginLeft: 6 }}>ST</span> : null}

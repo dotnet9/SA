@@ -92,6 +92,7 @@ public sealed class OnDemandHostedService(
         var indicatorJob = provider.GetRequiredService<IndicatorJob>();
         var financeJob = provider.GetRequiredService<FinanceJob>();
         var fundamentalJob = provider.GetRequiredService<FundamentalJob>();
+        var researchJob = provider.GetRequiredService<ResearchJob>();
         var equityJob = provider.GetRequiredService<EquityJob>();
         var capitalJob = provider.GetRequiredService<CapitalJob>();
         var ratingJob = provider.GetRequiredService<RatingJob>();
@@ -113,6 +114,10 @@ public sealed class OnDemandHostedService(
             await RunStepAsync(code, "股权", () => equityJob.RunAsync(code, cancellationToken)).ConfigureAwait(false);
             await RunStepAsync(code, "资金", () => capitalJob.RunAsync(code, cancellationToken)).ConfigureAwait(false);
             await RunStepAsync(code, "评级", () => ratingJob.RunAsync(code, cancellationToken)).ConfigureAwait(false);
+            // 研究数据（主营构成 / 股本结构 / 限售解禁 / 公告 / 研报）：价值研究页与机构观点页要用。
+            // 只对按需关注的标的拉取——全市场 5,832 只各拉 4 个端点就是 2.3 万次请求，
+            // 而其中绝大多数不会被查看。
+            await RunStepAsync(code, "研究数据", () => researchJob.RunAsync(code, cancellationToken)).ConfigureAwait(false);
 
             // 该股所属行业的指数日线：因果链的传导带宽要用它。
             // 放在这里而不是只在每日补齐里做，是因为用户正看的这只股票所属行业很可能

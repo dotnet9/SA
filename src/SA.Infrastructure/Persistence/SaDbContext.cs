@@ -6,6 +6,7 @@ using SA.Domain.Entities.Equity;
 using SA.Domain.Entities.Events;
 using SA.Domain.Entities.Finance;
 using SA.Domain.Entities.Rating;
+using SA.Domain.Entities.Research;
 using SA.Domain.Entities.Screener;
 using SA.Domain.Entities.Identity;
 using SA.Domain.Entities.Market;
@@ -98,6 +99,24 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
 
     /// <summary>基本面指标（按报告期的全市场横截面因子 + 单只历史序列）。</summary>
     public DbSet<FundamentalMetric> FundamentalMetrics => Set<FundamentalMetric>();
+
+    /// <summary>主营概况（业务范围 + 经营评述原文）。</summary>
+    public DbSet<BusinessProfile> BusinessProfiles => Set<BusinessProfile>();
+
+    /// <summary>主营构成（三套并列口径）。</summary>
+    public DbSet<BusinessComposition> BusinessCompositions => Set<BusinessComposition>();
+
+    /// <summary>股本变动历史。</summary>
+    public DbSet<ShareChange> ShareChanges => Set<ShareChange>();
+
+    /// <summary>限售解禁（整体替换语义）。</summary>
+    public DbSet<UpcomingUnlock> UpcomingUnlocks => Set<UpcomingUnlock>();
+
+    /// <summary>公告列表。</summary>
+    public DbSet<Announcement> Announcements => Set<Announcement>();
+
+    /// <summary>研报列表。</summary>
+    public DbSet<ResearchReport> ResearchReports => Set<ResearchReport>();
 
     /// <summary>十大股东（含流通口径）。</summary>
     public DbSet<TopHolder> TopHolders => Set<TopHolder>();
@@ -580,6 +599,130 @@ public sealed class SaDbContext(DbContextOptions<SaDbContext> options) : DbConte
                 nameof(FundamentalMetric.Bps), nameof(FundamentalMetric.OperatingCashFlowPerShare),
                 nameof(FundamentalMetric.RndExpenseRatio), nameof(FundamentalMetric.RndPersonnel),
                 nameof(FundamentalMetric.StaffNumber)
+            })
+            {
+                entity.Property(property).HasConversion<double?>();
+            }
+        });
+
+        modelBuilder.Entity<BusinessProfile>(entity =>
+        {
+            entity.ToTable("BusinessProfile");
+            entity.HasKey(e => e.Code);
+            entity.Property(e => e.Code).HasMaxLength(16);
+            // 业务范围与经营评述都是长文本（实测经营评述约 4,500 字），SQLite 的 TEXT 无长度上限，
+            // 因此不设 MaxLength——设了反而会在超长时被截断
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+        });
+
+        modelBuilder.Entity<BusinessComposition>(entity =>
+        {
+            entity.ToTable("BusinessComposition");
+            // 主键含口径与项目名：三套口径并列且项目名在口径内唯一
+            entity.HasKey(e => new { e.Code, e.ReportDate, e.MainOpType, e.ItemName });
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.ItemName).HasMaxLength(128);
+            entity.Property(e => e.ReportDate).HasConversion(dateConverter);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+
+            // 展示按「代码 + 报告期 + 口径」取，建索引避免全表扫描
+            entity.HasIndex(e => new { e.Code, e.ReportDate, e.MainOpType });
+
+            // 比率字段是小数（0.652002 = 65.20%），金额是元
+            foreach (var property in new[]
+            {
+                nameof(BusinessComposition.Income), nameof(BusinessComposition.Cost),
+                nameof(BusinessComposition.Profit),
+                nameof(BusinessComposition.IncomeRatio), nameof(BusinessComposition.CostRatio),
+                nameof(BusinessComposition.ProfitRatio), nameof(BusinessComposition.GrossProfitRatio)
+            })
+            {
+                entity.Property(property).HasConversion<double?>();
+            }
+        });
+
+        modelBuilder.Entity<ShareChange>(entity =>
+        {
+            entity.ToTable("ShareChange");
+            entity.HasKey(e => new { e.Code, e.EndDate });
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.ChangeReason).HasMaxLength(64);
+            entity.Property(e => e.EndDate).HasConversion(dateConverter);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+
+            foreach (var property in new[]
+            {
+                nameof(ShareChange.TotalShares), nameof(ShareChange.LimitedShares),
+                nameof(ShareChange.UnlimitedShares), nameof(ShareChange.ListedAShares)
+            })
+            {
+                entity.Property(property).HasConversion<double?>();
+            }
+        });
+
+        modelBuilder.Entity<UpcomingUnlock>(entity =>
+        {
+            entity.ToTable("UpcomingUnlock");
+            entity.HasKey(e => new { e.Code, e.LiftDate, e.LiftType });
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.LiftType).HasMaxLength(64);
+            entity.Property(e => e.LiftDate).HasConversion(dateConverter);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+
+            foreach (var property in new[]
+            {
+                nameof(UpcomingUnlock.LiftShares), nameof(UpcomingUnlock.TotalSharesRatio),
+                nameof(UpcomingUnlock.UnlimitedASharesRatio)
+            })
+            {
+                entity.Property(property).HasConversion<double?>();
+            }
+        });
+
+        modelBuilder.Entity<Announcement>(entity =>
+        {
+            entity.ToTable("Announcement");
+            entity.HasKey(e => e.ArtCode);
+            entity.Property(e => e.ArtCode).HasMaxLength(64);
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.Title).HasMaxLength(512);
+            entity.Property(e => e.ColumnName).HasMaxLength(64);
+            entity.Property(e => e.ColumnNames).HasMaxLength(256);
+            entity.Property(e => e.AnnType).HasMaxLength(64);
+            entity.Property(e => e.SourceType).HasMaxLength(32);
+            entity.Property(e => e.Url).HasMaxLength(256);
+            entity.Property(e => e.NoticeDate).HasConversion(dateConverter);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+
+            // 展示按「代码 + 日期倒序」，类型分组按「代码 + 类型」
+            entity.HasIndex(e => new { e.Code, e.NoticeDate });
+            entity.HasIndex(e => new { e.Code, e.ColumnName });
+        });
+
+        modelBuilder.Entity<ResearchReport>(entity =>
+        {
+            entity.ToTable("ResearchReport");
+            entity.HasKey(e => e.InfoCode);
+            entity.Property(e => e.InfoCode).HasMaxLength(64);
+            entity.Property(e => e.Code).HasMaxLength(16);
+            entity.Property(e => e.Title).HasMaxLength(512);
+            entity.Property(e => e.OrgName).HasMaxLength(128);
+            entity.Property(e => e.OrgShortName).HasMaxLength(64);
+            entity.Property(e => e.Researcher).HasMaxLength(128);
+            entity.Property(e => e.RatingName).HasMaxLength(32);
+            entity.Property(e => e.IndustryName).HasMaxLength(64);
+            entity.Property(e => e.EncodeUrl).HasMaxLength(256);
+            entity.Property(e => e.Url).HasMaxLength(512);
+            entity.Property(e => e.PublishDate).HasConversion(dateConverter);
+            entity.Property(e => e.UpdatedAt).HasConversion(timeConverter);
+
+            entity.HasIndex(e => new { e.Code, e.PublishDate });
+
+            foreach (var property in new[]
+            {
+                nameof(ResearchReport.PredictThisYearEps), nameof(ResearchReport.PredictThisYearPe),
+                nameof(ResearchReport.PredictNextYearEps), nameof(ResearchReport.PredictNextYearPe),
+                nameof(ResearchReport.PredictNextTwoYearEps), nameof(ResearchReport.PredictNextTwoYearPe)
             })
             {
                 entity.Property(property).HasConversion<double?>();

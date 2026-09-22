@@ -43,6 +43,7 @@ export const StockModuleKeys = [
 /** 个股模块的中文名，用于标签栏与页面标题。 */
 export const StockModuleNames: Record<string, string> = {
   overview: '矩阵总览',
+  value: '价值研究',
   trend: '趋势与价格结构',
   finance: '盈利与财务表现',
   equity: '投资与股权结构',
@@ -65,6 +66,51 @@ export const StockModuleFunctionPoints: Record<string, string> = {
   risk: 'stock.risk',
   rating: 'stock.rating'
 };
+
+/**
+ * 个股页的 5 个 Tab（实施计划 §6.2）。
+ *
+ * 原 9 个模块页收编为 5 个 Tab，**不删除任何功能**：
+ * 旧模块路径仍可直达（`/stock/:code/trend` 打开 Tab 1 并展开技术段），
+ * 因此分享链接与浏览器前进后退不破坏。
+ */
+export const StockTabKeys = ['value', 'fundamental', 'capital', 'risk', 'institution'] as const;
+
+/** Tab 名称。 */
+export const StockTabNames: Record<string, string> = {
+  value: '价值研究',
+  fundamental: '基本面',
+  capital: '筹码与资金',
+  risk: '风险与事件',
+  institution: '机构观点'
+};
+
+/**
+ * 每个 Tab 收编的模块（第一个是该 Tab 的默认落点）。
+ *
+ * `value` 的第一个元素是新的价值研究页，其余 Tab 落到原模块页。
+ */
+export const StockTabModules: Record<string, string[]> = {
+  value: ['value', 'overview', 'trend'],
+  fundamental: ['finance', 'industry'],
+  capital: ['equity', 'capital'],
+  risk: ['risk', 'events', 'causal'],
+  institution: ['rating']
+};
+
+/** 旧模块 → 所属 Tab。 */
+export const StockTabOfModule: Record<string, string> = Object.fromEntries(
+  Object.entries(StockTabModules).flatMap(([tab, modules]) => modules.map((module) => [module, tab]))
+);
+
+/** 由模块解析所属 Tab；未知模块回退到第一个 Tab（不报 404）。 */
+export function tabOfModule(module: string | undefined): string {
+  if (!module) {
+    return StockTabKeys[0];
+  }
+
+  return StockTabOfModule[module] ?? StockTabKeys[0];
+}
 
 /** 尚未选择股票时的兜底代码（与原型主演示股一致）。 */
 export const DefaultStockCode = '300750';

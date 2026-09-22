@@ -44,6 +44,10 @@ public sealed class SourceRegistry
         IEnumerable<IKlineSource> klines,
         IFinanceSource finance,
         IFundamentalSource fundamental,
+        IBusinessCompositionSource businessComposition,
+        ICapitalStructureSource capitalStructure,
+        IAnnouncementSource announcements,
+        IResearchReportSource researchReports,
         IEquitySource equity,
         ICapitalSource capital,
         IFundFlowSource fundFlow,
@@ -60,6 +64,10 @@ public sealed class SourceRegistry
         MarketFundFlow = marketFundFlow;
         Finance = finance;
         Fundamental = fundamental;
+        BusinessComposition = businessComposition;
+        CapitalStructure = capitalStructure;
+        Announcements = announcements;
+        ResearchReports = researchReports;
         Equity = equity;
         Capital = capital;
         FundFlow = fundFlow;
@@ -102,6 +110,18 @@ public sealed class SourceRegistry
 
     /// <summary>基本面指标源（按报告期扫全市场的横截面因子）。</summary>
     public IFundamentalSource Fundamental { get; }
+
+    /// <summary>主营构成源（业务范围 / 主营构成 / 经营评述）。</summary>
+    public IBusinessCompositionSource BusinessComposition { get; }
+
+    /// <summary>股本结构源（股本变动历史 / 限售解禁）。</summary>
+    public ICapitalStructureSource CapitalStructure { get; }
+
+    /// <summary>公告源（只取列表，不做正文解析）。</summary>
+    public IAnnouncementSource Announcements { get; }
+
+    /// <summary>研报源（不提供目标价）。</summary>
+    public IResearchReportSource ResearchReports { get; }
 
     /// <summary>股权结构源。</summary>
     public IEquitySource Equity { get; }

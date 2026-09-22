@@ -135,6 +135,10 @@ public static class DependencyInjection
 
         services.AddSingleton<IFinanceSource, EastMoneyFinanceSource>();
         services.AddSingleton<IFundamentalSource, EastMoneyFundamentalSource>();
+        services.AddSingleton<IBusinessCompositionSource, EastMoneyBusinessSource>();
+        services.AddSingleton<ICapitalStructureSource, EastMoneyCapitalStructureSource>();
+        services.AddSingleton<IAnnouncementSource, EastMoneyAnnouncementSource>();
+        services.AddSingleton<IResearchReportSource, EastMoneyResearchSource>();
         services.AddSingleton<IEquitySource, EastMoneyEquitySource>();
         services.AddSingleton<ICapitalSource, EastMoneyCapitalSource>();
         services.AddSingleton<IFundFlowSource, EastMoneyFundFlowSource>();
@@ -160,6 +164,7 @@ public static class DependencyInjection
         services.AddScoped<BenchmarkDailyJob>();
         services.AddScoped<FinanceJob>();
         services.AddScoped<FundamentalJob>();
+        services.AddScoped<ResearchJob>();
         services.AddScoped<EquityJob>();
         services.AddScoped<CapitalJob>();
         services.AddScoped<SectorKlineJob>();
@@ -190,6 +195,7 @@ public static class DependencyInjection
         services.AddScoped<IWatchlistStore, WatchlistStore>();
         services.AddScoped<IFinanceStore, FinanceStore>();
         services.AddScoped<IFundamentalStore, FundamentalStore>();
+        services.AddScoped<IResearchStore, ResearchStore>();
         services.AddScoped<IEquityStore, EquityStore>();
         services.AddScoped<ICapitalStore, CapitalStore>();
         services.AddScoped<IEventAnnotationStore, EventAnnotationStore>();

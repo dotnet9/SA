@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SA.Application.Abstractions;
 using SA.Application.Analysis;
@@ -13,6 +13,7 @@ using SA.Application.Events;
 using SA.Application.Finance;
 using SA.Application.Industry;
 using SA.Application.Rating;
+using SA.Application.Research;
 using SA.Application.Risk;
 using SA.Application.Screener;
 using SA.Application.Search;
@@ -90,6 +91,7 @@ public static class DependencyInjection
         services.AddScoped<AlertService>();
         services.AddScoped<AdminService>();
         services.AddScoped<ScreenerService>();
+        services.AddScoped<ValueResearchService>();
         services.AddScoped<DataScopeFilter>();
 
         return services;
