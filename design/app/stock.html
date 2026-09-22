@@ -3,106 +3,46 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>个股总览 · 股析 SA（移动端）</title>
+<title>个股 · 股析 SA（移动端）</title>
 <link rel="stylesheet" href="../web/_shared/tokens.css">
 <link rel="stylesheet" href="../web/_shared/tailwind.css">
 <link rel="stylesheet" href="../web/_shared/components.css">
 <style>
-  .sticky-quote {
+  .m-quote {
     position: sticky; top: 0; z-index: 15;
     background: var(--bg-glass);
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    padding: 10px 20px 12px;
+    padding: 10px 16px 10px;
   }
-  .mod-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .mod-tile {
-    border-radius: 14px; padding: 14px;
-    background: var(--bg-panel); min-height: 72px;
-    display: flex; flex-direction: column; justify-content: space-between;
-  }
-  [data-theme="light"] .mod-tile { box-shadow: 0 1px 3px rgba(20, 22, 26, 0.05); }
-  .mod-tile .mt-name { font-size: 13px; font-weight: 600; line-height: 1.4; }
-  .mod-tile .mt-val { font-family: var(--font-num); font-size: 16px; font-weight: 600; }
-  .stat-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; text-align: center; }
-  .stat-strip .st-v { font-family: var(--font-num); font-size: 14px; font-weight: 600; }
-  .stat-strip .st-k { font-size: 11px; color: var(--text-3); margin-top: 2px; }
-  .verdict {
-    border-radius: 16px; padding: 16px;
-    background: var(--bg-panel);
-  }
-  [data-theme="light"] .verdict { box-shadow: 0 1px 3px rgba(20, 22, 26, 0.05); }
+  /* 移动端 Tab 条：横向滚动，不换行 */
+  #mStockPane .stock-tabs { padding: 8px 16px 10px; background: var(--bg-root); }
+  #mStockPane .stock-pane-head { margin: 0 16px 8px; padding: 10px 12px; flex-wrap: wrap; gap: 8px; }
+  #mStockPane .stock-pane-head .stock-back { display: none; }
+  #mStockPane > div:not(.stock-tabs):not(#stockPaneHead) { padding: 0 16px 20px; }
 </style>
 </head>
-<body data-page="stock" data-title="个股总览" data-desc="吸顶行情聚焦价格本身；一句话综合结论；8 个模块按「名称 + 关键数字」双列入口；底部固定「加自选 / 设提醒」。">
+<body data-page="stock" data-title="个股" data-desc="吸顶行情条 + 9 个 Tab（横向滚动）。明细数据只内置了主演示股，其它标的显示概览。">
 <div id="appScreen">
 
-  <!-- 吸顶行情条 -->
-  <div class="sticky-quote">
+  <div class="m-quote">
     <div class="row-between">
       <div class="row gap-2">
-        <span class="fs-16" style="font-weight:700">宁德时代</span>
-        <span class="mono fs-12 t-3">300750</span>
+        <span class="fs-16" style="font-weight:700" id="mName">宁德时代</span>
+        <span class="mono fs-12 t-3" id="mCode">300750</span>
       </div>
-      <button class="icon-btn" style="margin-right:-8px">☆</button>
+      <button class="icon-btn" style="margin-right:-8px" id="mStar">☆</button>
     </div>
-    <div class="row" style="gap:12px;margin-top:6px">
-      <span class="mono fs-28 fw-700 t-up" data-price="268.42" id="mLive" style="letter-spacing:-0.02em">268.42</span>
+    <div class="row" style="gap:12px;margin-top:4px">
+      <span class="mono fs-26 fw-700" id="mPrice" style="letter-spacing:-0.02em">268.42</span>
       <span class="col" style="gap:1px">
-        <span class="mono fs-13 t-up">+12.46</span>
-        <span class="mono fs-13 t-up">+4.86%</span>
+        <span class="mono fs-13" id="mPct">+4.86%</span>
       </span>
     </div>
-    <div class="hint" style="margin-top:6px">
-      高 <span class="t-up">271.24</span> · 低 <span class="t-down">255.62</span> · 额 186.4 亿 · 换手 1.42%
-    </div>
   </div>
 
-  <div class="m-page">
+  <!-- 个股区：与桌面端共用同一份控制器与面板 -->
+  <div class="stock-pane is-active" id="mStockPane"></div>
 
-    <!-- 关键指标：一行四项，开放式排版 -->
-    <div class="stat-strip" style="margin-top:4px">
-      <div><div class="st-v">11,820 亿</div><div class="st-k">总市值</div></div>
-      <div><div class="st-v">24.8</div><div class="st-k">PE(TTM)</div></div>
-      <div><div class="st-v">4.62</div><div class="st-k">PB</div></div>
-      <div><div class="st-v t-up">+18.6 亿</div><div class="st-k">主力净流入</div></div>
-    </div>
-
-    <!-- 综合结论：一句话 + 三个关键词 -->
-    <div class="verdict" style="margin-top:16px">
-      <div class="row-between">
-        <span class="fs-13 t-2">综合结论</span>
-        <span class="tag tag-up">偏多</span>
-      </div>
-      <div style="font-size:17px;font-weight:600;line-height:1.5;margin-top:8px">
-        趋势多头、主力持续流入，估值处于中位偏低
-      </div>
-      <div class="row gap-2" style="margin-top:10px">
-        <span class="tag tag-up">多头排列</span>
-        <span class="tag tag-up">目标价 +19.2%</span>
-        <span class="tag tag-warn">价格战风险</span>
-      </div>
-    </div>
-
-    <!-- 近 60 日走势 -->
-    <div class="m-section-title">近 60 日走势</div>
-    <div class="m-card">
-      <div id="mTrend" class="chart chart-md"></div>
-    </div>
-
-    <!-- 模块入口：8 个模块，名称 + 关键数字 -->
-    <div class="m-section-title">分析矩阵</div>
-    <div class="mod-grid" id="modGrid"></div>
-
-    <div class="hint" style="margin-top:20px;line-height:1.8">
-      演示数据 · 非实时 · 不构成投资建议
-    </div>
-
-  </div>
-</div>
-
-<div id="appActions" class="m-actions" style="display:none">
-  <button class="btn btn-outline" id="mAlert">设提醒</button>
-  <button class="btn btn-primary" id="mWatch">+ 加自选</button>
 </div>
 
 <script src="../web/_shared/vendor/echarts.min.js"></script>
@@ -110,49 +50,50 @@
 <script src="../web/_shared/charts.js"></script>
 <script src="../web/_shared/spec.js"></script>
 <script src="../web/_shared/app.js"></script>
+<script src="../web/_shared/stock-panels.js"></script>
+<script src="../web/_shared/panels/overview.js"></script>
+<script src="../web/_shared/panels/trend.js"></script>
+<script src="../web/_shared/panels/finance.js"></script>
+<script src="../web/_shared/panels/equity.js"></script>
+<script src="../web/_shared/panels/capital.js"></script>
+<script src="../web/_shared/panels/industry.js"></script>
+<script src="../web/_shared/panels/events.js"></script>
+<script src="../web/_shared/panels/risk.js"></script>
+<script src="../web/_shared/panels/rating.js"></script>
 <script src="../web/_shared/mock-frame.js"></script>
 <script>
 (function () {
-  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F;
+  var D = window.SA_DATA;
 
-  /* 八模块入口：名称 + 关键数字 */
-  var mods = [
-    { name: "趋势与价格", href: "stock.html#trend", val: "+22.4%", cls: "t-up", sub: "20 日涨幅" },
-    { name: "盈利与财务", href: "stock.html#finance", val: "+22.8%", cls: "t-up", sub: "净利同比" },
-    { name: "投资与股权", href: "stock.html#equity", val: "2.4%", cls: "", sub: "质押比例" },
-    { name: "资金与筹码", href: "stock.html#capital", val: "+18.6 亿", cls: "t-up", sub: "主力净流入" },
-    { name: "行业与同业", href: "stock.html#industry", val: "第 1", cls: "", sub: "全球市占 36.8%" },
-    { name: "事件与影响", href: "stock.html#events", val: "12 件", cls: "", sub: "近 30 日" },
-    { name: "风险与舆情", href: "stock.html#risk", val: "4 / 5", cls: "t-danger", sub: "最高风险等级" },
-    { name: "机构评级", href: "stock.html#rating", val: "320.0", cls: "t-up", sub: "目标价" }
-  ];
-  document.getElementById("modGrid").innerHTML = mods.map(function (m) {
-    return '<a class="mod-tile" href="' + m.href + '">' +
-      '<div class="mt-name">' + m.name + "</div>" +
-      '<div><div class="mt-val ' + m.cls + '">' + m.val + "</div>" +
-      '<div class="fs-11 t-3" style="margin-top:2px">' + m.sub + "</div></div>" +
-      "</a>";
-  }).join("");
+  /* URL 还原优先（从大盘/自选点进来会带 ?code=），否则用主演示股 */
+  var m = /[?&]code=([^&#]+)/.exec(window.location.search || "");
+  var code = m ? decodeURIComponent(m[1]) : ((D.meta && D.meta.focus) || "300750");
+  var tab = (window.location.hash || "").replace("#", "") || "overview";
 
-  /* 趋势缩略 */
-  F.area("#mTrend", {
-    labels: D.focusKline.slice(-60).map(function (b) { return b.d.slice(5); }),
-    data: D.focusKline.slice(-60).map(function (b) { return b.c; }),
-    unit: "元"
+  var s = (D.allStockByCode && D.allStockByCode[code]) || (D.stockByCode && D.stockByCode[code]) || null;
+
+  /* 吸顶行情条：只放 名称 / 代码 / 现价 / 涨跌幅 */
+  if (s) {
+    document.getElementById("mName").textContent = s.name;
+    document.getElementById("mCode").textContent = s.code;
+    var cls = s.pct >= 0 ? "t-up" : "t-down";
+    var priceEl = document.getElementById("mPrice");
+    priceEl.textContent = s.price.toFixed(2);
+    priceEl.className = "mono fs-26 fw-700 " + cls;
+    var pctEl = document.getElementById("mPct");
+    pctEl.textContent = (s.pct >= 0 ? "+" : "") + s.pct.toFixed(2) + "%";
+    pctEl.className = "mono fs-13 " + cls;
+  }
+
+  window.SA_PANE.mount("#mStockPane", null);
+  window.SA_PANE.open(code, tab);
+
+  document.getElementById("mStar").addEventListener("click", function () {
+    this.textContent = "★";
+    SA.toast("已加入自选", "ok");
   });
 
-  document.getElementById("mWatch").addEventListener("click", function () {
-    this.textContent = "已加入自选";
-    this.classList.remove("btn-primary");
-    this.classList.add("btn-outline");
-    SA.toast("已加入自选股：宁德时代 300750", "ok");
-  });
-  document.getElementById("mAlert").addEventListener("click", function () {
-    SA.toast("已打开发送提醒设置（见「提醒规则」页）", "info");
-    setTimeout(function () { window.location.href = "alerts.html"; }, 500);
-  });
-
-  SA.startLiveTicker("#mLive", { interval: 3000 });
+  if (s) SA.startLiveTicker("#mPrice", { interval: 3000 });
 })();
 </script>
 </body>

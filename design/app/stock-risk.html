@@ -3,137 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>风险与舆情监控 · 股析 SA（移动端）</title>
+<title>风险 · 股析 SA（移动端）</title>
+<!-- 旧链接跳转桩：该模块已并入个股页的 Tab -->
+<meta http-equiv="refresh" content="0;url=stock.html#risk">
 <link rel="stylesheet" href="../web/_shared/tokens.css">
-<link rel="stylesheet" href="../web/_shared/tailwind.css">
 <link rel="stylesheet" href="../web/_shared/components.css">
-<style>
-  .alert-card {
-    border-radius: 14px; padding: 12px 14px;
-    background: var(--bg-panel); display: flex; gap: 12px;
-  }
-  [data-theme="light"] .alert-card { box-shadow: 0 1px 3px rgba(20, 22, 26, 0.05); }
-  .alert-lv {
-    width: 28px; height: 28px; border-radius: 9px; flex: 0 0 auto;
-    display: grid; place-items: center; font-family: var(--font-num); font-size: 13px; font-weight: 700; color: #fff;
-  }
-  .stat-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; text-align: center; }
-  .stat-strip .st-v { font-family: var(--font-num); font-size: 15px; font-weight: 600; }
-  .stat-strip .st-k { font-size: 11px; color: var(--text-3); margin-top: 2px; }
-</style>
 </head>
-<body data-page="stock-risk" data-title="风险与舆情监控" data-desc="风险矩阵 + 明细折叠是主角；舆情压成一行三项指标；情绪柱状图与热词云移至 Web 端。">
-<div id="appScreen">
-  <div class="m-topbar">
-    <a class="icon-btn" href="stock.html">←</a>
-    <span class="m-title">风险与舆情</span>
-    <span class="tag tag-warn" style="margin-left:auto">最高 4/5</span>
-  </div>
-
-  <div class="m-page">
-
-    <!-- 概览 -->
-    <div class="m-kpi-row" style="grid-template-columns:repeat(3,1fr)">
-      <div class="kpi"><span class="kpi-label">高风险项</span><span class="kpi-value t-danger">4</span></div>
-      <div class="kpi"><span class="kpi-label">待关注告警</span><span class="kpi-value t-warn">8</span></div>
-      <div class="kpi"><span class="kpi-label">舆情情绪</span><span class="kpi-value t-up">74</span><span class="kpi-delta t-up">+6</span></div>
-    </div>
-
-    <!-- 风险项列表 -->
-    <div class="m-section-title">风险项</div>
-    <div class="col gap-2" id="mRiskList"></div>
-
-    <!-- 六维雷达 -->
-    <div class="m-section-title">六维风险对比</div>
-    <div class="m-card" style="padding:8px 4px">
-      <div id="mRadar" class="chart" style="height:280px"></div>
-    </div>
-    <div class="hint mt-3">市场风险（58）略高于行业均值（52），财务风险 18 显著优于行业 34。</div>
-
-    <!-- 舆情 -->
-    <div class="m-section-title">舆情构成</div>
-    <div class="m-card">
-      <div class="stat-strip">
-        <div><div class="st-v t-up">66%</div><div class="st-k">正面</div></div>
-        <div><div class="st-v">25%</div><div class="st-k">中性</div></div>
-        <div><div class="st-v t-down">9%</div><div class="st-k">负面</div></div>
-      </div>
-    </div>
-
-    <!-- 告警清单 -->
-    <div class="m-section-title">
-      告警
-      <span class="segmented" style="margin-left:auto">
-        <span class="is-active" data-v="all">全部</span>
-        <span data-v="4">高</span>
-        <span data-v="3">中</span>
-      </span>
-    </div>
-    <div class="col gap-2" id="mAlerts"></div>
-
-    <div class="hint" style="margin-top:20px;line-height:1.8">
-      风险等级为人工标注 1–5 · 演示数据 · 不构成投资建议
-    </div>
-
-  </div>
-</div>
-
-<script src="../web/_shared/vendor/echarts.min.js"></script>
-<script src="../web/_shared/data.js"></script>
-<script src="../web/_shared/charts.js"></script>
-<script src="../web/_shared/spec.js"></script>
-<script src="../web/_shared/app.js"></script>
-<script src="../web/_shared/mock-frame.js"></script>
+<body>
+<div class="sa-boot">正在打开个股页的「风险」…</div>
 <script>
 (function () {
-  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F, rk = D.risk;
-  var alertFilter = "all";
-
-  /* 风险项列表 */
-  document.getElementById("mRiskList").innerHTML = rk.matrix.slice().sort(function (a, b) { return b.level - a.level; }).slice(0, 6).map(function (m) {
-    return '<div class="fold">' +
-      '<div class="fold-head">' +
-        '<span class="risk-lv risk-lv-' + m.level + '"><i></i></span>' +
-        '<span class="fs-13 fw-600">' + m.type + "</span>" +
-        '<span class="mono fs-11 t-3" style="margin-left:auto">严重 ' + m.severity + " · 概率 " + m.probability + "</span>" +
-        '<span class="caret">▼</span>' +
-      "</div>" +
-      '<div class="fold-body fs-13 t-2" style="line-height:1.8">' + m.note + "</div>" +
-      "</div>";
-  }).join("");
-
-  F.radar("#mRadar", { indicators: rk.radar.indicators, series: rk.radar.series, radius: "62%" });
-
-  /* 告警 */
-  function renderAlerts() {
-    var rows = rk.alerts.filter(function (a) {
-      if (alertFilter === "all") return true;
-      if (alertFilter === "4") return a.level >= 4;
-      return a.level === 3;
-    });
-    document.getElementById("mAlerts").innerHTML = rows.length ? rows.slice(0, 6).map(function (a) {
-      var color = a.level >= 5 ? "#e5544b" : a.level === 4 ? "#e58a3f" : a.level === 3 ? "#e0a83f" : "#84cc16";
-      return '<div class="alert-card">' +
-        '<div class="alert-lv" style="background:' + color + '">' + a.level + "</div>" +
-        '<div class="grow">' +
-          '<div class="row gap-2"><span class="fs-13" style="font-weight:600;line-height:1.6">' + a.title + "</span>" +
-          '<span class="mono fs-11 t-3" style="margin-left:auto;flex:0 0 auto">' + a.date + "</span></div>" +
-          '<div class="fs-12 t-2" style="margin-top:4px;line-height:1.7">' + a.detail + "</div>" +
-        "</div></div>";
-    }).join("") : '<div class="empty"><div class="em-icon">◌</div><div class="fs-13">该筛选下暂无告警</div></div>';
-  }
-  renderAlerts();
-  SA.qsa(".segmented > *").forEach(function (el) {
-    el.addEventListener("click", function () {
-      SA.qsa(".segmented > *", el.parentNode).forEach(function (o) { o.classList.toggle("is-active", o === el); });
-      alertFilter = el.getAttribute("data-v");
-      renderAlerts();
-    });
-  });
-
-  SA.qsa(".fold-head").forEach(function (h) {
-    h.addEventListener("click", function () { h.parentNode.classList.toggle("is-collapsed"); });
-  });
+  var q = window.location.search || "";
+  window.location.replace("stock.html" + q + "#risk");
 })();
 </script>
 </body>

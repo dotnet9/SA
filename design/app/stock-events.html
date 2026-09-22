@@ -3,177 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>事件时间线与影响 · 股析 SA（移动端）</title>
+<title>事件 · 股析 SA（移动端）</title>
+<!-- 旧链接跳转桩：该模块已并入个股页的 Tab -->
+<meta http-equiv="refresh" content="0;url=stock.html#events">
 <link rel="stylesheet" href="../web/_shared/tokens.css">
-<link rel="stylesheet" href="../web/_shared/tailwind.css">
 <link rel="stylesheet" href="../web/_shared/components.css">
-<style>
-  .ev-card {
-    border-radius: 14px; padding: 12px 14px;
-    background: var(--bg-panel); border-left: 2px solid var(--border-strong);
-  }
-  .ev-card.is-up { border-left-color: var(--up); }
-  .ev-card.is-down { border-left-color: var(--down); }
-  .graph-box { border-radius: 16px; overflow: hidden; background: var(--bg-panel); }
-  [data-theme="light"] .graph-box { box-shadow: 0 1px 3px rgba(20, 22, 26, 0.05); }
-</style>
 </head>
-<body data-page="stock-events" data-title="事件时间线与影响" data-desc="因果网络等四种拓扑一次只看一种；事件明细卡片流带影响色标。泳道图与类型统计移至 Web 端。">
-<div id="appScreen">
-  <div class="m-topbar">
-    <a class="icon-btn" href="stock.html">←</a>
-    <span class="m-title">事件与影响</span>
-    <a class="fs-12 t-brand" href="stock.html#events" style="margin-left:auto">对照表</a>
-  </div>
-
-  <div class="m-page">
-
-    <!-- 概览 -->
-    <div class="m-kpi-row" style="grid-template-columns:repeat(3,1fr)">
-      <div class="kpi"><span class="kpi-label">近 90 日事件</span><span class="kpi-value">21</span></div>
-      <div class="kpi"><span class="kpi-label">利好 / 利空</span><span class="kpi-value"><span class="t-up">14</span> / <span class="t-down">7</span></span></div>
-      <div class="kpi"><span class="kpi-label">情绪温度</span><span class="kpi-value t-up">74</span><span class="kpi-delta t-3">加权</span></div>
-    </div>
-
-    <!-- 四种拓扑切换 -->
-    <div class="m-section-title">传导拓扑</div>
-    <div class="segmented" style="width:100%;overflow-x:auto" data-tabs=".graph-panel">
-      <span class="is-active" data-tab="causal">因果网络</span>
-      <span data-tab="equity">股权关系</span>
-      <span data-tab="chain">产业链</span>
-      <span data-tab="topdown">自上而下</span>
-    </div>
-
-    <div class="graph-box" style="margin-top:12px">
-      <div class="graph-panel is-active" data-panel="causal">
-        <div id="mG1" class="chart" style="height:320px"></div>
-      </div>
-      <div class="graph-panel" data-panel="equity">
-        <div id="mG2" class="chart" style="height:320px"></div>
-      </div>
-      <div class="graph-panel" data-panel="chain">
-        <div id="mG3" class="chart" style="height:320px"></div>
-      </div>
-      <div class="graph-panel" data-panel="topdown">
-        <div id="mG4" class="chart" style="height:320px"></div>
-      </div>
-    </div>
-
-    <!-- 事件列表 -->
-    <div class="m-section-title">
-      事件明细
-      <span class="fs-11 t-3" style="margin-left:auto" id="mEvCount"></span>
-    </div>
-    <div class="row gap-2 wrap" style="margin-bottom:10px">
-      <span class="tag tag-lg tag-brand" id="fAll">全部</span>
-      <span class="tag tag-lg tag-outline" id="fUp">仅利好</span>
-      <span class="tag tag-lg tag-outline" id="fDown">仅利空</span>
-    </div>
-    <div class="col gap-2" id="mEvList"></div>
-
-    <div class="hint" style="margin-top:20px;line-height:1.8">
-      事件由规则引擎抽取，强度为人工标注（0–100）· 演示数据
-    </div>
-
-  </div>
-</div>
-
-<script src="../web/_shared/vendor/echarts.min.js"></script>
-<script src="../web/_shared/data.js"></script>
-<script src="../web/_shared/charts.js"></script>
-<script src="../web/_shared/spec.js"></script>
-<script src="../web/_shared/app.js"></script>
-<script src="../web/_shared/mock-frame.js"></script>
+<body>
+<div class="sa-boot">正在打开个股页的「事件」…</div>
 <script>
 (function () {
-  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F, ev = D.events;
-  var filter = "all";
-
-  var catColor = {
-    policy: C.cv("--chart-1"), finance: C.cv("--chart-6"), order: C.cv("--chart-2"),
-    operate: C.cv("--chart-8"), supply: C.cv("--chart-4"), fund: C.cv("--chart-3"),
-    price: C.cv("--chart-7"), capacity: C.cv("--chart-2"), rating: C.cv("--chart-1"), compete: C.cv("--chart-5")
-  };
-
-  /* ① 因果网络 */
-  F.graph("#mG1", {
-    nodes: ev.causal.nodes.map(function (n) {
-      return {
-        id: n.id, name: n.name.length > 6 ? n.name.slice(0, 6) + "…" : n.name, cat: n.cat,
-        size: 22 + n.strength / 8,
-        desc: n.type + " · " + n.date + " · " + (n.impact === "up" ? "利好" : "利空") + " · 强度 " + n.strength
-      };
-    }),
-    links: ev.causal.links,
-    categories: Object.keys(catColor).map(function (k) { return { name: k, color: catColor[k] }; }),
-    repulsion: 170, edgeLength: [38, 90], showLegend: false, showLinkLabel: false, curveness: 0.2
-  });
-
-  /* ② 股权关系 */
-  F.graph("#mG2", {
-    nodes: D.equity.graph.nodes.map(function (n) {
-      return Object.assign({}, n, { size: n.id === "self" ? 42 : 26, short: n.name.length > 5 ? n.name.slice(0, 5) + "…" : n.name });
-    }),
-    links: D.equity.graph.links,
-    categories: [
-      { name: "control", color: C.cv("--chart-4") }, { name: "self", color: C.cv("--chart-1") },
-      { name: "sub", color: C.cv("--chart-2") }, { name: "assoc", color: C.cv("--chart-3") },
-      { name: "partner", color: C.cv("--chart-7") }
-    ],
-    repulsion: 170, edgeLength: [36, 84], showLegend: false, showLinkLabel: false
-  });
-
-  /* ③ 产业链 */
-  F.sankey("#mG3", {
-    nodes: D.industry.chain.nodes.map(function (n) {
-      return {
-        name: n.name, level: n.stage === "上游" ? 0 : n.stage === "中游" ? 1 : 2,
-        color: n.stage === "上游" ? C.cv("--chart-4") : n.stage === "中游" ? C.cv("--chart-1") : C.cv("--chart-2"),
-        note: n.note
-      };
-    }),
-    links: D.industry.chain.links
-  });
-
-  /* ④ 自上而下 */
-  F.sankey("#mG4", {
-    nodes: ev.topdown.nodes.map(function (n) {
-      return {
-        name: n.name, level: n.level,
-        color: n.impact === "up" ? C.cv("--chart-1") : C.cv("--chart-5"),
-        note: (n.impact === "up" ? "利好" : "利空") + " · 强度 " + n.strength
-      };
-    }),
-    links: ev.topdown.links
-  });
-
-  /* 事件列表 */
-  function renderEv() {
-    var list = ev.table.filter(function (t) { return filter === "all" || t.impact === filter; });
-    document.getElementById("mEvCount").textContent = list.length + " 条";
-    document.getElementById("mEvList").innerHTML = list.map(function (t) {
-      var isUp = t.impact === "up";
-      return '<div class="ev-card ' + (isUp ? "is-up" : "is-down") + '">' +
-        '<div class="row gap-2">' +
-          '<span class="tag ' + (isUp ? "tag-up" : "tag-down") + '">' + (isUp ? "利好" : "利空") + "</span>" +
-          '<span class="fs-13" style="font-weight:500;line-height:1.6">' + t.title + "</span>" +
-          '<span class="mono fs-11 t-3" style="margin-left:auto;flex:0 0 auto">' + t.date + "</span>" +
-        "</div>" +
-        "</div>";
-    }).join("");
-  }
-  renderEv();
-  [["fAll", "all"], ["fUp", "up"], ["fDown", "down"]].forEach(function (pair) {
-    document.getElementById(pair[0]).addEventListener("click", function () {
-      filter = pair[1];
-      ["fAll", "fUp", "fDown"].forEach(function (id) {
-        var el = document.getElementById(id);
-        el.classList.toggle("tag-brand", id === pair[0]);
-        el.classList.toggle("tag-outline", id !== pair[0]);
-      });
-      renderEv();
-    });
-  });
+  var q = window.location.search || "";
+  window.location.replace("stock.html" + q + "#events");
 })();
 </script>
 </body>

@@ -3,147 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>盈利与财务表现 · 股析 SA（移动端）</title>
+<title>财务 · 股析 SA（移动端）</title>
+<!-- 旧链接跳转桩：该模块已并入个股页的 Tab -->
+<meta http-equiv="refresh" content="0;url=stock.html#finance">
 <link rel="stylesheet" href="../web/_shared/tokens.css">
-<link rel="stylesheet" href="../web/_shared/tailwind.css">
 <link rel="stylesheet" href="../web/_shared/components.css">
-<style>
-  .hscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .hscroll::-webkit-scrollbar { display: none; }
-  .freeze-tbl td:first-child, .freeze-tbl th:first-child {
-    position: sticky; left: 0; z-index: 2; background: var(--bg-panel);
-    box-shadow: 1px 0 0 var(--border-soft);
-  }
-  .stat-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; text-align: center; }
-  .stat-strip .st-v { font-family: var(--font-num); font-size: 15px; font-weight: 600; }
-  .stat-strip .st-k { font-size: 11px; color: var(--text-3); margin-top: 2px; }
-</style>
 </head>
-<body data-page="stock-finance" data-title="盈利与财务表现" data-desc="营收利润一张主图 + 六个核心指标横滑 + 单季度增速表。砍掉盈利能力副图、资产负债表与同业表，分别由总览与行业页承载。">
-<div id="appScreen">
-  <div class="m-topbar">
-    <a class="icon-btn" href="stock.html">←</a>
-    <span class="m-title">盈利与财务</span>
-    <span class="mono fs-11 t-3" style="margin-left:auto">300750</span>
-  </div>
-
-  <div class="m-page">
-
-    <div class="row-between">
-      <span class="segmented">
-        <span class="is-active">年度</span><span>单季度</span>
-      </span>
-      <span class="fs-11 t-3">2025 年报</span>
-    </div>
-
-    <!-- 营收利润主图 -->
-    <div class="m-card" style="margin-top:12px;padding:8px 4px">
-      <div id="mRev" class="chart" style="height:260px"></div>
-    </div>
-    <div class="hint mt-3" style="line-height:1.8">
-      2025 年营收 +17.9%，毛利率 25.8% 创近 4 年新高，净利逆势 +22.8%。
-    </div>
-
-    <!-- 核心指标横滑 -->
-    <div class="m-section-title">核心指标</div>
-    <div class="m-scroll-x" id="finCards"></div>
-
-    <!-- 现金流质量 -->
-    <div class="m-section-title">现金流质量</div>
-    <div class="m-card">
-      <div class="stat-strip">
-        <div><div class="st-v t-up">1.63</div><div class="st-k">净现比</div></div>
-        <div><div class="st-v t-up">1.08</div><div class="st-k">收现比</div></div>
-        <div><div class="st-v t-up">486.2</div><div class="st-k">自由现金流(亿)</div></div>
-      </div>
-    </div>
-
-    <!-- 单季度增速表 -->
-    <div class="m-section-title">
-      单季度增速
-      <span class="hint" style="margin-left:auto">← 左右滑动 →</span>
-    </div>
-    <div class="m-card" style="padding:0">
-      <div class="hscroll">
-        <table class="tbl freeze-tbl" id="mGrowth" style="min-width:640px"></table>
-      </div>
-    </div>
-
-    <div class="hint" style="margin-top:20px;line-height:1.8">
-      合并报表披露值 · 演示数据 · 不构成投资建议
-    </div>
-
-  </div>
-</div>
-
-<script src="../web/_shared/vendor/echarts.min.js"></script>
-<script src="../web/_shared/data.js"></script>
-<script src="../web/_shared/charts.js"></script>
-<script src="../web/_shared/spec.js"></script>
-<script src="../web/_shared/app.js"></script>
-<script src="../web/_shared/mock-frame.js"></script>
+<body>
+<div class="sa-boot">正在打开个股页的「财务」…</div>
 <script>
 (function () {
-  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F, fin = D.finance, q = D.financeQuarters;
-
-  /* 核心指标横滑：6 个 */
-  var cards = [
-    { k: "营业收入", v: fin.revenue[4].toFixed(1), u: "亿", d: "+17.9%" },
-    { k: "净利润", v: fin.netProfit[4].toFixed(1), u: "亿", d: "+22.8%" },
-    { k: "毛利率", v: fin.grossMargin[4].toFixed(1) + "%", u: "", d: "+1.4pct" },
-    { k: "净利率", v: fin.netMargin[4].toFixed(1) + "%", u: "", d: "+0.6pct" },
-    { k: "ROE", v: fin.roe[4].toFixed(1) + "%", u: "", d: "+1.4pct" },
-    { k: "经营现金流", v: fin.ocf[4].toFixed(1), u: "亿", d: "+16.9%" }
-  ];
-  document.getElementById("finCards").innerHTML = cards.map(function (c) {
-    return '<div class="kpi" style="flex:0 0 132px">' +
-      '<span class="kpi-label">' + c.k + "</span>" +
-      '<span class="kpi-value">' + c.v + '<span class="fs-11 t-3"> ' + c.u + "</span></span>" +
-      '<span class="kpi-delta t-up">' + c.d + "</span></div>";
-  }).join("");
-
-  /* 营收利润主图 */
-  function drawRev(isQ) {
-    document.getElementById("mRev").innerHTML = "";
-    F.combo("#mRev", {
-      labels: isQ ? q.labels : fin.years, unit: "亿元", unit2: "%",
-      bars: [{ name: "营业收入", data: isQ ? q.revenue : fin.revenue }],
-      lines: [
-        { name: "净利润", data: isQ ? q.netProfit : fin.netProfit, axis: 2, color: C.cv("--chart-4") },
-        { name: "毛利率 %", data: isQ ? q.grossMargin : fin.grossMargin, axis: 2, color: C.cv("--chart-2") }
-      ],
-      rotate: 30
-    });
-    C.rebuildAll();
-  }
-  drawRev(false);
-
-  /* 增速表 */
-  var rows = [
-    { k: "营业收入", v: q.revenue, unit: "亿" },
-    { k: "净利润", v: q.netProfit, unit: "亿" },
-    { k: "毛利率", v: q.grossMargin, unit: "%" },
-    { k: "净利率", v: q.netMargin, unit: "%" },
-    { k: "营收同比", v: q.yoy, unit: "%" },
-    { k: "营收环比", v: q.qoq, unit: "%" }
-  ];
-  document.getElementById("mGrowth").innerHTML =
-    "<thead><tr><th>指标</th>" + q.labels.map(function (l) { return '<th class="num">' + l + "</th>"; }).join("") + "</tr></thead><tbody>" +
-    rows.map(function (r) {
-      return "<tr><td class=\"fw-600\">" + r.k + "</td>" + r.v.map(function (v) {
-        var isPct = r.unit === "%";
-        var cls = r.k.indexOf("率") >= 0 ? "" : v >= 0 ? "t-up" : "t-down";
-        return '<td class="num ' + cls + '">' + (v >= 0 && (r.k.indexOf("同比") >= 0 || r.k.indexOf("环比") >= 0) ? "+" : "") + v.toFixed(1) + (isPct ? "%" : "") + "</td>";
-      }).join("") + "</tr>";
-    }).join("") + "</tbody>";
-
-  /* 周期切换 */
-  SA.qsa(".segmented > *").forEach(function (el) {
-    el.addEventListener("click", function () {
-      SA.qsa(".segmented > *", el.parentNode).forEach(function (o) { o.classList.toggle("is-active", o === el); });
-      drawRev(el.textContent.trim() === "单季度");
-    });
-  });
+  var q = window.location.search || "";
+  window.location.replace("stock.html" + q + "#finance");
 })();
 </script>
 </body>

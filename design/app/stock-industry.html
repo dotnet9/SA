@@ -3,125 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>行业与同业对比 · 股析 SA（移动端）</title>
+<title>行业 · 股析 SA（移动端）</title>
+<!-- 旧链接跳转桩：该模块已并入个股页的 Tab -->
+<meta http-equiv="refresh" content="0;url=stock.html#industry">
 <link rel="stylesheet" href="../web/_shared/tokens.css">
-<link rel="stylesheet" href="../web/_shared/tailwind.css">
 <link rel="stylesheet" href="../web/_shared/components.css">
-<style>
-  .hscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .hscroll::-webkit-scrollbar { display: none; }
-  .freeze-tbl td:first-child, .freeze-tbl th:first-child {
-    position: sticky; left: 0; z-index: 2; background: var(--bg-panel);
-    box-shadow: 1px 0 0 var(--border-soft);
-  }
-</style>
 </head>
-<body data-page="stock-industry" data-title="行业与同业对比" data-desc="同业对比表与雷达图是主角；产业链以折叠明细呈现，估值散点与景气仪表移至 Web 端。">
-<div id="appScreen">
-  <div class="m-topbar">
-    <a class="icon-btn" href="stock.html">←</a>
-    <span class="m-title">行业与同业</span>
-    <span class="mono fs-11 t-3" style="margin-left:auto">300750</span>
-  </div>
-
-  <div class="m-page">
-
-    <!-- 行业概览 -->
-    <div class="m-kpi-row" style="grid-template-columns:repeat(2,1fr)">
-      <div class="kpi"><span class="kpi-label">所属行业</span><span class="kpi-value">电池</span><span class="kpi-delta t-up">今日 +3.86%</span></div>
-      <div class="kpi"><span class="kpi-label">全球市占率</span><span class="kpi-value t-up">36.8%</span><span class="kpi-delta t-3">第 1 位</span></div>
-      <div class="kpi"><span class="kpi-label">行业景气度</span><span class="kpi-value">68 / 100</span><span class="kpi-delta t-3">中性偏强</span></div>
-      <div class="kpi"><span class="kpi-label">估值 vs 行业</span><span class="kpi-value t-up">折价 16%</span><span class="kpi-delta t-3">PE 22.4 vs 26.8</span></div>
-    </div>
-
-    <!-- 同业对比表 -->
-    <div class="m-section-title">
-      同业对比
-      <span class="hint" style="margin-left:auto">← 左右滑动 →</span>
-    </div>
-    <div class="m-card" style="padding:0">
-      <div class="hscroll">
-        <table class="tbl freeze-tbl" style="min-width:700px" id="mPeerTbl"></table>
-      </div>
-    </div>
-
-    <!-- 雷达 -->
-    <div class="m-section-title">多指标雷达对比</div>
-    <div class="m-card" style="padding:8px 4px">
-      <div id="mRadar" class="chart" style="height:300px"></div>
-    </div>
-    <div class="hint mt-3">宁德时代位于「低 PE + 高 RO」象限，同业中性价比最优。</div>
-
-    <!-- 产业链环节 -->
-    <div class="m-section-title">产业链环节</div>
-    <div id="mChainCards"></div>
-
-    <!-- 行业地位 -->
-    <div class="m-section-title">行业地位</div>
-    <div class="m-card">
-      <div class="col gap-2">
-        <div class="row-between"><span class="fs-13 t-2">行业排名（按市值）</span><span class="mono fs-13 t-up">1 / 86</span></div>
-        <div class="row-between"><span class="fs-13 t-2">国内市占率</span><span class="mono fs-13 t-up">42.6%</span></div>
-        <div class="row-between"><span class="fs-13 t-2">净利润行业占比</span><span class="mono fs-13 t-up">48.6%</span></div>
-        <div class="row-between"><span class="fs-13 t-2">海外收入占比</span><span class="mono fs-13 t-up">32.8%</span></div>
-      </div>
-    </div>
-
-    <div class="hint" style="margin-top:20px;line-height:1.8">
-      申万一级行业「电池」· 演示数据 · 不构成投资建议
-    </div>
-
-  </div>
-</div>
-
-<script src="../web/_shared/vendor/echarts.min.js"></script>
-<script src="../web/_shared/data.js"></script>
-<script src="../web/_shared/charts.js"></script>
-<script src="../web/_shared/spec.js"></script>
-<script src="../web/_shared/app.js"></script>
-<script src="../web/_shared/mock-frame.js"></script>
+<body>
+<div class="sa-boot">正在打开个股页的「行业」…</div>
 <script>
 (function () {
-  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F, ind = D.industry;
-
-  /* 雷达 */
-  F.radar("#mRadar", { indicators: ind.peerRadar.indicators, series: ind.peerRadar.series, radius: "62%" });
-
-  /* 环节卡片（默认折叠） */
-  document.getElementById("mChainCards").innerHTML = ["上游", "中游", "下游"].map(function (stage) {
-    var nodes = ind.chain.nodes.filter(function (n) { return n.stage === stage; });
-    return '<div class="fold is-collapsed">' +
-      '<div class="fold-head"><span class="tag tag-outline">' + stage + '</span>' +
-      '<span class="fs-13 fw-600">' + nodes.length + " 个环节</span>" +
-      '<span class="caret">▼</span></div>' +
-      '<div class="fold-body" style="padding:0">' +
-        nodes.map(function (n) {
-          return '<div style="padding:8px 0;border-bottom:1px solid var(--border-soft)">' +
-            '<div class="row-between"><span class="fs-13 fw-600">' + n.name + "</span>" +
-            '<span class="mono fs-12 ' + (n.boom >= 65 ? "t-up" : n.boom >= 50 ? "t-2" : "t-down") + '">景气 ' + n.boom + "</span></div>" +
-            '<div class="hint" style="line-height:1.7">' + n.note + (n.share ? " · 市占率 " + n.share + "%" : "") + "</div>" +
-            "</div>";
-        }).join("") +
-      "</div></div>";
-  }).join("");
-  SA.qsa(".fold-head").forEach(function (h) {
-    h.addEventListener("click", function () { h.parentNode.classList.toggle("is-collapsed"); });
-  });
-
-  /* 同业表 */
-  document.getElementById("mPeerTbl").innerHTML =
-    '<thead><tr><th>公司</th><th class="num">营收</th><th class="num">净利</th><th class="num">毛利率</th><th class="num">ROE</th><th class="num">PE</th><th class="num">涨跌</th></tr></thead><tbody>' +
-    ind.peers.map(function (p) {
-      return '<tr data-chg="' + (p.pct >= 0 ? "up" : "down") + '" class="is-clickable" data-href="stock.html?code=' + p.code + '">' +
-        '<td class="fw-600">' + p.name + (p.self ? ' <span class="tag tag-brand">本股</span>' : "") + "</td>" +
-        '<td class="num">' + p.revenue.toFixed(1) + "</td>" +
-        '<td class="num">' + p.netProfit.toFixed(1) + "</td>" +
-        '<td class="num">' + p.grossMargin.toFixed(1) + "%</td>" +
-        '<td class="num ' + (p.roe >= 0 ? "t-up" : "t-down") + '">' + p.roe.toFixed(1) + "%</td>" +
-        '<td class="num">' + (p.pe ? p.pe.toFixed(1) : "亏损") + "</td>" +
-        '<td class="num ' + (p.pct >= 0 ? "t-up" : "t-down") + '">' + (p.pct >= 0 ? "+" : "") + p.pct.toFixed(2) + "%</td>" +
-        "</tr>";
-    }).join("") + "</tbody>";
+  var q = window.location.search || "";
+  window.location.replace("stock.html" + q + "#industry");
 })();
 </script>
 </body>

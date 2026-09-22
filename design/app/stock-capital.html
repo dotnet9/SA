@@ -3,122 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>资金面与筹码 · 股析 SA（移动端）</title>
+<title>资金 · 股析 SA（移动端）</title>
+<!-- 旧链接跳转桩：该模块已并入个股页的 Tab -->
+<meta http-equiv="refresh" content="0;url=stock.html#capital">
 <link rel="stylesheet" href="../web/_shared/tokens.css">
-<link rel="stylesheet" href="../web/_shared/tailwind.css">
 <link rel="stylesheet" href="../web/_shared/components.css">
-<style>
-  .hero-flow {
-    border-radius: 16px; padding: 20px;
-    background: var(--bg-panel);
-  }
-  [data-theme="light"] .hero-flow { box-shadow: 0 1px 3px rgba(20, 22, 26, 0.05); }
-  .stat-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; text-align: center; }
-  .stat-strip .st-v { font-family: var(--font-num); font-size: 15px; font-weight: 600; }
-  .stat-strip .st-k { font-size: 11px; color: var(--text-3); margin-top: 2px; }
-</style>
 </head>
-<body data-page="stock-capital" data-title="资金面与筹码" data-desc="今日主力净流入大字卡是唯一主角；主力走势图 + 资金分层表 + 筹码分布 + 龙虎榜。两融与增减持收进 Web 端。">
-<div id="appScreen">
-  <div class="m-topbar">
-    <a class="icon-btn" href="stock.html">←</a>
-    <span class="m-title">资金与筹码</span>
-    <span class="mono fs-11 t-3" style="margin-left:auto">300750</span>
-  </div>
-
-  <div class="m-page">
-
-    <!-- 大字卡 -->
-    <div class="hero-flow" style="margin-top:4px">
-      <div class="hint">今日主力净流入</div>
-      <div class="mono fw-700 t-up" style="font-size:36px;line-height:1.2;letter-spacing:-0.02em;margin-top:4px">+18.62<span class="fs-14"> 亿元</span></div>
-      <div class="row gap-3" style="margin-top:8px">
-        <span class="fs-12 t-2">超大单 <b class="mono t-up">+11.42</b></span>
-        <span class="fs-12 t-2">大单 <b class="mono t-up">+7.20</b></span>
-        <span class="fs-12 t-2">近 5 日 <b class="mono t-up">+38.14</b></span>
-      </div>
-    </div>
-
-    <!-- 主力资金图 -->
-    <div class="m-section-title">主力资金净流入（亿元）</div>
-    <div class="m-card" style="padding:8px 4px">
-      <div id="mFlow" class="chart" style="height:220px"></div>
-    </div>
-
-    <!-- 资金分层 -->
-    <div class="m-section-title">资金分层（亿元）</div>
-    <div class="m-card" style="padding:0 16px">
-      <table class="tbl">
-        <thead><tr><th>分层</th><th class="num">今日</th><th class="num">近 5 日</th></tr></thead>
-        <tbody>
-          <tr><td class="t-2">超大单</td><td class="num t-up">+11.42</td><td class="num t-up">+26.84</td></tr>
-          <tr><td class="t-2">大单</td><td class="num t-up">+7.20</td><td class="num t-up">+11.30</td></tr>
-          <tr><td class="t-2">中单</td><td class="num t-down">-5.86</td><td class="num t-down">-12.42</td></tr>
-          <tr><td class="t-2">小单</td><td class="num t-down">-12.76</td><td class="num t-down">-25.72</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="hint mt-3">机构主动买入、散户卖出，筹码向机构集中。</div>
-
-    <!-- 筹码分布 -->
-    <div class="m-section-title">
-      筹码分布
-      <span class="tag tag-up" style="margin-left:auto">获利盘 72.4%</span>
-    </div>
-    <div class="m-card" style="padding:8px 4px">
-      <div id="mChips" class="chart" style="height:260px"></div>
-      <div class="stat-strip" style="padding:8px 12px 4px">
-        <div><div class="st-v">246.80 元</div><div class="st-k">平均成本</div></div>
-        <div><div class="st-v t-up">0.186</div><div class="st-k">集中度</div></div>
-        <div><div class="st-v">27.6%</div><div class="st-k">上方套牢盘</div></div>
-      </div>
-    </div>
-
-    <!-- 龙虎榜 -->
-    <div class="m-section-title">
-      龙虎榜
-      <span class="fs-11 t-3" style="margin-left:auto">近 3 月 4 次</span>
-    </div>
-    <div class="col gap-2" id="mDT"></div>
-
-    <div class="hint" style="margin-top:20px;line-height:1.8">
-      资金流按逐笔成交分层 · 演示数据 · 不构成投资建议
-    </div>
-
-  </div>
-</div>
-
-<script src="../web/_shared/vendor/echarts.min.js"></script>
-<script src="../web/_shared/data.js"></script>
-<script src="../web/_shared/charts.js"></script>
-<script src="../web/_shared/spec.js"></script>
-<script src="../web/_shared/app.js"></script>
-<script src="../web/_shared/mock-frame.js"></script>
+<body>
+<div class="sa-boot">正在打开个股页的「资金」…</div>
 <script>
 (function () {
-  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F, cap = D.capital;
-
-  F.combo("#mFlow", {
-    labels: cap.mainFlow.labels, unit: "亿元",
-    bars: [{ name: "主力净流入", data: cap.mainFlow.net }],
-    lines: [{
-      name: "累计", area: true, color: C.cv("--chart-2"),
-      data: (function () { var s = 0; return cap.mainFlow.net.map(function (v) { s += v; return +s.toFixed(2); }); })()
-    }],
-    rotate: 40
-  });
-
-  F.chips("#mChips", { data: cap.chips, current: D.focusProfile.price });
-
-  /* 龙虎榜卡片：前 2 条 */
-  document.getElementById("mDT").innerHTML = cap.dragonTiger.slice(0, 2).map(function (d) {
-    var isUp = d.net >= 0;
-    return '<div class="m-card">' +
-      '<div class="row-between"><span class="mono fs-11 t-3">' + d.date + "</span>" +
-      '<span class="tag ' + (isUp ? "tag-up" : "tag-down") + '">净' + (isUp ? "买入" : "卖出") + " " + Math.abs(d.net).toFixed(2) + " 亿</span></div>" +
-      '<div class="fs-13" style="margin-top:6px;line-height:1.7;font-weight:500">' + d.reason + "</div>" +
-      "</div>";
-  }).join("");
+  var q = window.location.search || "";
+  window.location.replace("stock.html" + q + "#capital");
 })();
 </script>
 </body>

@@ -3,143 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>投资与股权结构 · 股析 SA（移动端）</title>
+<title>股权 · 股析 SA（移动端）</title>
+<!-- 旧链接跳转桩：该模块已并入个股页的 Tab -->
+<meta http-equiv="refresh" content="0;url=stock.html#equity">
 <link rel="stylesheet" href="../web/_shared/tokens.css">
-<link rel="stylesheet" href="../web/_shared/tailwind.css">
 <link rel="stylesheet" href="../web/_shared/components.css">
-<style>
-  .graph-box {
-    position: relative; border-radius: 16px; overflow: hidden;
-    background: var(--bg-panel);
-  }
-  [data-theme="light"] .graph-box { box-shadow: 0 1px 3px rgba(20, 22, 26, 0.05); }
-</style>
 </head>
-<body data-page="stock-equity" data-title="投资与股权结构" data-desc="拓扑图是首屏主角，股权穿透时间轴讲清控制权，其余数据用折叠面板逐层展开。机构持仓趋势与质押细节移至 Web 端。">
-<div id="appScreen">
-  <div class="m-topbar">
-    <a class="icon-btn" href="stock.html">←</a>
-    <span class="m-title">投资与股权</span>
-    <span class="mono fs-11 t-3" style="margin-left:auto">300750</span>
-  </div>
-
-  <div class="m-page">
-
-    <!-- 拓扑 -->
-    <div class="graph-box" style="margin-top:4px">
-      <div id="mEqGraph" class="chart" style="height:320px"></div>
-    </div>
-    <div class="hint" style="margin-top:8px;text-align:center">双指捏合缩放 · 单指拖动平移</div>
-
-    <!-- 关键指标 -->
-    <div class="m-kpi-row" style="margin-top:16px;grid-template-columns:repeat(2,1fr)">
-      <div class="kpi"><span class="kpi-label">实际控制人</span><span class="kpi-value">曾毓群</span><span class="kpi-delta t-3">控制 33.02%</span></div>
-      <div class="kpi"><span class="kpi-label">机构持仓</span><span class="kpi-value t-up">25.2%</span><span class="kpi-delta t-up">↑ +1.4pct</span></div>
-      <div class="kpi"><span class="kpi-label">股权质押</span><span class="kpi-value t-up">2.4%</span><span class="kpi-delta t-3">远低于行业 8.6%</span></div>
-      <div class="kpi"><span class="kpi-label">近一年投资</span><span class="kpi-value">6 笔</span><span class="kpi-delta t-3">合计 360.2 亿</span></div>
-    </div>
-
-    <!-- 股权穿透 -->
-    <div class="m-section-title">股权穿透路径</div>
-    <div class="m-card">
-      <div class="timeline">
-        <div class="tl-item is-brand"><span class="tl-dot"></span>
-          <div class="tl-head"><span class="tl-time">L0</span><span class="fs-13 fw-600">曾毓群</span>
-            <span class="mono fs-12 t-up" style="margin-left:auto">22.42%</span></div>
-          <div class="tl-body">自然人 · 实际控制人（直接持股）</div>
-        </div>
-        <div class="tl-item"><span class="tl-dot"></span>
-          <div class="tl-head"><span class="tl-time">L1</span><span class="fs-13 fw-600">瑞庭投资</span></div>
-          <div class="tl-body">曾毓群 100% 持股</div>
-        </div>
-        <div class="tl-item is-up"><span class="tl-dot"></span>
-          <div class="tl-head"><span class="tl-time">L2</span><span class="fs-13 fw-600">宁德时代</span>
-            <span class="mono fs-12 t-up" style="margin-left:auto">10.6%</span></div>
-          <div class="tl-body">叠加直接持股，合计控制 33.02%</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 股东折叠 -->
-    <div class="m-section-title">主要股东</div>
-    <div id="mHolders"></div>
-
-    <!-- 子公司清单 -->
-    <div class="m-section-title">控股与参股公司</div>
-    <div id="mSubs"></div>
-
-    <div class="hint" style="margin-top:20px;line-height:1.8">
-      取自定期报告与公告 · 演示数据 · 不构成投资建议
-    </div>
-
-  </div>
-</div>
-
-<script src="../web/_shared/vendor/echarts.min.js"></script>
-<script src="../web/_shared/data.js"></script>
-<script src="../web/_shared/charts.js"></script>
-<script src="../web/_shared/spec.js"></script>
-<script src="../web/_shared/app.js"></script>
-<script src="../web/_shared/mock-frame.js"></script>
+<body>
+<div class="sa-boot">正在打开个股页的「股权」…</div>
 <script>
 (function () {
-  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F, eq = D.equity;
-
-  /* 拓扑（手机端用更小斥力、更短边长） */
-  F.graph("#mEqGraph", {
-    nodes: eq.graph.nodes.map(function (n) {
-      return Object.assign({}, n, {
-        size: n.id === "self" ? 44 : 30,
-        short: n.name.length > 5 ? n.name.slice(0, 5) + "…" : n.name
-      });
-    }),
-    links: eq.graph.links,
-    categories: [
-      { name: "control", color: C.cv("--chart-4") }, { name: "self", color: C.cv("--chart-1") },
-      { name: "sub", color: C.cv("--chart-2") }, { name: "assoc", color: C.cv("--chart-3") },
-      { name: "partner", color: C.cv("--chart-7") }
-    ],
-    repulsion: 190, edgeLength: [40, 90], showLegend: false, showLinkLabel: false
-  });
-
-  /* 主要股东折叠：前 4 */
-  document.getElementById("mHolders").innerHTML = eq.topHolders.slice(0, 4).map(function (h) {
-    var isUp = h.chg > 0, isDown = h.chg < 0;
-    var tag = h.chgType === "增持" ? "tag-up" : h.chgType === "减持" ? "tag-down" : "tag";
-    return '<div class="fold">' +
-      '<div class="fold-head">' +
-        '<span class="mono fs-11 t-3" style="width:18px">' + h.rank + "</span>" +
-        '<span class="fs-13 fw-600 ellipsis" style="max-width:140px">' + h.name + "</span>" +
-        '<span class="mono fs-13" style="margin-left:auto">' + h.pct.toFixed(2) + "%</span>" +
-        '<span class="tag ' + tag + '">' + h.chgType + "</span>" +
-        '<span class="caret">▼</span>' +
-      "</div>" +
-      '<div class="fold-body">' +
-        '<div class="row-between"><span class="fs-12 t-2">类型</span><span class="fs-12">' + h.type + "</span></div>" +
-        '<div class="row-between mt-2"><span class="fs-12 t-2">持股数</span><span class="mono fs-12">' + h.shares.toFixed(2) + " 亿股</span></div>" +
-        '<div class="row-between mt-2"><span class="fs-12 t-2">本期变动</span><span class="mono fs-12 ' + (isUp ? "t-up" : isDown ? "t-down" : "t-flat") + '">' +
-          (h.chg === 0 ? "— 不变" : (isUp ? "+" : "") + h.chg.toFixed(2) + "%") + "</span></div>" +
-      "</div></div>";
-  }).join("");
-
-  /* 子公司清单：折叠面板 */
-  var catName = { control: "控股方", self: "本公司", sub: "控股子公司", assoc: "参股公司", partner: "合资 / 授权" };
-  document.getElementById("mSubs").innerHTML = eq.graph.nodes.filter(function (n) { return n.cat === "sub" || n.cat === "assoc"; }).map(function (n) {
-    var lk = eq.graph.links.filter(function (l) { return l.target === n.id; })[0];
-    return '<div class="fold is-collapsed">' +
-      '<div class="fold-head">' +
-        '<span class="tag tag-outline">' + (catName[n.cat] || n.cat) + "</span>" +
-        '<span class="fs-13 fw-600 ellipsis" style="max-width:130px">' + n.name + "</span>" +
-        (lk && lk.ratio ? '<span class="mono fs-13 t-up" style="margin-left:auto">' + lk.ratio + "%</span>" : "") +
-        '<span class="caret">▼</span>' +
-      "</div>" +
-      '<div class="fold-body fs-12 t-2" style="line-height:1.8">' + n.desc + "</div>" +
-      "</div>";
-  }).join("");
-
-  SA.qsa(".fold-head").forEach(function (h) {
-    h.addEventListener("click", function () { h.parentNode.classList.toggle("is-collapsed"); });
-  });
+  var q = window.location.search || "";
+  window.location.replace("stock.html" + q + "#equity");
 })();
 </script>
 </body>

@@ -3,71 +3,48 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>自选股盯盘 · 股析 SA（移动端）</title>
+<title>自选股 · 股析 SA（移动端）</title>
 <link rel="stylesheet" href="../web/_shared/tokens.css">
 <link rel="stylesheet" href="../web/_shared/tailwind.css">
 <link rel="stylesheet" href="../web/_shared/components.css">
 <style>
-  .wl-row {
-    position: relative; overflow: hidden; background: var(--bg-panel);
-  }
-  .wl-row + .wl-row { margin-top: 2px; }
-  .wl-inner {
-    display: flex; align-items: center; gap: 10px;
-    padding: 13px 16px; min-height: 64px;
-    background: var(--bg-panel); position: relative; z-index: 2;
-    transition: transform var(--t-base);
-  }
-  .wl-row:first-child .wl-inner { border-radius: 16px 16px 0 0; }
-  .wl-row:last-child .wl-inner { border-radius: 0 0 16px 16px; }
-  .wl-actions {
-    position: absolute; right: 0; top: 0; bottom: 0; z-index: 1;
-    display: flex;
-  }
-  .wl-actions > * {
-    width: 68px; display: grid; place-items: center; color: #fff; font-size: 12px;
-  }
-  .swipe-hint { font-size: 10px; color: var(--text-3); }
+  .wl-row { display: flex; align-items: baseline; gap: 8px; padding: 13px 16px; border-bottom: 1px solid var(--border-soft); }
+  .wl-row:last-child { border-bottom: none; }
+  .wl-row .nm { flex: 1; min-width: 0; }
+  .wl-row .pc { width: 76px; text-align: right; }
 </style>
 </head>
-<body data-page="watchlist" data-title="自选股盯盘" data-desc="大盘窄条 + 分组筛选 + 纯净列表（名称 / 价格 / 涨跌幅），实时刷新闪烁，左滑删除、长按拖拽排序。小屏上价格与涨跌就是全部。">
+<body data-page="watchlist" data-title="自选股" data-desc="名称 + 涨跌幅两列。点任一行进入个股页。">
 <div id="appScreen">
-
-  <div class="m-topbar">
-    <span class="m-title">自选</span>
-    <span class="row gap-2" style="margin-left:auto"><span class="dot dot-live"></span><span class="fs-11 t-3">实时 3s</span></span>
-    <button class="icon-btn" id="mPause">⏸</button>
-  </div>
-
   <div class="m-page">
 
-    <!-- 大盘窄条 -->
-    <div class="statbar" style="margin-bottom:12px">
-      <span class="statbar-item"><span class="k">上证</span><span class="v t-up">3286.42 +0.45%</span></span>
-      <span class="statbar-item"><span class="k">创业板</span><span class="v t-up">2148.66 +1.24%</span></span>
-      <span class="statbar-item"><span class="k">北向</span><span class="v t-up">+42.6 亿</span></span>
+    <div class="row-between">
+      <div>
+        <div style="font-size:22px;font-weight:700;letter-spacing:-0.01em">自选股</div>
+        <div class="hint" style="margin-top:2px" id="wlCount"></div>
+      </div>
+      <button class="btn btn-outline btn-sm" id="btnAdd">+ 添加</button>
     </div>
 
-    <!-- 分组 -->
-    <div class="m-scroll-x" style="margin-bottom:12px" id="mGroups">
-      <span class="tag tag-lg tag-brand" data-g="all">全部 14</span>
-      <span class="tag tag-lg tag-outline" data-g="core">核心持仓 4</span>
-      <span class="tag tag-lg tag-outline" data-g="watch">重点观察 6</span>
-      <span class="tag tag-lg tag-outline" data-g="chain">产业链 4</span>
-    </div>
-
-    <!-- 列表 -->
-    <div id="mList"></div>
-
-    <div class="hint" style="margin-top:20px;line-height:1.8">
-      仅自选股享受 3 秒实时推送 · 左滑删除 · 长按拖动排序
+    <div class="m-card is-flush" style="padding:0;margin-top:14px">
+      <div id="wlList"></div>
     </div>
 
   </div>
 </div>
 
-<div id="appActions" class="m-actions" style="display:none">
-  <button class="btn btn-primary" id="mAdd">+ 添加自选</button>
+<div class="overlay" id="dlgAdd">
+  <div class="sheet">
+    <div class="sheet-grip"></div>
+    <div class="m-page">
+      <div class="row-between">
+        <span class="fs-15 fw-600">添加自选</span>
+        <button class="icon-btn" data-close="dlgAdd">✕</button>
+      </div>
+      <input class="input" id="addKw" placeholder="代码 / 名称 / 拼音" style="margin-top:12px">
+      <div id="addResult" class="col gap-2" style="margin-top:10px"></div>
+    </div>
+  </div>
 </div>
 
 <script src="../web/_shared/vendor/echarts.min.js"></script>
@@ -78,151 +55,88 @@
 <script src="../web/_shared/mock-frame.js"></script>
 <script>
 (function () {
-  var D = window.SA_DATA, wl = D.watchlist;
-  var group = "all";
-  var ticker = null;
+  var D = window.SA_DATA;
+  var ORDER_KEY = "sa.watchorder";
+  var defaults = D.watchlist.items.map(function (w) { return w.code; });
 
-  function rows() {
-    return wl.items.filter(function (i) { return group === "all" || i.group === group; });
+  var codes = (function () {
+    var saved = SA.get(ORDER_KEY, "");
+    if (!saved) return defaults.slice();
+    var out = saved.split(",").filter(function (c) { return defaults.indexOf(c) >= 0; });
+    defaults.forEach(function (c) { if (out.indexOf(c) < 0) out.push(c); });
+    return out;
+  })();
+
+  function stockOf(code) {
+    return (D.allStockByCode && D.allStockByCode[code]) || (D.stockByCode && D.stockByCode[code]) || null;
   }
 
   function render() {
-    var list = rows();
-    document.getElementById("mList").innerHTML = list.map(function (s) {
-      var isUp = s.pct >= 0;
-      return '<div class="wl-row" draggable="true" data-code="' + s.code + '">' +
-        '<div class="wl-actions">' +
-          '<div style="background:var(--brand)" class="actAlert" data-code="' + s.code + '">提醒</div>' +
-          '<div style="background:var(--danger)" class="actDel" data-code="' + s.code + '">移除</div>' +
-        "</div>" +
-        '<div class="wl-inner">' +
-          '<div class="grow" data-href="stock.html?code=' + s.code + '" style="min-width:0">' +
-            '<div class="fs-14" style="font-weight:600">' + s.name + "</div>" +
-            '<div class="row gap-2"><span class="mono fs-11 t-3">' + s.code + "</span>" +
-            (s.alert ? '<span class="tag tag-brand">提醒</span>' : "") + "</div>" +
-          "</div>" +
-          '<div style="text-align:right;flex:0 0 auto;width:88px">' +
-            '<div class="mono fs-15 fw-600" data-live data-price="' + s.price + '">' + s.price.toFixed(2) + "</div>" +
-            '<div class="mono fs-12 ' + (isUp ? "t-up" : "t-down") + '" data-live-pct data-pct="' + s.pct + '">' + (isUp ? "+" : "") + s.pct.toFixed(2) + "%</div>" +
-          "</div>" +
-        "</div>" +
-        "</div>";
-    }).join("");
+    document.getElementById("wlCount").textContent = codes.length + " 只";
 
-    /* 左滑 */
-    SA.qsa(".wl-inner").forEach(function (inner) {
-      var sx = 0, dx = 0, dragging = false;
-      inner.addEventListener("touchstart", function (e) {
-        sx = e.touches[0].clientX; dx = 0; dragging = true;
-      }, { passive: true });
-      inner.addEventListener("touchmove", function (e) {
-        if (!dragging) return;
-        dx = e.touches[0].clientX - sx;
-        if (dx < 0 && dx > -140) inner.style.transform = "translateX(" + dx + "px)";
-      }, { passive: true });
-      inner.addEventListener("touchend", function () {
-        dragging = false;
-        inner.style.transform = dx < -60 ? "translateX(-136px)" : "";
-      });
-      /* 桌面端演示：双击行也可展开操作 */
-      inner.addEventListener("dblclick", function () {
-        inner.style.transform = inner.style.transform ? "" : "translateX(-136px)";
-      });
-    });
-
-    SA.qsa(".actDel").forEach(function (b) {
-      b.addEventListener("click", function () {
-        var s = D.stockByCode[b.getAttribute("data-code")];
-        SA.toast("已从自选移除：" + (s ? s.name : ""), "info");
-        b.closest(".wl-row").remove();
-      });
-    });
-    SA.qsa(".actAlert").forEach(function (b) {
-      b.addEventListener("click", function () {
-        SA.toast("已为该股票创建提醒规则", "ok");
-      });
-    });
-
-    bindDrag();
-  }
-
-  function bindDrag() {
-    var dragEl = null;
-    SA.qsa(".wl-row").forEach(function (row) {
-      row.addEventListener("dragstart", function () { dragEl = row; row.style.opacity = ".4"; });
-      row.addEventListener("dragend", function () {
-        row.style.opacity = "";
-        if (dragEl && dragEl.parentNode) {
-          var rowsArr = SA.qsa(".wl-row");
-          rowsArr.forEach(function (r, i) { r.setAttribute("data-order", i); });
-        }
-        dragEl = null;
-      });
-      row.addEventListener("dragover", function (e) { if (dragEl && dragEl !== row) e.preventDefault(); });
-      row.addEventListener("drop", function (e) {
-        if (!dragEl || dragEl === row) return;
-        e.preventDefault();
-        var rect = row.getBoundingClientRect();
-        var after = e.clientY > rect.top + rect.height / 2;
-        row.parentNode.insertBefore(dragEl, after ? row.nextSibling : row);
-      });
-    });
-  }
-
-  SA.qsa("#mGroups > *").forEach(function (t) {
-    t.addEventListener("click", function () {
-      SA.qsa("#mGroups > *").forEach(function (o) {
-        o.classList.toggle("tag-brand", o === t);
-        o.classList.toggle("tag-outline", o !== t);
-      });
-      group = t.getAttribute("data-g");
-      render();
-    });
-  });
-
-  function startTicker() {
-    return setInterval(function () {
-      SA.qsa("[data-live]").forEach(function (el) {
-        var base = parseFloat(el.getAttribute("data-price") || "0");
-        if (!base) return;
-        var drift = (Math.random() - 0.48) * base * 0.0018;
-        var next = base + drift;
-        el.setAttribute("data-price", next.toFixed(2));
-        el.textContent = next.toFixed(2);
-        el.classList.remove("flash-up", "flash-down");
-        void el.offsetWidth;
-        el.classList.add(drift >= 0 ? "flash-up" : "flash-down");
-        var pctEl = el.parentNode.querySelector("[data-live-pct]");
-        if (pctEl) {
-          var pb = parseFloat(pctEl.getAttribute("data-pct") || "0");
-          var np = pb + drift / base * 100;
-          pctEl.setAttribute("data-pct", np.toFixed(2));
-          pctEl.textContent = (np >= 0 ? "+" : "") + np.toFixed(2) + "%";
-          pctEl.className = "mono fs-12 " + (np >= 0 ? "t-up" : "t-down");
-        }
-      });
-    }, 3000);
-  }
-
-  document.getElementById("mPause").addEventListener("click", function () {
-    if (ticker) {
-      clearInterval(ticker); ticker = null;
-      this.textContent = "▶";
-      SA.toast("已暂停实时刷新", "warn");
-    } else {
-      ticker = startTicker();
-      this.textContent = "⏸";
-      SA.toast("已恢复实时刷新（3 秒）", "ok");
+    if (!codes.length) {
+      document.getElementById("wlList").innerHTML =
+        '<div class="hint" style="padding:16px">还没有自选股</div>';
+      return;
     }
+
+    document.getElementById("wlList").innerHTML = codes.map(function (code) {
+      var s = stockOf(code);
+      var w = null;
+      D.watchlist.items.forEach(function (x) { if (x.code === code) w = x; });
+      var name = s ? s.name : (w ? w.name : code);
+      var pct = s ? s.pct : (w ? w.pct : 0);
+      var cls = pct >= 0 ? "t-up" : "t-down";
+      return '<a class="wl-row" href="stock.html?code=' + code + '">' +
+        '<span class="nm"><span class="fs-14">' + name + '</span>' +
+          '<span class="mono fs-11 t-3" style="margin-left:6px">' + code + "</span></span>" +
+        '<span class="mono fs-14 ' + cls + ' pc">' + (pct >= 0 ? "+" : "") + pct.toFixed(2) + "%</span>" +
+      "</a>";
+    }).join("");
+  }
+
+  var kw = document.getElementById("addKw");
+  var result = document.getElementById("addResult");
+
+  function search() {
+    var k = kw.value.trim().toLowerCase();
+    if (!k) { result.innerHTML = '<span class="hint">输入代码或名称开始搜索</span>'; return; }
+    var hits = D.allStocks.filter(function (s) {
+      return s.code.indexOf(k) >= 0 || s.name.toLowerCase().indexOf(k) >= 0 || (s.py || "").indexOf(k) >= 0;
+    }).slice(0, 6);
+
+    if (!hits.length) { result.innerHTML = '<span class="hint">没有匹配的股票</span>'; return; }
+
+    result.innerHTML = hits.map(function (s) {
+      var added = codes.indexOf(s.code) >= 0;
+      return '<div class="row-between">' +
+        '<span class="fs-13">' + s.name + ' <span class="mono fs-11 t-3">' + s.code + "</span></span>" +
+        '<button class="btn btn-sm ' + (added ? "btn-ghost" : "btn-outline") + '" data-add="' + s.code + '"' +
+          (added ? " disabled" : "") + ">" + (added ? "已加" : "加入") + "</button>" +
+      "</div>";
+    }).join("");
+  }
+
+  result.addEventListener("click", function (e) {
+    var btn = e.target.closest ? e.target.closest("[data-add]") : null;
+    if (!btn) return;
+    var code = btn.getAttribute("data-add");
+    if (codes.indexOf(code) >= 0) return;
+    codes.unshift(code);
+    SA.set(ORDER_KEY, codes.join(","));
+    render();
+    search();
+    SA.toast("已加入自选", "ok");
   });
 
-  document.getElementById("mAdd").addEventListener("click", function () {
-    SA.toast("已打开发送搜索页，可搜索后加入自选", "info");
-    setTimeout(function () { window.location.href = "search.html"; }, 450);
+  kw.addEventListener("input", search);
+  document.getElementById("btnAdd").addEventListener("click", function () {
+    SA.openDrawer("dlgAdd");
+    kw.value = "";
+    search();
   });
 
   render();
-  ticker = startTicker();
 })();
 </script>
 </body>

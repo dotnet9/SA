@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light" data-updown="red-up">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>更多 · 股析 SA（移动端）</title>
+<link rel="stylesheet" href="../web/_shared/tokens.css">
+<link rel="stylesheet" href="../web/_shared/tailwind.css">
+<link rel="stylesheet" href="../web/_shared/components.css">
+<style>
+  .more-row { display: flex; align-items: center; gap: 12px; padding: 15px 16px; border-bottom: 1px solid var(--border-soft); }
+  .more-row:last-child { border-bottom: none; }
+  .more-row .ic { width: 22px; text-align: center; color: var(--text-2); }
+  .more-row .tx { flex: 1; }
+</style>
+</head>
+<body data-page="more" data-title="更多" data-desc="选股、提醒、通知、设置等入口。底部 Tab 只留三项，其余收在这里。">
+<div id="appScreen">
+  <div class="m-page">
+
+    <div style="font-size:22px;font-weight:700;letter-spacing:-0.01em">更多</div>
+
+    <div class="m-card is-flush" style="padding:0;margin-top:14px">
+      <a class="more-row" href="screener.html">
+        <span class="ic">⚙</span><span class="tx fs-14">条件选股器</span><span class="t-3 fs-12">›</span>
+      </a>
+      <a class="more-row" href="alerts.html">
+        <span class="ic">◔</span><span class="tx fs-14">提醒规则</span><span class="t-3 fs-12">›</span>
+      </a>
+      <a class="more-row" href="notifications.html">
+        <span class="ic">◍</span><span class="tx fs-14">通知中心</span><span class="tag tag-outline">4</span>
+      </a>
+      <a class="more-row" href="search.html">
+        <span class="ic">⌕</span><span class="tx fs-14">搜索</span><span class="t-3 fs-12">›</span>
+      </a>
+      <a class="more-row" href="notify-preview.html">
+        <span class="ic">◫</span><span class="tx fs-14">提醒形态预览</span><span class="t-3 fs-12">›</span>
+      </a>
+      <a class="more-row" href="settings.html">
+        <span class="ic">☰</span><span class="tx fs-14">我的</span><span class="t-3 fs-12">›</span>
+      </a>
+      <a class="more-row" href="styleguide-mobile.html">
+        <span class="ic">◧</span><span class="tx fs-14">移动端设计规范</span><span class="t-3 fs-12">›</span>
+      </a>
+    </div>
+
+    <div class="row gap-2" style="margin-top:16px">
+      <button class="btn btn-outline grow" id="tTheme">切换主题</button>
+      <button class="btn btn-outline grow" id="tUpdown">切换涨跌色</button>
+    </div>
+
+    <a class="btn btn-ghost" href="../web/market.html" style="margin-top:12px">← 打开 Web 端原型</a>
+
+  </div>
+</div>
+
+<script src="../web/_shared/vendor/echarts.min.js"></script>
+<script src="../web/_shared/data.js"></script>
+<script src="../web/_shared/charts.js"></script>
+<script src="../web/_shared/spec.js"></script>
+<script src="../web/_shared/app.js"></script>
+<script src="../web/_shared/mock-frame.js"></script>
+<script>
+(function () {
+  document.getElementById("tTheme").addEventListener("click", function () { SA.toggleTheme(); });
+  document.getElementById("tUpdown").addEventListener("click", function () { SA.toggleUpdown(); });
+})();
+</script>
+</body>
+</html>

@@ -3,77 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>市场概览 · 股析 SA（移动端）</title>
+<title>大盘概况 · 股析 SA（移动端）</title>
 <link rel="stylesheet" href="../web/_shared/tokens.css">
 <link rel="stylesheet" href="../web/_shared/tailwind.css">
 <link rel="stylesheet" href="../web/_shared/components.css">
 <style>
-  .idx-card {
-    flex: 0 0 148px; border-radius: 14px;
-    padding: 14px; background: var(--bg-panel);
-  }
+  .idx-card { flex: 0 0 132px; border-radius: 14px; padding: 12px; background: var(--bg-panel); }
   [data-theme="light"] .idx-card { box-shadow: 0 1px 3px rgba(20, 22, 26, 0.05); }
-  .ev-card {
-    border-radius: 14px; padding: 12px 14px;
-    background: var(--bg-panel); border-left: 2px solid var(--border-strong);
-  }
-  .ev-card.is-up { border-left-color: var(--up); }
-  .ev-card.is-down { border-left-color: var(--down); }
+  .mkt-row { display: flex; align-items: baseline; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border-soft); }
+  .mkt-row:last-child { border-bottom: none; }
+  .mkt-row .nm { flex: 1; min-width: 0; }
+  .mkt-row .pc { width: 68px; text-align: right; }
 </style>
 </head>
-<body data-page="home" data-title="市场概览" data-desc="指数横滑卡片 + 市场温度一行速览 + 行业榜 + 今日要事 + 涨幅榜。小屏只回答三个问题：大盘如何、什么在涨、发生了什么。">
+<body data-page="home" data-title="大盘概况" data-desc="指数横滑 + 全市场列表（三列：名称、现价、涨跌幅）。点任一行进入个股页。">
 <div id="appScreen">
   <div class="m-page">
 
     <div class="row-between">
       <div>
-        <div style="font-size:22px;font-weight:700;letter-spacing:-0.01em">市场概览</div>
+        <div style="font-size:22px;font-weight:700;letter-spacing:-0.01em">大盘概况</div>
         <div class="hint" style="margin-top:2px">09-18 周五 · 收盘</div>
       </div>
-      <div class="row gap-2">
-        <span class="dot dot-live"></span>
-        <span class="hint">15:00</span>
-      </div>
+      <span class="row gap-2"><span class="dot dot-live"></span><span class="hint">15:00</span></span>
     </div>
 
     <!-- 指数横滑 -->
-    <div class="m-scroll-x" id="idxRow" style="margin-top:16px"></div>
+    <div class="m-scroll-x" id="idxRow" style="margin-top:14px"></div>
 
-    <!-- 市场温度：一行速览（涨跌家数 + 成交 + 北向） -->
-    <div class="row" style="margin-top:16px;gap:10px;font-size:13px">
-      <span><b class="mono t-up">3,124</b><span class="hint"> 上涨</span></span>
-      <span><b class="mono t-down">1,786</b><span class="hint"> 下跌</span></span>
-      <span><b class="mono">213</b><span class="hint"> 平</span></span>
-      <span class="hint" style="margin-left:auto">涨停 68 · 跌停 12</span>
-    </div>
-    <div class="row" style="margin-top:8px;font-size:13px">
-      <span><b class="mono">10,982</b><span class="hint"> 亿成交 </span><b class="mono t-up fs-12">+8.6%</b></span>
-      <span style="margin-left:auto"><span class="hint">北向 </span><b class="mono t-up">+42.6 亿</b></span>
-    </div>
-
-    <!-- 行业排行 -->
-    <div class="m-section-title">行业涨跌</div>
+    <!-- 全市场 -->
+    <div class="m-section-title">全市场 <span class="hint" id="mktCount"></span></div>
+    <input class="input input-sm" id="mktFilter" type="search" placeholder="搜索代码 / 名称 / 拼音" style="margin-bottom:10px">
     <div class="m-card is-flush" style="padding:0">
-      <div id="mIndustry" class="chart" style="height:220px"></div>
+      <div id="mktList"></div>
     </div>
 
-    <!-- 事件热点 -->
-    <div class="m-section-title">
-      今日要事
-      <span class="tag tag-up" style="margin-left:auto">利好 6</span>
-      <span class="tag tag-down">利空 2</span>
-    </div>
-    <div class="col gap-2" id="evList"></div>
-
-    <!-- 榜单：只留涨幅榜 -->
-    <div class="m-section-title">涨幅榜</div>
-    <div class="m-card" style="padding:0">
-      <table class="tbl" id="mGainers"></table>
-    </div>
-
-    <div class="hint" style="margin-top:20px;line-height:1.8">
-      演示数据 · 非实时 · 不构成投资建议
-    </div>
+    <div class="hint" style="margin-top:16px;line-height:1.8">演示数据 · 非实时 · 不构成投资建议</div>
 
   </div>
 </div>
@@ -86,48 +51,42 @@
 <script src="../web/_shared/mock-frame.js"></script>
 <script>
 (function () {
-  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F;
+  var D = window.SA_DATA;
 
-  /* 指数横滑卡片 */
-  document.getElementById("idxRow").innerHTML = D.indices.map(function (ix, i) {
+  /* 指数横滑：名称 + 点位 + 涨跌幅 */
+  document.getElementById("idxRow").innerHTML = D.indices.map(function (ix) {
     var cls = ix.pct >= 0 ? "t-up" : "t-down";
     return '<div class="idx-card">' +
-      '<div class="fs-13" style="font-weight:600">' + ix.name + "</div>" +
+      '<div class="fs-12 t-2">' + ix.name + "</div>" +
       '<div class="mono fs-18 fw-700 ' + cls + '" style="margin-top:6px">' + ix.price.toFixed(2) + "</div>" +
-      '<div class="mono fs-12 ' + cls + '" style="margin-top:2px">' + (ix.pct >= 0 ? "+" : "") + ix.pct.toFixed(2) + "%</div>" +
-      '<div class="chart chart-xs" id="mSpark' + i + '" style="margin-top:8px"></div>' +
-      "</div>";
-  }).join("");
-  D.indices.forEach(function (ix, i) { F.spark("#mSpark" + i, ix.spark, { up: ix.pct >= 0 }); });
-
-  /* 行业排行：前 6 行业 */
-  F.hbar("#mIndustry", { data: D.industries.slice(0, 6) });
-
-  /* 事件卡片：只保留前 3 条 */
-  document.getElementById("evList").innerHTML = D.hotEvents.slice(0, 3).map(function (e) {
-    var isUp = e.level === "up";
-    var rel = e.related.length ? e.related.map(function (c) {
-      var s = D.stockByCode[c];
-      return s ? '<a class="tag tag-outline" href="stock.html?code=' + c + '">' + s.name + "</a>" : "";
-    }).join(" ") : '<span class="tag tag-outline">全市场</span>';
-    return '<div class="ev-card ' + (isUp ? "is-up" : "is-down") + '">' +
-      '<div class="row gap-2">' +
-        '<span class="tag ' + (isUp ? "tag-up" : "tag-down") + '">' + (isUp ? "利好" : "利空") + "</span>" +
-        '<span class="fs-13" style="font-weight:500;line-height:1.6">' + e.title + "</span>" +
-      "</div>" +
-      '<div class="row gap-1 mt-2 wrap">' + rel + "</div>" +
-      "</div>";
+      '<div class="mono fs-12 ' + cls + '">' + (ix.pct >= 0 ? "+" : "") + ix.pct.toFixed(2) + "%</div>" +
+    "</div>";
   }).join("");
 
-  /* 涨幅榜：前 5 */
-  var rows = D.rankings.gainers.slice().sort(function (a, b) { return b.pct - a.pct; }).slice(0, 5);
-  document.getElementById("mGainers").innerHTML =
-    '<tbody>' +
-    rows.map(function (r) {
-      return '<tr data-chg="' + (r.pct >= 0 ? "up" : "down") + '" class="is-clickable" data-href="stock.html?code=' + r.code + '">' +
-        '<td><span class="stock-cell"><span class="sc-name">' + r.name + '</span><span class="sc-code">' + r.code + "</span></span></td>" +
-        '<td class="num fs-14 ' + (r.pct >= 0 ? "t-up" : "t-down") + '">' + (r.pct >= 0 ? "+" : "") + r.pct.toFixed(2) + "%</td></tr>";
-    }).join("") + "</tbody>";
+  /* 全市场：窄屏三列，最多列 60 条（原型不翻页） */
+  var LIMIT = 60;
+  function render(kw) {
+    var k = (kw || "").trim().toLowerCase();
+    var list = D.allStocks.filter(function (s) {
+      if (!k) return true;
+      return s.code.indexOf(k) >= 0 || s.name.toLowerCase().indexOf(k) >= 0 || (s.py || "").indexOf(k) >= 0;
+    });
+
+    document.getElementById("mktCount").textContent = "共 " + list.length + " 只";
+
+    document.getElementById("mktList").innerHTML = list.slice(0, LIMIT).map(function (s) {
+      var cls = s.pct >= 0 ? "t-up" : "t-down";
+      return '<a class="mkt-row" href="stock.html?code=' + s.code + '">' +
+        '<span class="nm"><span class="fs-13">' + s.name + '</span>' +
+          '<span class="mono fs-11 t-3" style="margin-left:6px">' + s.code + "</span></span>" +
+        '<span class="mono fs-13" style="width:64px;text-align:right">' + s.price.toFixed(2) + "</span>" +
+        '<span class="mono fs-13 ' + cls + ' pc">' + (s.pct >= 0 ? "+" : "") + s.pct.toFixed(2) + "%</span>" +
+      "</a>";
+    }).join("");
+  }
+
+  document.getElementById("mktFilter").addEventListener("input", function () { render(this.value); });
+  render("");
 })();
 </script>
 </body>

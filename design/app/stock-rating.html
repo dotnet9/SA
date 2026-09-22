@@ -3,144 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>机构评级与盈利预测 · 股析 SA（移动端）</title>
+<title>评级 · 股析 SA（移动端）</title>
+<!-- 旧链接跳转桩：该模块已并入个股页的 Tab -->
+<meta http-equiv="refresh" content="0;url=stock.html#rating">
 <link rel="stylesheet" href="../web/_shared/tokens.css">
-<link rel="stylesheet" href="../web/_shared/tailwind.css">
 <link rel="stylesheet" href="../web/_shared/components.css">
-<style>
-  .rating-badge { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
-  .rb-buy { background: var(--up-soft); color: var(--up); }
-  .rb-add { background: var(--brand-soft); color: var(--brand); }
-  .rb-neutral { background: var(--neutral-soft); color: var(--text-2); }
-  .rb-reduce { background: var(--down-soft); color: var(--down); }
-  .hero-target {
-    border-radius: 16px; padding: 20px;
-    background: var(--bg-panel);
-  }
-  [data-theme="light"] .hero-target { box-shadow: 0 1px 3px rgba(20, 22, 26, 0.05); }
-  .upside-band { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--down), var(--flat) 42%, var(--up)); position: relative; }
-  .upside-band .m { position: absolute; top: -5px; width: 3px; height: 16px; border-radius: 2px; background: var(--text-1); transform: translateX(-50%); }
-</style>
 </head>
-<body data-page="stock-rating" data-title="机构评级与预测" data-desc="一致目标价大字卡是首屏唯一主角；评级分布环形 + 一致预期表 + 明细折叠。目标价散点与历史走势移至 Web 端。">
-<div id="appScreen">
-  <div class="m-topbar">
-    <a class="icon-btn" href="stock.html">←</a>
-    <span class="m-title">机构评级</span>
-    <span class="mono fs-11 t-3" style="margin-left:auto">300750</span>
-  </div>
-
-  <div class="m-page">
-
-    <!-- 一致目标价 -->
-    <div class="hero-target" style="margin-top:4px">
-      <div class="row-between">
-        <span class="hint">一致目标价</span>
-        <span class="fs-11 t-3">12 家机构</span>
-      </div>
-      <div class="mono fw-700 t-up" style="font-size:36px;line-height:1.2;letter-spacing:-0.02em;margin-top:4px">320.00<span class="fs-14"> 元</span></div>
-      <div class="upside-band" style="margin-top:16px"><span class="m" style="left:19.2%"></span></div>
-      <div class="row-between" style="margin-top:8px">
-        <span class="hint">现价 268.42</span>
-        <span class="mono fs-13 t-up">+19.2% 上行空间</span>
-      </div>
-    </div>
-
-    <!-- 评级分布 -->
-    <div class="m-section-title">评级分布</div>
-    <div class="m-card" style="padding:8px 4px">
-      <div id="mDist" class="chart" style="height:200px"></div>
-    </div>
-    <div class="hint mt-3">看多占比（买入 + 增持）85.7% · 近 3 月上调 5 家、下调 1 家。</div>
-
-    <!-- 一致预期 -->
-    <div class="m-section-title">一致预期</div>
-    <div class="m-card" style="padding:0 16px">
-      <table class="tbl">
-        <thead><tr><th>年度</th><th class="num">EPS(元)</th><th class="num">净利(亿)</th><th class="num">增速</th><th class="num">PE</th></tr></thead>
-        <tbody id="mConsBody"></tbody>
-      </table>
-    </div>
-
-    <!-- 明细 -->
-    <div class="m-section-title">
-      评级明细
-      <span class="segmented" style="margin-left:auto">
-        <span class="is-active" data-v="all">全部</span>
-        <span data-v="买入">买入</span>
-        <span data-v="增持">增持</span>
-      </span>
-    </div>
-    <div class="col gap-2" id="mRatingList"></div>
-
-    <div class="hint" style="margin-top:20px;line-height:1.8">
-      公开评级汇总 · 目标价为机构观点，非本产品预测 · 演示数据
-    </div>
-
-  </div>
-</div>
-
-<script src="../web/_shared/vendor/echarts.min.js"></script>
-<script src="../web/_shared/data.js"></script>
-<script src="../web/_shared/charts.js"></script>
-<script src="../web/_shared/spec.js"></script>
-<script src="../web/_shared/app.js"></script>
-<script src="../web/_shared/mock-frame.js"></script>
+<body>
+<div class="sa-boot">正在打开个股页的「评级」…</div>
 <script>
 (function () {
-  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F, rt = D.ratings;
-  var ratingFilter = "all";
-
-  F.donut("#mDist", {
-    label: false, legendOrient: "horizontal",
-    center: ["50%", "48%"], radius: ["50%", "74%"],
-    data: rt.distribution.map(function (d) { return { name: d.name, value: d.value, color: d.color }; })
-  });
-
-  document.getElementById("mConsBody").innerHTML = rt.consensus.years.map(function (y, i) {
-    var g = i === 0 ? "+26.2%" : "+" + (((rt.consensus.netProfit[i] - rt.consensus.netProfit[i - 1]) / rt.consensus.netProfit[i - 1]) * 100).toFixed(1) + "%";
-    return "<tr><td class=\"fw-600\">" + y + "</td>" +
-      '<td class="num">' + rt.consensus.eps[i].toFixed(2) + "</td>" +
-      '<td class="num t-up">' + rt.consensus.netProfit[i].toFixed(1) + "</td>" +
-      '<td class="num t-up">' + g + "</td>" +
-      '<td class="num t-up">' + rt.consensus.pe[i].toFixed(1) + "</td></tr>";
-  }).join("");
-
-  /* 评级明细卡片 */
-  function renderRatings() {
-    var rows = rt.targetPrices.filter(function (t) { return ratingFilter === "all" || t.rating === ratingFilter; });
-    document.getElementById("mRatingList").innerHTML = rows.map(function (t) {
-      var badge = t.rating === "买入" ? "rb-buy" : t.rating === "增持" ? "rb-add" : t.rating === "中性" ? "rb-neutral" : "rb-reduce";
-      var chg = t.target - t.prev;
-      return '<div class="fold">' +
-        '<div class="fold-head">' +
-          '<span class="fs-13 fw-600">' + t.org + "</span>" +
-          '<span class="rating-badge ' + badge + '">' + t.rating + "</span>" +
-          '<span class="mono fs-13 t-up" style="margin-left:auto">' + t.target.toFixed(0) + " 元</span>" +
-          '<span class="caret">▼</span>' +
-        "</div>" +
-        '<div class="fold-body">' +
-          '<div class="row-between"><span class="fs-12 t-2">分析师</span><span class="fs-12">' + t.analyst + "</span></div>" +
-          '<div class="row-between mt-2"><span class="fs-12 t-2">发布日期</span><span class="mono fs-12">' + t.date + "</span></div>" +
-          '<div class="row-between mt-2"><span class="fs-12 t-2">目标价变动</span><span class="mono fs-12 ' + (chg > 0 ? "t-up" : chg < 0 ? "t-down" : "t-flat") + '">' +
-            t.prev.toFixed(0) + " → " + t.target.toFixed(0) + (chg !== 0 ? "（" + (chg > 0 ? "+" : "") + chg.toFixed(0) + "）" : "") + "</span></div>" +
-          '<div class="row-between mt-2"><span class="fs-12 t-2">距现价</span><span class="mono fs-12 ' + (t.upside >= 0 ? "t-up" : "t-down") + '">' +
-            (t.upside >= 0 ? "+" : "") + t.upside.toFixed(1) + "%</span></div>" +
-        "</div></div>";
-    }).join("");
-    SA.qsa("#mRatingList .fold-head").forEach(function (h) {
-      h.addEventListener("click", function () { h.parentNode.classList.toggle("is-collapsed"); });
-    });
-  }
-  renderRatings();
-
-  SA.qsa(".segmented > *").forEach(function (el) {
-    el.addEventListener("click", function () {
-      SA.qsa(".segmented > *", el.parentNode).forEach(function (o) { o.classList.toggle("is-active", o === el); });
-      ratingFilter = el.getAttribute("data-v");
-      renderRatings();
-    });
-  });
+  var q = window.location.search || "";
+  window.location.replace("stock.html" + q + "#rating");
 })();
 </script>
 </body>

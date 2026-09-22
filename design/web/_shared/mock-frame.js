@@ -6,20 +6,15 @@
 (function () {
   "use strict";
 
+  /* 页面清单（供预览工具的下拉跳转使用）。
+     8 个个股模块已并入 stock.html 的 Tab，不再单列。 */
   var PAGES = [
     { key: "index", text: "登录", href: "index.html" },
-    { key: "home", text: "市场概览", href: "home.html" },
+    { key: "home", text: "大盘概况", href: "home.html" },
     { key: "search", text: "搜索", href: "search.html" },
-    { key: "stock", text: "个股总览", href: "stock.html" },
-    { key: "stock-trend", text: "趋势与价格结构", href: "stock.html#trend" },
-    { key: "stock-finance", text: "盈利与财务表现", href: "stock.html#finance" },
-    { key: "stock-equity", text: "投资与股权结构", href: "stock.html#equity" },
-    { key: "stock-capital", text: "资金面与筹码", href: "stock.html#capital" },
-    { key: "stock-industry", text: "行业与同业对比", href: "stock.html#industry" },
-    { key: "stock-events", text: "事件时间线与影响", href: "stock.html#events" },
-    { key: "stock-risk", text: "风险与舆情监控", href: "stock.html#risk" },
-    { key: "stock-rating", text: "机构评级与预测", href: "stock.html#rating" },
-    { key: "watchlist", text: "自选股盯盘", href: "watchlist.html" },
+    { key: "stock", text: "个股（9 个 Tab）", href: "stock.html" },
+    { key: "watchlist", text: "自选股", href: "watchlist.html" },
+    { key: "more", text: "更多", href: "more.html" },
     { key: "screener", text: "条件选股器", href: "screener.html" },
     { key: "notifications", text: "通知中心", href: "notifications.html" },
     { key: "alerts", text: "提醒规则", href: "alerts.html" },
@@ -28,12 +23,11 @@
     { key: "styleguide-mobile", text: "移动端规范", href: "styleguide-mobile.html" }
   ];
 
+  /* 底部 Tab：3 项。与桌面端一致（大盘、自选为主，其余收进「更多」）。 */
   var TABS = [
-    { key: "home", text: "市场", icon: "▦", href: "home.html" },
-    { key: "watchlist", text: "自选", icon: "★", href: "watchlist.html", badge: "3" },
-    { key: "screener", text: "选股", icon: "⚙", href: "screener.html" },
-    { key: "notifications", text: "通知", icon: "◍", href: "notifications.html", badge: "4" },
-    { key: "settings", text: "我的", icon: "☰", href: "settings.html" }
+    { key: "home", text: "大盘", icon: "▦", href: "home.html" },
+    { key: "watchlist", text: "自选", icon: "★", href: "watchlist.html" },
+    { key: "more", text: "更多", icon: "☰", href: "more.html" }
   ];
 
   function qs(s, r) { return (r || document).querySelector(s); }
@@ -100,7 +94,10 @@
     }
     if (!noTabs) {
       qs("#phoneTabs").innerHTML = TABS.map(function (t) {
-        return '<a class="app-tab' + (t.key === pageKey ? " is-active" : "") + '" href="' + t.href + '">' +
+        /* 个股页与「更多」下的子页都把「更多」标为当前 */
+        var active = t.key === pageKey ||
+          (t.key === "more" && ["stock", "screener", "notifications", "alerts", "settings", "more"].indexOf(pageKey) >= 0);
+        return '<a class="app-tab' + (active ? " is-active" : "") + '" href="' + t.href + '">' +
           '<span class="at-icon">' + t.icon + "</span>" + t.text +
           (t.badge ? '<span class="at-badge">' + t.badge + "</span>" : "") + "</a>";
       }).join("");
@@ -127,8 +124,7 @@
         '<div class="card-head"><span class="card-title">移动端原型预览</span></div>' +
         '<div class="card-body col gap-3">' +
           '<div class="hint">' +
-            "移动端与 Web 端共用同一套设计令牌、组件样式、演示数据与 ECharts 封装。" +
-            "所有页面为响应式 Web + PWA 设计，不做独立 App（Avalonia / MAUI）。" +
+            "与 Web 端共用同一套令牌、组件、数据与图表封装。" +
           "</div>" +
           '<div class="field"><label class="label">跳转到页面</label>' +
             '<select class="select" id="pageJump">' +

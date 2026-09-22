@@ -3,126 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>趋势与价格结构 · 股析 SA（移动端）</title>
+<title>趋势 · 股析 SA（移动端）</title>
+<!-- 旧链接跳转桩：该模块已并入个股页的 Tab -->
+<meta http-equiv="refresh" content="0;url=stock.html#trend">
 <link rel="stylesheet" href="../web/_shared/tokens.css">
-<link rel="stylesheet" href="../web/_shared/tailwind.css">
 <link rel="stylesheet" href="../web/_shared/components.css">
-<style>
-  .m-topbar { position: sticky; }
-</style>
 </head>
-<body data-page="stock-trend" data-title="趋势与价格结构" data-desc="K 线全宽是唯一主角，趋势判定压缩为一行结论 + 三个周期数字，关键价位保留。手势：单指平移、双指缩放、长按十字光标。">
-<div id="appScreen">
-  <div class="m-topbar">
-    <a class="icon-btn" href="stock.html">←</a>
-    <span class="m-title">趋势</span>
-    <span class="mono fs-12" style="margin-left:auto">268.42 <span class="t-up">+4.86%</span></span>
-  </div>
-
-  <div class="m-page">
-
-    <!-- 周期与复权 -->
-    <div class="row-between">
-      <span class="segmented">
-        <span class="is-active">日 K</span><span>周 K</span><span>月 K</span>
-      </span>
-      <span class="segmented">
-        <span class="is-active">前复权</span><span>后复权</span>
-      </span>
-    </div>
-
-    <!-- K 线 -->
-    <div class="m-card" style="margin-top:12px;padding:8px 4px">
-      <div id="mKline" class="chart" style="height:320px"></div>
-    </div>
-
-    <!-- 指标开关 -->
-    <div class="row gap-2 mt-3 wrap">
-      <span class="tag tag-lg tag-brand" id="tgMA">MA</span>
-      <span class="tag tag-lg tag-brand" id="tgVol">成交量</span>
-      <span class="tag tag-lg tag-brand" id="tgMacd">MACD</span>
-      <span class="tag tag-lg tag-outline" id="tgKdj">KDJ</span>
-    </div>
-
-    <!-- 趋势判定：一行结论 + 三个周期 -->
-    <div class="m-section-title">趋势判定</div>
-    <div class="m-card">
-      <div class="row-between">
-        <span style="font-size:16px;font-weight:600">多头排列 · 温和放量</span>
-        <span class="tag tag-warn">KDJ 超买</span>
-      </div>
-      <div class="stat-strip" style="margin-top:12px">
-        <div><div class="st-v t-up">+9.9%</div><div class="st-k">5 日</div></div>
-        <div><div class="st-v t-up">+22.4%</div><div class="st-k">20 日</div></div>
-        <div><div class="st-v t-up">+38.6%</div><div class="st-k">120 日</div></div>
-        <div><div class="st-v t-up">金叉</div><div class="st-k">MACD 09-16</div></div>
-      </div>
-    </div>
-
-    <!-- 价格结构定位 -->
-    <div class="m-section-title">价格位置</div>
-    <div class="m-card">
-      <div class="row-between"><span class="fs-13 t-2">近 3 年分位</span><span class="mono fs-16 fw-600">72%</span></div>
-      <div class="tempbar" style="margin-top:12px"><span class="marker" style="left:72%"></span></div>
-      <div class="tempbar-legend"><span>168.2</span><span>214.6</span><span>296.4</span></div>
-      <div class="row-between" style="margin-top:12px">
-        <span class="hint">距 52 周高点 <span class="mono t-down">-9.4%</span></span>
-        <span class="hint">距 52 周低点 <span class="mono t-up">+59.6%</span></span>
-      </div>
-    </div>
-
-    <!-- 关键价位 -->
-    <div class="m-section-title">关键价位</div>
-    <div class="m-card" style="padding:4px 16px">
-      <table class="tbl">
-        <tbody>
-          <tr><td class="t-2">前高压力</td><td class="num t-down">296.40</td></tr>
-          <tr><td class="t-2">箱体上沿</td><td class="num t-down">271.24</td></tr>
-          <tr><td class="fw-600">现价</td><td class="num fw-600 t-up">268.42</td></tr>
-          <tr><td class="t-2">MA20 支撑</td><td class="num t-up">238.40</td></tr>
-          <tr><td class="t-2">年线支撑</td><td class="num t-up">226.70</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="hint" style="margin-top:20px;line-height:1.8">
-      前复权日线 · 演示数据 · 不构成投资建议
-    </div>
-
-  </div>
-</div>
-
-<script src="../web/_shared/vendor/echarts.min.js"></script>
-<script src="../web/_shared/data.js"></script>
-<script src="../web/_shared/charts.js"></script>
-<script src="../web/_shared/spec.js"></script>
-<script src="../web/_shared/app.js"></script>
-<script src="../web/_shared/mock-frame.js"></script>
+<body>
+<div class="sa-boot">正在打开个股页的「趋势」…</div>
 <script>
 (function () {
-  var D = window.SA_DATA, C = window.SA_CHARTS, F = C.F;
-  var opts = { ma: [5, 10, 20, 60], volume: true, macd: true, kdj: false, zoomStart: 40 };
-
-  function draw() {
-    document.getElementById("mKline").innerHTML = "";
-    F.kline("#mKline", D.focusKline.slice(-90), opts);
-    C.rebuildAll();
-  }
-  draw();
-
-  function bindToggle(id, key, on, off) {
-    document.getElementById(id).addEventListener("click", function () {
-      opts[key] = !opts[key];
-      this.classList.toggle("tag-outline", !opts[key]);
-      this.classList.toggle("tag-brand", !!opts[key]);
-      if (on) on();
-      draw();
-    });
-  }
-  bindToggle("tgMA", "ma", null, function () { opts.ma = opts.ma.length ? [] : [5, 10, 20, 60]; });
-  bindToggle("tgVol", "volume");
-  bindToggle("tgMacd", "macd", function () { if (opts.macd) { opts.kdj = false; document.getElementById("tgKdj").classList.replace("tag-brand", "tag-outline"); } });
-  bindToggle("tgKdj", "kdj", function () { if (opts.kdj) { opts.macd = false; document.getElementById("tgMacd").classList.replace("tag-brand", "tag-outline"); } });
+  var q = window.location.search || "";
+  window.location.replace("stock.html" + q + "#trend");
 })();
 </script>
 </body>
