@@ -220,11 +220,7 @@
                 <div class="kpi"><span class="kpi-label">安装状态</span><span class="kpi-value is-sm">未安装（浏览器访问中）</span><span class="kpi-delta t-3">安装后可用离线缓存</span></div>
                 <button class="btn btn-primary" id="btnInstall">立即安装到主屏</button>
                 <button class="btn btn-outline" id="btnTestNotify">测试通知（发送一条测试提醒）</button>
-                <div class="legend-block">
-                  <b>为什么需要 HTTPS</b><br>
-                  Service Worker、Web Push、通知栏 API、震动 API 都只在安全上下文（HTTPS 或 localhost）下可用。
-                  本机调试用 http://localhost 即可，手机访问必须走域名 HTTPS。
-                </div>
+
               </div>
             </div>
           </div>
@@ -264,14 +260,7 @@
           <div class="card">
             <div class="card-head"><span class="card-title">数据口径</span></div>
             <div class="card-body">
-              <div class="legend-block">
-                <b>行情</b>：东方财富 + 新浪财经公开接口，交易时段每 3 秒快照；<br>
-                <b>财务</b>：合并报表披露值，每交易日 18:00 同步；<br>
-                <b>资金流</b>：按成交金额分层统计，交易日 15:20 采集；<br>
-                <b>事件与影响</b>：规则引擎自动抽取 + 人工标注（0–100）；<br>
-                <b>北向资金</b>：按持股变动估算，非官方净买入额；<br>
-                <b>更新时间</b>：2026-09-18 15:00 · 演示数据。
-              </div>
+
             </div>
           </div>
 
@@ -295,6 +284,7 @@
 <script src="_shared/vendor/echarts.min.js"></script>
 <script src="_shared/data.js"></script>
 <script src="_shared/charts.js"></script>
+<script src="_shared/spec.js"></script>
 <script src="_shared/app.js"></script>
 <script>
 (function () {

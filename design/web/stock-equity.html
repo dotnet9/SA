@@ -47,7 +47,7 @@
           <div class="card is-accent">
             <div class="card-head">
               <span class="card-title">股权关系拓扑</span>
-              <span class="card-sub">控股方 → 本公司 → 参控股子公司 · 边标持股比例 · 节点可拖拽、画布可缩放</span>
+              <span class="card-sub">边标持股比例 · 可拖拽</span>
               <div class="card-tools">
                 <span class="segmented" id="segLayout">
                   <span class="is-active" data-v="force">力导向</span>
@@ -72,10 +72,7 @@
             <div class="card-head"><span class="card-title">股权穿透路径</span><span class="card-sub">实际控制人控制链</span></div>
             <div class="card-body">
               <div id="penetration" class="col gap-2"></div>
-              <div class="legend-block mt-3">
-                <b>结论</b>：曾毓群通过直接持股 22.42% 与瑞庭投资间接持股 10.6%，合计控制 33.02% 表决权，
-                为实际控制人；宁波联合创新为一致行动人（10.6%），控制权稳定。
-              </div>
+
             </div>
           </div>
 
@@ -102,7 +99,7 @@
           <!-- 机构持仓 -->
           <div class="grid grid-2">
             <div class="card">
-              <div class="card-head"><span class="card-title">机构持仓趋势</span><span class="card-sub">公募 / 社保 / 北向 / QFII 占流通股比例（%）</span></div>
+              <div class="card-head"><span class="card-title">机构持仓趋势</span><span class="card-sub">占流通股比例（%）</span></div>
               <div class="card-body"><div id="instChart" class="chart chart-lg"></div></div>
             </div>
             <div class="card">
@@ -129,9 +126,7 @@
                   <div class="row-between"><span class="fs-12 t-2">质押笔数</span><span class="mono fs-12">3 笔</span></div>
                   <div class="row-between"><span class="fs-12 t-2">预警线估算</span><span class="mono fs-12 t-up">约 148 元</span></div>
                 </div>
-                <div class="legend-block mt-3">
-                  质押比例 2.4%，远低于行业平均 8.6%，且距估算预警线仍有 <b class="t-up">45%</b> 空间，无平仓风险。
-                </div>
+
               </div>
             </div>
 
@@ -212,13 +207,7 @@
           <div class="card">
             <div class="card-head"><span class="card-title">数据口径</span></div>
             <div class="card-body">
-              <div class="legend-block">
-                股权与子公司：定期报告「合并范围」与公告，每日 19:30 抽取；<br>
-                十大股东：最新定期报告披露值，含变动方向；<br>
-                机构持仓：基金季报 + 陆股通持股 + 社保组合披露；<br>
-                质押：公司公告与登记结算披露；<br>
-                更新时间 2026-09-18 · 演示数据。
-              </div>
+
             </div>
           </div>
         </aside>
@@ -231,6 +220,7 @@
 <script src="_shared/vendor/echarts.min.js"></script>
 <script src="_shared/data.js"></script>
 <script src="_shared/charts.js"></script>
+<script src="_shared/spec.js"></script>
 <script src="_shared/app.js"></script>
 <script>
 (function () {

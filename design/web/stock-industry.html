@@ -49,7 +49,7 @@
           <div class="card is-accent">
             <div class="card-head">
               <span class="card-title">产业链传导拓扑</span>
-              <span class="card-sub">上游原材料 → 中游电池 → 下游应用 · 带宽 = 成本占比 / 供货占比 · 可拖拽节点</span>
+              <span class="card-sub">带宽 = 成本占比 · 可拖拽</span>
               <div class="card-tools">
                 <span class="segmented" id="segChain">
                   <span class="is-active" data-v="sankey">桑基传导图</span>
@@ -64,11 +64,7 @@
               <div class="graph-panel" data-panel="cards">
                 <div class="grid grid-3" id="chainCards"></div>
               </div>
-              <div class="legend-block mt-3">
-                <b>读图</b>：上游正极材料占电池成本约 42%，是成本传导的关键环节；
-                中游宁德时代全球市占率 36.8%；下游储能景气度最高（82），毛利率优于动力电池，
-                是当前公司利润弹性的主要来源。景气度取值 0–100，由开工率、价格、订单与库存合成。
-              </div>
+
             </div>
           </div>
 
@@ -171,10 +167,7 @@
               <div class="card-head"><span class="card-title">估值 × 盈利散点</span><span class="card-sub">气泡大小 = 总市值 · 红点为当前股</span></div>
               <div class="card-body">
                 <div id="peerBubble" class="chart chart-lg"></div>
-                <div class="legend-block mt-3">
-                  <b>解读</b>：宁德时代位于「低 PE + 高 ROE」象限，
-                  在同业中性价比最优；欣旺达、国轩高科位于「高 PE + 低 ROE」象限，估值性价比偏弱。
-                </div>
+
               </div>
             </div>
           </div>
@@ -221,10 +214,7 @@
               <div class="row-between"><span class="fs-12 t-2">前五大供应商占比</span><span class="mono fs-12 t-warn">38.6%</span></div>
               <div class="row-between"><span class="fs-12 t-2">海外收入占比</span><span class="mono fs-12 t-up">32.8%</span></div>
               <div class="row-between"><span class="fs-12 t-2">储能收入占比</span><span class="mono fs-12 t-up">26.4%</span></div>
-              <div class="legend-block mt-2">
-                客户集中度 42.4% 处于行业中等水平；储能业务占比提升至 26.4%，
-                海外收入占比 32.8%，受关税与汇率影响需持续跟踪。
-              </div>
+
             </div>
           </div>
 
@@ -236,13 +226,7 @@
           <div class="card">
             <div class="card-head"><span class="card-title">数据口径</span></div>
             <div class="card-body">
-              <div class="legend-block">
-                行业分类：申万一级「电池」+ 概念板块；<br>
-                市占率：公开装机量统计，季度更新；<br>
-                景气度：由开工率、价格、订单、库存合成（0–100）；<br>
-                同业财务：2025 年年报；<br>
-                更新时间 2026-09-18 · 演示数据。
-              </div>
+
             </div>
           </div>
         </aside>
@@ -269,7 +253,7 @@
       <label class="check"><input type="checkbox"> 贝特瑞 835185</label>
       <label class="check"><input type="checkbox"> 国轩高科 002074</label>
       <label class="check"><input type="checkbox"> 鹏辉能源 300438</label>
-      <div class="legend-block mt-3">原型说明：勾选状态仅作演示，不改变图表数据。</div>
+
     </div>
     <div class="dialog-foot">
       <button class="btn btn-ghost" data-close="dlgPeer">取消</button>
@@ -281,6 +265,7 @@
 <script src="_shared/vendor/echarts.min.js"></script>
 <script src="_shared/data.js"></script>
 <script src="_shared/charts.js"></script>
+<script src="_shared/spec.js"></script>
 <script src="_shared/app.js"></script>
 <script>
 (function () {

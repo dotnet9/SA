@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="dark" data-updown="red-up">
+<html lang="zh-CN" data-theme="light" data-updown="red-up">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -25,11 +25,6 @@
 
   <div class="m-page">
 
-    <div class="legend-block">
-      移动端与 Web 端共用同一套设计令牌与组件样式（<code>tokens.css</code> / <code>components.css</code>），
-      差异只在布局：Web 用左侧导航 + 三栏，移动端用底部 Tab + 单列流。
-      本页只列移动端特有的规则与检查项。
-    </div>
 
     <!-- 画布与安全区 -->
     <div class="m-section-title">1. 画布与安全区</div>
@@ -64,10 +59,7 @@
           <span class="hint t-down">24×24 不达标</span>
         </div>
       </div>
-      <div class="legend-block mt-3">
-        <b>规则</b>：所有可点击元素热区 ≥ 44×44；图标按钮视觉尺寸可小，但用透明内边距把热区撑到 44px。
-        列表行最小高度 56px，左右可整行点击。
-      </div>
+
     </div>
 
     <!-- 间距与字号 -->
@@ -229,15 +221,6 @@
       <div class="spec-line"><span class="k">演示数据角标</span><span class="v">Web 右下角固定 → 移动端置于屏幕内右下、Tab 栏上方</span></div>
     </div>
 
-    <div class="legend-block mt-4">
-      <b>自检清单</b><br>
-      ① 所有可点击元素热区 ≥ 44×44；<br>
-      ② 390×844 内无横向滚动条（刻意设计的宽表格除外）；<br>
-      ③ 每个图表下方有数据口径说明；<br>
-      ④ 底部 Tab 栏常驻且当前页高亮；<br>
-      ⑤ 数字列等宽右对齐；<br>
-      ⑥ 深浅主题与涨跌色切换在全部页面生效。
-    </div>
 
   </div>
 </div>
@@ -266,10 +249,7 @@
       <button class="btn btn-sm btn-primary" style="margin-left:auto" data-close="sgFull">保存</button>
     </div>
     <div style="flex:1;overflow-y:auto;padding:16px">
-      <div class="legend-block">
-        复杂表单（如新建提醒规则）用全屏页而非对话框：步骤可分段、字段可堆叠、底部按钮可固定在安全区内，
-        在窄屏上点按准确率明显更高。
-      </div>
+
       <div class="field mt-4"><label class="label">示例字段</label><input class="input tap-44" value="宁德时代 300750"></div>
       <div class="field mt-3"><label class="label">示例选择</label><select class="select tap-44"><option>仅这一只股票</option></select></div>
       <button class="btn btn-primary btn-block mt-4" style="height:44px" data-close="sgFull">确认</button>
@@ -280,6 +260,7 @@
 <script src="../web/_shared/vendor/echarts.min.js"></script>
 <script src="../web/_shared/data.js"></script>
 <script src="../web/_shared/charts.js"></script>
+<script src="../web/_shared/spec.js"></script>
 <script src="../web/_shared/app.js"></script>
 <script src="../web/_shared/mock-frame.js"></script>
 <script>

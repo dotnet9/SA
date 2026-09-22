@@ -84,7 +84,7 @@
           <div class="card">
             <div class="card-head">
               <span class="card-title">风险矩阵</span>
-              <span class="card-sub">横轴 = 严重度 · 纵轴 = 发生概率 · 格内数字 = 风险等级 · 悬浮查看具体风险项</span>
+              <span class="card-sub">横轴严重度 · 纵轴概率</span>
               <div class="card-tools">
                 <span class="risk-lv risk-lv-1"><i></i>1</span>
                 <span class="risk-lv risk-lv-2"><i></i>2</span>
@@ -95,11 +95,7 @@
             </div>
             <div class="card-body">
               <div id="riskMatrix" class="chart chart-xl"></div>
-              <div class="legend-block mt-3">
-                <b>读图</b>：右上角（高严重度 + 高概率）为需重点监控区域。
-                本公司风险集中在「价格战」与「原材料涨价」两项（等级 4），
-                但均属行业共性因素；公司特有风险（商誉、质押、诉讼）普遍处于 1–2 级。
-              </div>
+
             </div>
           </div>
 
@@ -109,10 +105,7 @@
               <div class="card-head"><span class="card-title">六维风险雷达</span><span class="card-sub">数值越高风险越大（0–100）</span></div>
               <div class="card-body">
                 <div id="riskRadar" class="chart chart-lg"></div>
-                <div class="legend-block mt-2">
-                  本公司（蓝色）在市场风险（58）上高于行业均值（52），源于估值波动与价格战；
-                  其余五个维度均低于或接近行业均值，其中财务风险（18）显著优于行业（34）。
-                </div>
+
               </div>
             </div>
             <div class="card">
@@ -158,7 +151,7 @@
           <div class="card">
             <div class="card-head">
               <span class="card-title">告警清单</span>
-              <span class="card-sub">诉讼 / 监管函 / 商誉减值 / 质押 / 减持 / 退市风险</span>
+              <span class="card-sub">风险项明细</span>
               <div class="card-tools">
                 <select class="select input-sm" id="fLevel" style="width:120px">
                   <option value="all">全部等级</option>
@@ -181,10 +174,7 @@
             </div>
             <div class="card-body">
               <div id="relatedRisk" class="chart chart-lg"></div>
-              <div class="legend-block mt-3">
-                主要敞口集中在「Stellantis 欧洲合资」（政策与关税风险，敞口 82）与
-                「邦普循环」（原材料价格风险，敞口 64）；国内子公司风险敞口均较低。
-              </div>
+
             </div>
           </div>
 
@@ -241,13 +231,7 @@
           <div class="card">
             <div class="card-head"><span class="card-title">数据口径</span></div>
             <div class="card-body">
-              <div class="legend-block">
-                风险项：从公告、监管文件与公开信息按模板抽取，每交易日 19:30；<br>
-                严重度与概率：人工标注 1–5，风险等级 = 严重度 × 概率 / 5 取整；<br>
-                舆情：公开新闻与资讯，情绪由词典 + 规则打分，每交易日 20:30；<br>
-                关联方敞口：按业务关联度与信息披露完整度评估；<br>
-                更新时间 2026-09-18 · 演示数据，不构成投资建议。
-              </div>
+
             </div>
           </div>
         </aside>
@@ -260,6 +244,7 @@
 <script src="_shared/vendor/echarts.min.js"></script>
 <script src="_shared/data.js"></script>
 <script src="_shared/charts.js"></script>
+<script src="_shared/spec.js"></script>
 <script src="_shared/app.js"></script>
 <script>
 (function () {

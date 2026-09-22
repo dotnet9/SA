@@ -147,7 +147,6 @@
               <div id="gTopdown" class="chart" style="height:560px"></div>
             </div>
 
-            <div class="legend-block mt-3" id="topoNote"></div>
           </div>
         </div>
       </div>
@@ -159,28 +158,28 @@
             <div class="card-head"><span class="card-title">① 事件因果网络</span><span class="card-sub">事件 → 事件</span></div>
             <div class="card-body">
               <div id="cCausal" class="chart chart-lg"></div>
-              <div class="legend-block mt-2">回答「为什么会发生、会引发什么」。适合追踪催化剂的传导链条。</div>
+
             </div>
           </div>
           <div class="card">
             <div class="card-head"><span class="card-title">② 公司股权关系</span><span class="card-sub">主体 → 主体</span></div>
             <div class="card-body">
               <div id="cEquity" class="chart chart-lg"></div>
-              <div class="legend-block mt-2">回答「谁控制谁、利益如何绑定」。适合判断关联交易与控制权稳定性。</div>
+
             </div>
           </div>
           <div class="card">
             <div class="card-head"><span class="card-title">③ 产业链传导</span><span class="card-sub">环节 → 环节</span></div>
             <div class="card-body">
               <div id="cChain" class="chart chart-lg"></div>
-              <div class="legend-block mt-2">回答「成本与需求如何传导」。适合判断成本端与需求端弹性。</div>
+
             </div>
           </div>
           <div class="card">
             <div class="card-head"><span class="card-title">④ 自上而下影响传导</span><span class="card-sub">宏观 → 行业 → 个股</span></div>
             <div class="card-body">
               <div id="cTopdown" class="chart chart-lg"></div>
-              <div class="legend-block mt-2">回答「政策与宏观如何落到个股」。适合主题投资与政策跟踪。</div>
+
             </div>
           </div>
         </div>
@@ -209,12 +208,6 @@
         </div>
       </div>
 
-      <div class="legend-block mt-4">
-        <b>统一口径说明</b><br>
-        四种拓扑图的节点与边均为<b>演示数据</b>；影响强度与传导强度为人工标注的 0–100 分（负值表示压制方向），
-        代表「影响力度」而非收益率预测；持股比例与成本占比取自公开披露或行业估算，已在各图下方单独标注来源。
-        本页所有内容不构成投资建议。
-      </div>
 
     </div>
   </main>
@@ -223,6 +216,7 @@
 <script src="_shared/vendor/echarts.min.js"></script>
 <script src="_shared/data.js"></script>
 <script src="_shared/charts.js"></script>
+<script src="_shared/spec.js"></script>
 <script src="_shared/app.js"></script>
 <script>
 (function () {

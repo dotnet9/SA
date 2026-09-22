@@ -66,7 +66,7 @@
           <div class="card is-accent">
             <div class="card-head">
               <span class="card-title">四种拓扑图</span>
-              <span class="card-sub">同一支股票下四种「谁影响谁」的表达方式 · 节点可拖拽 · 画布可缩放</span>
+              <span class="card-sub">节点可拖拽 · 画布可缩放</span>
               <div class="card-tools">
                 <span class="tag tag-outline">近 90 天</span>
                 <a class="btn btn-sm btn-ghost" href="topology.html">集中对照页 →</a>
@@ -90,18 +90,9 @@
                 </div>
                 <div id="causalGraph" class="chart chart-2xl"></div>
                 <div class="grid grid-3 mt-3">
-                  <div class="legend-block">
-                    <b>读图</b>：从「固态电池路线图」与「储能大单」出发的链路最终汇聚到「业绩预告超预期」，
-                    再传导至「机构上调目标价」，形成完整正向闭环。
-                  </div>
-                  <div class="legend-block">
-                    <b>负向链路</b>：二线厂商价格战 → 毛利率承压；程序化交易新规 → 短期活跃度下降。
-                    两条负向链路强度分别为 -48 与 -36，弱于正向链路。
-                  </div>
-                  <div class="legend-block">
-                    <b>数据口径</b>：事件由规则引擎从公告与新闻抽取，影响方向与强度为人工标注（0–100，
-                    负值表示压制），传导关系由标注人员连线，每日 19:30 更新。
-                  </div>
+
+
+
                 </div>
               </div>
 
@@ -112,11 +103,7 @@
                   <a class="btn btn-sm btn-ghost" style="margin-left:auto" href="stock-equity.html">进入完整股权分析 →</a>
                 </div>
                 <div id="equityGraph" class="chart chart-2xl"></div>
-                <div class="legend-block mt-3">
-                  <b>与事件的关联</b>：欧洲合资（Stellantis）对应「欧洲工厂提前投产」事件；
-                  邦普循环对应「电池回收管理办法」；时代智能对应「增资 28.6 亿」事件。
-                  节点悬浮可看到具体关联事件。
-                </div>
+
               </div>
 
               <!-- ③ 产业链传导 -->
@@ -126,11 +113,7 @@
                   <a class="btn btn-sm btn-ghost" style="margin-left:auto" href="stock-industry.html">进入完整行业分析 →</a>
                 </div>
                 <div id="chainSankey" class="chart chart-2xl"></div>
-                <div class="legend-block mt-3">
-                  <b>链上事件</b>：碳酸锂价格触底回升（08-28，利空成本端）→ 正极材料涨价 →
-                  电池成本上升 → 毛利率承压；而储能订单放量（09-10，利好）→ 高毛利业务占比提升 →
-                  对冲成本压力，最终毛利率仍环比改善。
-                </div>
+
               </div>
 
               <!-- ④ 自上而下传导 -->
@@ -141,16 +124,9 @@
                 </div>
                 <div id="topdownSankey" class="chart chart-2xl"></div>
                 <div class="grid grid-3 mt-3">
-                  <div class="legend-block">
-                    <b>最强正向传导</b>：固态电池路线图（政策）→ 电池行业（强度 82）→ 宁德时代（74）。
-                  </div>
-                  <div class="legend-block">
-                    <b>最强负向传导</b>：锂资源价格上行 → 天齐锂业（-76）；程序化交易新规 → 电池行业（-18）。
-                  </div>
-                  <div class="legend-block">
-                    <b>数据口径</b>：传导强度由标注人员依据历史弹性与事件性质打分（0–100），
-                    代表「该上游变化对下游的影响力度」，非收益率预测。
-                  </div>
+
+
+
                 </div>
               </div>
             </div>
@@ -160,17 +136,14 @@
           <div class="card">
             <div class="card-head">
               <span class="card-title">事件时间轴泳道</span>
-              <span class="card-sub">按主体分泳道 · 圆点颜色 = 影响方向 · 悬浮查看标题</span>
+              <span class="card-sub">按主体分泳道</span>
               <div class="card-tools">
                 <span class="tag tag-up">利好</span><span class="tag tag-down">利空</span><span class="tag">中性</span>
               </div>
             </div>
             <div class="card-body">
               <div id="laneChart" class="chart chart-xl"></div>
-              <div class="legend-block mt-3">
-                泳道把同一时间轴上不同主体的事件分开排列，便于看出「何时、谁、发生了什么」；
-                与上方的拓扑图配合使用：泳道看时序，拓扑看传导。
-              </div>
+
             </div>
           </div>
 
@@ -180,10 +153,7 @@
               <div class="card-head"><span class="card-title">事件类型与影响方向统计</span><span class="card-sub">近 90 天</span></div>
               <div class="card-body">
                 <div id="typeChart" class="chart chart-lg"></div>
-                <div class="legend-block mt-3">
-                  「订单」「资金」「业绩」类事件以利好为主，「竞争」「监管」类以利空为主，
-                  与直觉一致；可用于识别该股票的主要风险来源。
-                </div>
+
               </div>
             </div>
             <div class="card">
@@ -248,10 +218,7 @@
                 <div class="row-between"><span class="fs-12 t-2">情绪温度（事件加权）</span><span class="mono fs-12 t-up">74 / 100</span></div>
                 <div class="meter is-ok mt-2"><i style="width:74%"></i></div>
               </div>
-              <div class="legend-block">
-                按强度加权后，近 90 天事件面整体偏多；利空事件集中在竞争与监管两类，
-                均属行业性因素而非公司特有风险。
-              </div>
+
             </div>
           </div>
 
@@ -299,14 +266,7 @@
           <div class="card">
             <div class="card-head"><span class="card-title">数据口径</span></div>
             <div class="card-body">
-              <div class="legend-block">
-                事件抽取：规则引擎从公告标题与新闻正文抽取（关键词 + 模板），
-                每交易日 07:30 / 12:30 / 19:30 三次；<br>
-                影响方向与强度：人工标注，0–100，负值表示压制；<br>
-                传导关系：人工连线，标注因果方向与强度；<br>
-                本页不含编辑入口（仅查询与浏览）；<br>
-                更新时间 2026-09-18 · 演示数据。
-              </div>
+
             </div>
           </div>
         </aside>

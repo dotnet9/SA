@@ -66,7 +66,7 @@
       <div class="card mt-4">
         <div class="card-head">
           <span class="card-title">数据源状态</span>
-          <span class="card-sub">连通性 · 最近成功时间 · 响应延迟 · 失败次数 · 覆盖数据域</span>
+          <span class="card-sub">连通性与延迟</span>
           <div class="card-tools">
             <span class="tag tag-ok tag-dot">正常</span>
             <span class="tag tag-warn tag-dot">延迟 / 限流</span>
@@ -83,7 +83,7 @@
       <div class="card mt-4">
         <div class="card-head">
           <span class="card-title">采集任务</span>
-          <span class="card-sub">调度周期 · 最近执行 · 耗时 · 状态 · 下次执行 · 写入行数</span>
+          <span class="card-sub">调度与执行状态</span>
           <div class="card-tools">
             <select class="select input-sm" id="fTaskStatus" style="width:120px">
               <option value="all">全部状态</option>
@@ -173,12 +173,6 @@
         </div>
       </div>
 
-      <div class="legend-block mt-4">
-        <b>架构说明</b>：采集层是独立的 .NET 后台服务（HostedService + 定时调度），按数据域拆分为多个适配器
-        （行情 / 财务 / 资金流 / 龙虎榜与两融 / 公告 / 宏观），全部直连公开 HTTP 接口，不引入 Python 依赖。
-        采集结果写入 SQLite 元数据 + Parquet/DuckDB 时序文件；失败自动退避重试，连续失败会降级到备用数据源。
-        盘中行情快照与自选股推送走内存缓存 + SignalR，不落盘。
-      </div>
 
     </div>
   </main>
@@ -187,6 +181,7 @@
 <script src="_shared/vendor/echarts.min.js"></script>
 <script src="_shared/data.js"></script>
 <script src="_shared/charts.js"></script>
+<script src="_shared/spec.js"></script>
 <script src="_shared/app.js"></script>
 <script>
 (function () {

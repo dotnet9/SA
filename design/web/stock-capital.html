@@ -66,10 +66,7 @@
                 <div class="flow-tile"><div class="ft-k">近 60 日累计</div><div class="ft-v t-up">+28.42</div><div class="hint">先流出后回流</div></div>
               </div>
               <div id="mainFlowChart" class="chart chart-lg mt-4"></div>
-              <div class="legend-block mt-3">
-                <b>看点</b>：09-18 主力净流入 18.62 亿元，为近 60 日单日最大，且超大单占比 61%，
-                属机构主动买入特征；同期小单净流出 12.76 亿元，散户在上涨中卖出，筹码向机构集中。
-              </div>
+
             </div>
           </div>
 
@@ -151,11 +148,7 @@
                   <div class="meter is-ok mt-2"><i style="width:82%"></i></div>
                   <div class="hint mt-1">近 3 个月集中度由 0.286 降至 0.186，筹码持续集中</div>
                 </div>
-                <div class="legend-block">
-                  <b>解读</b>：现价 268.42 元位于筹码密集区（246–270）上沿，
-                  该区间为前期震荡区，若放量突破则上方套牢盘（27.6%）压力较小；
-                  下方 246.8 元平均成本构成中期支撑。
-                </div>
+
               </div>
             </div>
           </div>
@@ -239,24 +232,14 @@
             <div class="card-head"><span class="card-title">资金与价格背离</span></div>
             <div class="card-body">
               <div id="diverge" class="chart chart-sm"></div>
-              <div class="legend-block mt-3">
-                近 5 日资金累计净流入 <b class="t-up">+38.14 亿</b>，价格同期上涨 <b class="t-up">+9.86%</b>，
-                量价资金同向，无背离信号。
-              </div>
+
             </div>
           </div>
 
           <div class="card">
             <div class="card-head"><span class="card-title">数据口径</span></div>
             <div class="card-body">
-              <div class="legend-block">
-                资金流：按逐笔成交金额分层统计（超大单 ≥200 万元），交易日 15:20 采集；<br>
-                北向资金：陆股通持股披露，非净买入额；<br>
-                两融：交易所公开数据，交易日 19:00 采集；<br>
-                筹码分布：按换手率衰减模型由历史成交估算，非交易所数据；<br>
-                龙虎榜与大宗：交易所公开数据；<br>
-                更新时间 2026-09-18 · 演示数据。
-              </div>
+
             </div>
           </div>
         </aside>
@@ -269,6 +252,7 @@
 <script src="_shared/vendor/echarts.min.js"></script>
 <script src="_shared/data.js"></script>
 <script src="_shared/charts.js"></script>
+<script src="_shared/spec.js"></script>
 <script src="_shared/app.js"></script>
 <script>
 (function () {
@@ -391,9 +375,7 @@
     <button class="icon-btn" data-close="dlgSeats" style="margin-left:auto">✕</button>
   </div>
   <div class="drawer-body col gap-4">
-    <div class="legend-block">
-      上榜原因：日涨幅达 7% 的证券 · 买入合计 18.42 亿 · 卖出合计 9.86 亿 · 净买入 8.56 亿
-    </div>
+
     <div>
       <div class="fs-13 fw-600 mb-2" style="margin-bottom:8px">买入前五席位</div>
       <table class="tbl is-comfort">
@@ -418,10 +400,7 @@
         </tbody>
       </table>
     </div>
-    <div class="legend-block">
-      <b>解读</b>：机构专用席位同时出现在买卖两侧，净买入 2.56 亿，属机构分歧；
-      深股通专用净买入 4.86 亿，北向为当日主要增量资金。
-    </div>
+
   </div>
 </div>
 </body>

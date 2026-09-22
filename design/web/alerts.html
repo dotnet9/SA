@@ -137,11 +137,7 @@
                 <label class="switch"><input type="checkbox" checked><span class="track"></span>浏览器通知栏（需 PWA 已安装 + 授权）</label>
                 <label class="switch"><input type="checkbox" checked><span class="track"></span>震动（仅移动端，iOS 不支持）</label>
                 <label class="switch"><input type="checkbox"><span class="track"></span>邮件（未接入）</label>
-                <div class="legend-block">
-                  <b>iOS 限制</b>：必须先在 Safari 中「添加到主屏幕」并从主屏图标启动，才可申请通知权限；
-                  iOS 不支持 Web 震动 API，也不支持桌面小组件。
-                  <a class="t-brand" href="../app/notify-preview.html">查看提醒形态预览 →</a>
-                </div>
+
               </div>
             </div>
             <div class="card">
@@ -177,9 +173,7 @@
               <div class="row-between"><span class="fs-12 t-2">近 30 日零触发规则</span><span class="mono fs-12 t-warn">2 条</span></div>
               <div class="row-between"><span class="fs-12 t-2">触发过于频繁</span><span class="mono fs-12 t-down">1 条</span></div>
               <div class="row-between"><span class="fs-12 t-2">阈值过宽松</span><span class="mono fs-12 t-warn">3 条</span></div>
-              <div class="legend-block">
-                「天齐锂业 跌破 MA20」近 30 日触发 4 次，建议收紧阈值或改为「连续两日跌破」以减少噪音。
-              </div>
+
               <button class="btn btn-outline btn-block" id="btnOptimize">一键优化建议</button>
             </div>
           </div>
@@ -198,13 +192,7 @@
           <div class="card">
             <div class="card-head"><span class="card-title">数据口径</span></div>
             <div class="card-body">
-              <div class="legend-block">
-                价格类规则：交易时段每 30 秒巡检，触发延迟 ≤ 3 秒；<br>
-                技术指标类：每交易日 16:00 计算后巡检（收盘后触发）；<br>
-                资金流类：交易日 15:20 数据就绪后巡检；<br>
-                公告事件类：公告抓取后立即巡检（07:30 / 12:30 / 19:30）；<br>
-                更新时间 2026-09-18 · 演示数据。
-              </div>
+
             </div>
           </div>
         </aside>
@@ -290,10 +278,6 @@
         </div>
       </div>
 
-      <div class="legend-block">
-        <b>预览</b>：当「宁德时代 300750」在交易日 9:30–15:00 期间<b>上穿 280.00 元</b>时，
-        通过<b>站内 + 通知栏 + 震动</b>提醒，同一规则 5 分钟内不重复提醒。
-      </div>
     </div>
     <div class="dialog-foot">
       <button class="btn btn-ghost" data-close="dlgNew">取消</button>
@@ -306,6 +290,7 @@
 <script src="_shared/vendor/echarts.min.js"></script>
 <script src="_shared/data.js"></script>
 <script src="_shared/charts.js"></script>
+<script src="_shared/spec.js"></script>
 <script src="_shared/app.js"></script>
 <script>
 (function () {

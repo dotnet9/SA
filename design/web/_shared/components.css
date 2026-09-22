@@ -1652,3 +1652,104 @@ kbd {
   color: var(--text-2);
   line-height: 1.8;
 }
+
+/* ============================================================
+   12. 新外壳与新组件（两项主导航 / 个股 Tab / 全市场表 / 口径抽屉）
+   ============================================================ */
+
+/* ---- 侧栏「更多」折叠区 ---- */
+.sa-nav-more { margin-top: var(--sp-3); }
+.sa-nav-more-sum {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-11); color: var(--text-3);
+  letter-spacing: 0.08em; cursor: pointer; list-style: none;
+  border-radius: var(--r-btn);
+}
+.sa-nav-more-sum::-webkit-details-marker { display: none; }
+.sa-nav-more-sum::before { content: "\25B8"; font-size: 9px; }
+.sa-nav-more[open] > .sa-nav-more-sum::before { content: "\25BE"; }
+.sa-nav-more-sum:hover { color: var(--brand); background: var(--bg-hover); }
+.sa-nav-more-body { padding-top: 2px; }
+.sa-nav-note {
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-11); color: var(--text-3);
+}
+
+/* ---- 指数横条（大盘概况顶部，单行五格） ---- */
+.index-strip {
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px; background: var(--border);
+  border: 1px solid var(--border); border-radius: var(--r-card);
+  overflow: hidden; margin-bottom: var(--sp-4);
+}
+.index-strip-cell {
+  background: var(--bg-panel); padding: var(--sp-3) var(--sp-4);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.index-strip-name { font-size: var(--fs-12); color: var(--text-2); }
+.index-strip-value { font-size: var(--fs-18); font-weight: 700; }
+.index-strip-pct { font-size: var(--fs-12); }
+@media (max-width: 1023px) {
+  .index-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 767px) {
+  .index-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ---- 个股区（内联在大盘/自选页时使用） ---- */
+.stock-pane { display: none; }
+.stock-pane.is-active { display: block; }
+.stock-pane-head {
+  display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  margin-bottom: var(--sp-3);
+}
+.stock-back {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: var(--fs-12); color: var(--text-2);
+  padding: 4px 8px; border-radius: var(--r-btn);
+}
+.stock-back:hover { color: var(--brand); background: var(--bg-hover); }
+
+/* ---- 个股 9 Tab ---- */
+.stock-tabs {
+  position: sticky; top: 0; z-index: 5;
+  background: var(--bg-root);
+  padding: var(--sp-2) 0 var(--sp-3);
+  overflow-x: auto; scrollbar-width: none;
+}
+.stock-tabs::-webkit-scrollbar { display: none; }
+.stock-tabs .tabbar { flex-wrap: nowrap; }
+.stock-tabs .tab { white-space: nowrap; flex: 0 0 auto; }
+
+/* ---- 全市场表 ---- */
+.market-table { font-variant-numeric: tabular-nums; }
+.market-table tbody tr { cursor: pointer; }
+.market-table tbody tr:hover { background: var(--bg-hover); }
+.market-table td, .market-table th { white-space: nowrap; }
+
+/* ---- 口径抽屉 ---- */
+.spec-drawer { width: 420px; max-width: 92vw; }
+.spec-group { margin-bottom: var(--sp-4); }
+.spec-group-title {
+  font-size: var(--fs-12); font-weight: 600; color: var(--text-1);
+  margin-bottom: var(--sp-2);
+}
+.spec-group ul { margin: 0; padding-left: 16px; }
+.spec-group li {
+  font-size: var(--fs-12); color: var(--text-2);
+  line-height: 1.75; margin-bottom: 4px;
+}
+
+/* ---- 彻底隐藏装饰性说明文字 ---- */
+.text-none { display: none !important; }
+
+/* ---- 迷你侧栏下的「更多」 ---- */
+@media (max-width: 1279px) {
+  .sa-nav-more-sum { justify-content: center; padding: var(--sp-2) 0; }
+  .sa-nav-more-sum span, .sa-nav-note { display: none; }
+}

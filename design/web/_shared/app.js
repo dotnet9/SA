@@ -12,6 +12,7 @@
     updown: "sa.updown",
     role: "sa.role",
     navMini: "sa.navmini",
+    navMore: "sa.navmore",
     cardOrder: "sa.cardorder.",
     density: "sa.density"
   };
@@ -69,75 +70,70 @@
   /* ============================================================
      3. 导航定义
      ============================================================ */
+  /* 主导航只有两项：大盘概况、自选股（用户愿景：左侧只有这两项）。
+     其余功能收进底部可折叠的「更多」区，默认收起，状态存本机。 */
   var NAV = [
-    { group: "总览", items: [
-      { key: "market", text: "市场概览", icon: "▦", href: "market.html", fp: "market.view" },
-      { key: "search", text: "股票搜索", icon: "⌕", href: "search-results.html", fp: "stock.search" },
-      { key: "watchlist", text: "自选股盯盘", icon: "★", href: "watchlist.html", fp: "watchlist.view", badge: "3" }
-    ] },
-    { group: "个股分析矩阵", items: [
-      { key: "stock", text: "个股总览", icon: "◉", href: "stock.html", fp: "stock.trend" },
-      { key: "stock-trend", text: "趋势与价格结构", icon: "◪", href: "stock-trend.html", fp: "stock.trend" },
-      { key: "stock-finance", text: "盈利与财务表现", icon: "▤", href: "stock-finance.html", fp: "stock.finance" },
-      { key: "stock-equity", text: "投资与股权结构", icon: "⛓", href: "stock-equity.html", fp: "stock.equity" },
-      { key: "stock-capital", text: "资金面与筹码", icon: "◐", href: "stock-capital.html", fp: "stock.capital" },
-      { key: "stock-industry", text: "行业与同业对比", icon: "◫", href: "stock-industry.html", fp: "stock.industry" },
-      { key: "stock-events", text: "事件时间线与影响", icon: "◈", href: "stock-events.html", fp: "stock.events" },
-      { key: "stock-risk", text: "风险与舆情监控", icon: "⚠", href: "stock-risk.html", fp: "stock.risk" },
-      { key: "stock-rating", text: "机构评级与预测", icon: "◎", href: "stock-rating.html", fp: "stock.rating" }
-    ] },
-    { group: "拓扑图", items: [
-      { key: "topology", text: "四种拓扑图总览", icon: "⁂", href: "topology.html", fp: "topology.view" }
-    ] },
-    { group: "选股与提醒", items: [
-      { key: "screener", text: "条件选股器", icon: "⚙", href: "screener.html", fp: "screener.use" },
-      { key: "alerts", text: "提醒规则", icon: "◔", href: "alerts.html", fp: "alert.manage" },
-      { key: "notifications", text: "通知中心", icon: "◍", href: "notifications.html", fp: "notify.view", badge: "4" }
-    ] },
-    { group: "系统", items: [
-      { key: "settings", text: "个人设置", icon: "⚒", href: "settings.html", fp: null },
-      { key: "admin-users", text: "用户管理", icon: "☰", href: "admin-users.html", fp: "admin.users" },
-      { key: "admin-permissions", text: "角色与权限", icon: "⛨", href: "admin-permissions.html", fp: "admin.permissions" },
-      { key: "admin-datasource", text: "数据源监控", icon: "◱", href: "admin-datasource.html", fp: "admin.datasource" },
-      { key: "admin-security", text: "登录与安全", icon: "⛭", href: "admin-security.html", fp: "admin.security" }
-    ] }
+    { key: "market", text: "大盘概况", icon: "▦", href: "market.html", fp: "market.view" },
+    { key: "watchlist", text: "自选股", icon: "★", href: "watchlist.html", fp: "watchlist.view" }
   ];
+
+  var NAV_MORE = [
+    { key: "screener", text: "条件选股器", icon: "⚙", href: "screener.html", fp: "screener.use" },
+    { key: "alerts", text: "提醒规则", icon: "◔", href: "alerts.html", fp: "alert.manage" },
+    { key: "notifications", text: "通知中心", icon: "◍", href: "notifications.html", fp: "notify.view", badge: "4" },
+    { key: "search", text: "股票搜索", icon: "⌕", href: "search-results.html", fp: "stock.search" },
+    { key: "settings", text: "个人设置", icon: "⚒", href: "settings.html", fp: null },
+    { key: "admin-users", text: "用户管理", icon: "☰", href: "admin-users.html", fp: "admin.users" },
+    { key: "admin-permissions", text: "角色与权限", icon: "⛨", href: "admin-permissions.html", fp: "admin.permissions" },
+    { key: "admin-datasource", text: "数据源监控", icon: "◱", href: "admin-datasource.html", fp: "admin.datasource" },
+    { key: "admin-security", text: "登录与安全", icon: "⛭", href: "admin-security.html", fp: "admin.security" }
+  ];
+
+  /* 按角色裁剪：fp 为 null 表示所有角色可见 */
+  function visibleItems(items, role) {
+    return items.filter(function (it) {
+      if (it.fp === null) return true;
+      return role.fps.indexOf(it.fp) >= 0;
+    });
+  }
+
+  function navItemHtml(it, page) {
+    var active = it.key === page || it.href === page;
+    return '<a class="sa-navitem' + (active ? " is-active" : "") + '" href="' + it.href + '" title="' + it.text + '">' +
+      '<span class="ni-icon">' + it.icon + "</span>" +
+      '<span class="ni-text">' + it.text + "</span>" +
+      (it.badge ? '<span class="ni-badge">' + it.badge + "</span>" : "") +
+      "</a>";
+  }
 
   function renderNav() {
     var host = qs("#saNav");
     if (!host) return;
     var page = document.body.getAttribute("data-page") || "";
     var role = currentRole();
-    var html = "";
-    var hidden = 0;
 
-    NAV.forEach(function (g) {
-      var items = g.items.filter(function (it) {
-        if (it.fp === null) return true;
-        return role.fps.indexOf(it.fp) >= 0;
-      });
-      hidden += g.items.length - items.length;
-      if (!items.length) return;
-      html += '<div class="sa-navgroup">' + g.group + "</div>";
-      items.forEach(function (it) {
-        var active = it.key === page || it.href === page;
-        html += '<a class="sa-navitem' + (active ? " is-active" : "") + '" href="' + it.href + '" title="' + it.text + '">' +
-          '<span class="ni-icon">' + it.icon + "</span>" +
-          '<span class="ni-text">' + it.text + "</span>" +
-          (it.badge ? '<span class="ni-badge">' + it.badge + "</span>" : "") +
-          "</a>";
-      });
-    });
+    /* 主区：大盘概况、自选股。对所有角色可见，不受权限裁剪。 */
+    var html = NAV.map(function (it) { return navItemHtml(it, page); }).join("");
 
-    html += '<div class="sa-navgroup" style="margin-top:12px">当前角色</div>' +
-      '<div class="sa-navitem is-locked" title="切换角色见 角色与权限 页">' +
-      '<span class="ni-icon">◑</span><span class="ni-text">' + role.name + "</span></div>";
-
+    /* 更多区：折叠，默认收起；按角色裁剪 */
+    var more = visibleItems(NAV_MORE, role);
+    var hidden = NAV_MORE.length - more.length;
+    if (more.length) {
+      var open = get(LS.navMore, "0") === "1";
+      html += '<details class="sa-nav-more" id="saNavMore"' + (open ? " open" : "") + ">" +
+        '<summary class="sa-nav-more-sum"><span>更多</span></summary>' +
+        '<div class="sa-nav-more-body">' +
+        more.map(function (it) { return navItemHtml(it, page); }).join("") +
+        "</div></details>";
+    }
     if (hidden > 0) {
-      html += '<div style="padding:8px 12px;font-size:11px;color:var(--text-3);line-height:1.7">' +
-        "已按「" + role.name + "」角色隐藏 " + hidden + " 个无权限菜单</div>";
+      html += '<div class="sa-nav-note">「' + role.name + "」隐藏 " + hidden + " 项</div>";
     }
     host.innerHTML = html;
+    var details = qs("#saNavMore");
+    if (details) {
+      details.addEventListener("toggle", function () { set(LS.navMore, details.open ? "1" : "0"); });
+    }
   }
 
   /* ============================================================
@@ -160,6 +156,7 @@
       '<div class="sa-topactions">' +
         '<span class="tag tag-outline hide-mobile" title="数据截止时间">' + D.meta.asOf + "</span>" +
         '<span class="tag tag-ok tag-dot hide-mobile" title="自选股 3 秒推送">实时</span>' +
+        '<button class="icon-btn" id="btnSpec" title="数据口径">ⓘ</button>' +
         '<button class="icon-btn" id="btnUpdown" title="切换涨跌色（默认红涨绿跌）">⇅</button>' +
         '<button class="icon-btn" id="btnTheme" title="切换深浅主题">' + themeIcon + "</button>" +
         '<a class="icon-btn" href="notifications.html" title="通知中心">◍<span class="dot-badge">4</span></a>' +
@@ -170,6 +167,8 @@
       "</div>";
 
     bindSearch();
+    var specBtn = qs("#btnSpec");
+    if (specBtn) specBtn.addEventListener("click", openSpec);
     qs("#btnTheme").addEventListener("click", toggleTheme);
     qs("#btnUpdown").addEventListener("click", toggleUpdown);
   }
@@ -278,20 +277,50 @@
   function bindTabs(root) {
     qsa("[data-tabs]", root).forEach(function (bar) {
       var targetSel = bar.getAttribute("data-tabs");
-      qsa("[data-tab]", bar).forEach(function (btn) {
-        btn.addEventListener("click", function () {
-          qsa("[data-tab]", bar).forEach(function (o) { o.classList.remove("is-active"); });
-          btn.classList.add("is-active");
-          var key = btn.getAttribute("data-tab");
-          if (targetSel) {
-            qsa(targetSel).forEach(function (p) {
-              p.classList.toggle("is-active", p.getAttribute("data-panel") === key);
-            });
+      /* data-hash="true" 时 Tab 与 URL #锚点双向同步（个股 9 Tab 用） */
+      var useHash = bar.getAttribute("data-hash") === "true";
+      var buttons = qsa("[data-tab]", bar);
+
+      function activate(key, writeHash) {
+        buttons.forEach(function (o) { o.classList.toggle("is-active", o.getAttribute("data-tab") === key); });
+        if (targetSel) {
+          qsa(targetSel).forEach(function (p) {
+            p.classList.toggle("is-active", p.getAttribute("data-panel") === key);
+          });
+        }
+        if (useHash && writeHash) {
+          var next = "#" + key;
+          if (window.location.hash !== next) {
+            /* replaceState 而不是直接改 hash：避免每点一个 Tab 就往历史里塞一条记录 */
+            try { history.replaceState(null, "", next); } catch (e) { window.location.hash = key; }
           }
-          document.dispatchEvent(new CustomEvent("sa:tabchange", { detail: { key: key, bar: bar } }));
+        }
+        document.dispatchEvent(new CustomEvent("sa:tabchange", { detail: { key: key, bar: bar } }));
+        /* 面板据此做懒渲染与 resize（ECharts 在隐藏容器里初始化会得到空白画布） */
+        document.dispatchEvent(new CustomEvent("sa:tabshow", { detail: { key: key, bar: bar } }));
+      }
+
+      buttons.forEach(function (btn) {
+        btn.addEventListener("click", function (e) {
+          e.preventDefault();
+          activate(btn.getAttribute("data-tab"), true);
         });
       });
+
+      if (useHash) {
+        var initial = (window.location.hash || "").replace("#", "");
+        if (initial && buttons.some(function (b) { return b.getAttribute("data-tab") === initial; })) {
+          activate(initial, false);
+        }
+        window.addEventListener("hashchange", function () {
+          var key = (window.location.hash || "").replace("#", "");
+          if (key && buttons.some(function (b) { return b.getAttribute("data-tab") === key; })) {
+            activate(key, false);
+          }
+        });
+      }
     });
+
     /* 分段控件同步 .is-active */
     qsa("[data-seg]", root).forEach(function (seg) {
       qsa("button, a, span", seg).forEach(function (b) {
@@ -420,6 +449,40 @@
   }
 
   /* ============================================================
+     9.5 数据口径抽屉
+     把原先散在各页 legend-block 的大段说明集中到这里：
+     页面正文不再承载解释性文字（用户要求「不要显示太多的文字」）。
+     ============================================================ */
+  function specHtml() {
+    var spec = window.SA_SPEC;
+    if (!spec || !spec.groups) return '<div class="fs-12 t-3">暂无口径说明</div>';
+    return spec.groups.map(function (g) {
+      return '<div class="spec-group"><div class="spec-group-title">' + g.title + "</div><ul>" +
+        g.items.map(function (item) { return "<li>" + item + "</li>"; }).join("") +
+        "</ul></div>";
+    }).join("");
+  }
+
+  function ensureSpecDrawer() {
+    var el = qs("#saSpecDrawer");
+    if (el) return el;
+    el = document.createElement("div");
+    el.className = "overlay";
+    el.id = "saSpecDrawer";
+    el.innerHTML = '<div class="drawer spec-drawer">' +
+      '<div class="drawer-head"><span class="card-title">数据口径</span>' +
+      '<button class="icon-btn" data-close-spec="1" title="关闭">✕</button></div>' +
+      '<div class="drawer-body">' + specHtml() + "</div></div>";
+    document.body.appendChild(el);
+    el.addEventListener("click", function (e) { if (e.target === el) el.classList.remove("is-open"); });
+    var close = qs("[data-close-spec]", el);
+    if (close) close.addEventListener("click", function () { el.classList.remove("is-open"); });
+    return el;
+  }
+
+  function openSpec() { ensureSpecDrawer().classList.add("is-open"); }
+
+  /* ============================================================
      10. Toast
      ============================================================ */
   function toast(msg, kind) {
@@ -493,55 +556,29 @@
   /* ============================================================
      13. 个股页公共片段（模块页复用）
      ============================================================ */
-  var MODULES = [
-    { key: "stock", text: "矩阵总览", href: "stock.html" },
-    { key: "stock-trend", text: "趋势与价格结构", href: "stock-trend.html" },
-    { key: "stock-finance", text: "盈利与财务表现", href: "stock-finance.html" },
-    { key: "stock-equity", text: "投资与股权结构", href: "stock-equity.html" },
-    { key: "stock-capital", text: "资金面与筹码", href: "stock-capital.html" },
-    { key: "stock-industry", text: "行业与同业对比", href: "stock-industry.html" },
-    { key: "stock-events", text: "事件时间线与影响", href: "stock-events.html" },
-    { key: "stock-risk", text: "风险与舆情监控", href: "stock-risk.html" },
-    { key: "stock-rating", text: "机构评级与预测", href: "stock-rating.html" }
-  ];
-
-  /* 模块专注模式标签栏 */
-  function moduleTabs(active) {
-    return '<div class="tabbar is-pill">' + MODULES.map(function (m) {
-      return '<a class="tab' + (m.key === active ? " is-active" : "") + '" href="' + m.href + '">' + m.text + "</a>";
-    }).join("") + "</div>";
-  }
-
   /* 个股紧凑行情条 */
+  /* 个股紧凑行情条：只留身份 + 价格涨跌 + 三项关键指标。
+     原来 8 个指标 + 时间戳 + 「实时推送」字样属于「看着就没重点」，一并收掉。 */
   function quoteStrip() {
     var p = D.focusProfile;
     var cls = p.pct >= 0 ? "is-up" : "is-down";
-    return '<div class="card is-accent"><div class="card-body is-tight row gap-5 wrap">' +
-      '<div class="row gap-2 wrap">' +
+    return '<div class="stock-pane-head">' +
+      '<div class="row gap-2 wrap" style="min-width:0">' +
         '<span class="fs-16 fw-700">' + p.name + "</span>" +
         '<span class="mono fs-11 t-3">' + p.code + "</span>" +
         '<span class="tag tag-outline">' + p.board + "</span>" +
         '<span class="tag tag-brand">' + p.industry + "</span>" +
       "</div>" +
-      '<div class="row gap-3">' +
-        '<span class="mono fs-22 fw-700 ' + (p.pct >= 0 ? "t-up" : "t-down") + '" id="qLive" data-price="' + p.price + '">' + p.price.toFixed(2) + "</span>" +
-        '<span class="live-pct chg ' + cls + '" data-pct="' + p.pct + '">' + (p.pct >= 0 ? "+" : "") + p.chg.toFixed(2) + " " + (p.pct >= 0 ? "+" : "") + p.pct.toFixed(2) + "%</span>" +
+      '<div class="row gap-3" style="margin-left:auto">' +
+        '<span class="mono fs-20 fw-700 ' + (p.pct >= 0 ? "t-up" : "t-down") + '" id="qLive" data-price="' + p.price + '">' + p.price.toFixed(2) + "</span>" +
+        '<span class="live-pct chg ' + cls + '" data-pct="' + p.pct + '">' + (p.pct >= 0 ? "+" : "") + p.pct.toFixed(2) + "%</span>" +
       "</div>" +
-      '<div class="row gap-4 wrap fs-11 t-3">' +
-        "<span>今开 <b class=\"mono t-1\">" + p.open.toFixed(2) + "</b></span>" +
-        "<span>最高 <b class=\"mono t-up\">" + p.high.toFixed(2) + "</b></span>" +
-        "<span>最低 <b class=\"mono t-down\">" + p.low.toFixed(2) + "</b></span>" +
-        "<span>成交额 <b class=\"mono t-1\">" + p.amount + " 亿</b></span>" +
+      '<div class="row gap-4 fs-11 t-3">' +
+        "<span>成交 <b class=\"mono t-1\">" + p.amount + " 亿</b></span>" +
         "<span>换手 <b class=\"mono t-1\">" + p.turnover + "%</b></span>" +
-        "<span>量比 <b class=\"mono t-1\">" + p.volRatio + "</b></span>" +
-        "<span>市值 <b class=\"mono t-1\">" + p.cap.toLocaleString() + " 亿</b></span>" +
-        "<span>PE(TTM) <b class=\"mono t-1\">" + p.peTtm + "</b></span>" +
+        "<span>PE <b class=\"mono t-1\">" + p.peTtm + "</b></span>" +
       "</div>" +
-      '<div class="row gap-2" style="margin-left:auto">' +
-        '<span class="hint">' + D.meta.asOf + "</span>" +
-        '<span class="row gap-2"><span class="dot dot-live"></span><span class="hint">实时推送</span></span>' +
-      "</div>" +
-    "</div></div>";
+    "</div>";
   }
 
   /* ============================================================
@@ -557,8 +594,6 @@
     bindOverlays();
 
     /* 个股页公共片段 */
-    var mt = qs("#modTabs");
-    if (mt) mt.innerHTML = moduleTabs(document.body.getAttribute("data-page"));
     var qsEl = qs("#quoteStrip");
     if (qsEl) qsEl.innerHTML = quoteStrip();
 
@@ -590,6 +625,7 @@
     get: get, set: set, qs: qs, qsa: qsa,
     applyTheme: applyTheme, toggleTheme: toggleTheme, toggleUpdown: toggleUpdown,
     currentRole: currentRole, setRole: setRole, can: can, renderNav: renderNav,
+    openSpec: openSpec, specHtml: specHtml,
     openDialog: openDialog, closeDialog: closeDialog,
     openDrawer: openDrawer, closeDrawer: closeDrawer,
     toast: toast, startLiveTicker: startLiveTicker,

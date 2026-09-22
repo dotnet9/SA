@@ -90,10 +90,7 @@
                 <div class="meter is-warn mt-2"><i style="width:68%"></i></div>
                 <div class="hint mt-1">条件越多命中越少，建议控制在 5–8 条</div>
               </div>
-              <div class="legend-block">
-                <b>提示</b>：本原型不执行真实筛选，命中的为演示结果集；
-                正式版由服务端按指标计算并缓存，单次筛选约 200–600ms。
-              </div>
+
             </div>
           </div>
         </div>
@@ -173,11 +170,6 @@
             </div>
           </div>
 
-          <div class="legend-block">
-            <b>说明</b>：选股器基于每日批量更新后的快照数据（技术指标每交易日 16:00 计算，
-            财务数据 18:00 同步，资金流 15:20 采集），因此盘中筛选结果不会随实时行情变化；
-            如需盘中实时条件，可在「提醒规则」中配置并接收推送。
-          </div>
         </div>
       </div>
 
@@ -188,6 +180,7 @@
 <script src="_shared/vendor/echarts.min.js"></script>
 <script src="_shared/data.js"></script>
 <script src="_shared/charts.js"></script>
+<script src="_shared/spec.js"></script>
 <script src="_shared/app.js"></script>
 <script>
 (function () {

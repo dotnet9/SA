@@ -87,7 +87,7 @@
         </div>
 
         <div class="card">
-          <div class="card-head"><span class="card-title">品牌与语义色</span><span class="card-sub">语义色只用于表达含义，不做装饰；浅色为默认主题，色值以 tokens.css 为准</span></div>
+          <div class="card-head"><span class="card-title">品牌与语义色</span><span class="card-sub">语义色只做点缀 · 浅色默认</span></div>
           <div class="card-body">
             <div class="swatch-grid">
               <div class="swatch"><div class="chip" style="background:var(--brand)"></div><div class="meta"><b>--brand</b><code>#f97316</code>主操作 / 选中 / 链接</div></div>
@@ -665,13 +665,7 @@
         <div class="card">
           <div class="card-head"><span class="card-title">数据口径说明块</span><span class="card-sub">每个图表/表格下方必配</span></div>
           <div class="card-body">
-            <div class="legend-block">
-              <b>数据来源与口径</b><br>
-              行情与资金流：东方财富公开接口，交易日 15:20 采集；<br>
-              财务数据：合并报表披露值，每交易日 18:00 同步；<br>
-              事件与因果链：规则引擎自动抽取 + 人工标注，影响强度 0–100；<br>
-              更新时间：2026-09-18 15:00 · 本页数据均为演示数据。
-            </div>
+
           </div>
         </div>
         <div class="card">
@@ -805,6 +799,7 @@
 <script src="_shared/vendor/echarts.min.js"></script>
 <script src="_shared/data.js"></script>
 <script src="_shared/charts.js"></script>
+<script src="_shared/spec.js"></script>
 <script src="_shared/app.js"></script>
 <script>
 (function () {

@@ -193,6 +193,125 @@
   stocks.forEach(function (s) { stockByCode[s.code] = s; });
 
   /* ============================================================
+     2.5 全市场股票池 allStocks（约 620 只，确定性生成）
+     大盘概况要「一个页面搞定整个 A 股市场」，41 只撑不起排序 / 筛选 / 分页。
+     这里按板块生成约 620 只，字段与精选股完全一致；
+     与上面的 41 只精选按代码去重合并，精选优先（保证宁德时代等仍是真实量级）。
+     名称是「地名/字号 + 行业后缀」拼出来的，仅用于演示，非真实公司。
+     ============================================================ */
+  const BOARD_DEFS = [
+    { board: "沪市主板", count: 200, prefixes: ["600", "601", "603", "605"], limit: 10 },
+    { board: "深市主板", count: 190, prefixes: ["000", "001", "002", "003"], limit: 10 },
+    { board: "创业板", count: 130, prefixes: ["300", "301"], limit: 20 },
+    { board: "科创板", count: 60, prefixes: ["688"], limit: 20 },
+    { board: "北交所", count: 40, prefixes: ["830", "831", "832", "833", "870", "871", "872", "920"], limit: 30 }
+  ];
+
+  /* 行业与价格 / 估值区间：让每个行业的量级看起来合理 */
+  const IND_DEFS = [
+    { name: "半导体", price: [28, 180], pe: [30, 120], pb: [2.5, 12], cap: [60, 2400] },
+    { name: "电池", price: [18, 120], pe: [15, 60], pb: [1.8, 8], cap: [50, 1800] },
+    { name: "光伏设备", price: [12, 60], pe: [10, 45], pb: [1.2, 4], cap: [60, 1200] },
+    { name: "汽车整车", price: [8, 90], pe: [12, 45], pb: [1.2, 6], cap: [80, 2200] },
+    { name: "白酒", price: [30, 260], pe: [16, 38], pb: [3, 9], cap: [120, 2600] },
+    { name: "医疗器械", price: [20, 140], pe: [20, 60], pb: [2.5, 9], cap: [40, 900] },
+    { name: "生物制品", price: [14, 90], pe: [22, 70], pb: [2, 8], cap: [40, 700] },
+    { name: "软件服务", price: [16, 160], pe: [28, 90], pb: [3, 14], cap: [40, 1100] },
+    { name: "消费电子", price: [12, 80], pe: [18, 50], pb: [2, 7], cap: [60, 1500] },
+    { name: "银行", price: [4, 45], pe: [4, 9], pb: [0.5, 1.2], cap: [300, 12000] },
+    { name: "证券", price: [7, 32], pe: [12, 30], pb: [1, 3], cap: [200, 3600] },
+    { name: "保险", price: [22, 70], pe: [6, 14], pb: [0.8, 2.2], cap: [400, 8000] },
+    { name: "煤炭开采", price: [6, 42], pe: [5, 14], pb: [0.9, 2.4], cap: [120, 6000] },
+    { name: "贵金属", price: [8, 26], pe: [10, 26], pb: [2, 5], cap: [150, 4000] },
+    { name: "小金属", price: [10, 45], pe: [12, 60], pb: [1.4, 5], cap: [60, 900] },
+    { name: "化工", price: [6, 70], pe: [9, 30], pb: [1, 4], cap: [50, 1800] },
+    { name: "钢铁", price: [3, 18], pe: [6, 20], pb: [0.6, 1.8], cap: [60, 900] },
+    { name: "电力", price: [4, 34], pe: [10, 24], pb: [1, 3], cap: [100, 5000] },
+    { name: "房地产开发", price: [3, 22], pe: [6, 24], pb: [0.4, 1.6], cap: [60, 1600] },
+    { name: "建筑装饰", price: [3, 16], pe: [4, 14], pb: [0.4, 1.4], cap: [80, 2400] },
+    { name: "航空机场", price: [5, 32], pe: [12, 45], pb: [1, 4], cap: [80, 1300] },
+    { name: "轨交设备", price: [5, 26], pe: [10, 28], pb: [1, 3], cap: [60, 2000] },
+    { name: "自动化设备", price: [14, 90], pe: [20, 55], pb: [2, 7], cap: [40, 900] },
+    { name: "白色家电", price: [8, 82], pe: [9, 22], pb: [1.6, 5], cap: [100, 5000] },
+    { name: "食品饮料", price: [8, 60], pe: [14, 40], pb: [1.8, 6], cap: [40, 1200] },
+    { name: "医药商业", price: [8, 40], pe: [12, 34], pb: [1.2, 4], cap: [40, 600] },
+    { name: "环保", price: [4, 26], pe: [10, 32], pb: [1, 3], cap: [30, 400] },
+    { name: "物流", price: [6, 40], pe: [10, 28], pb: [1, 3], cap: [40, 900] },
+    { name: "通信设备", price: [10, 80], pe: [20, 60], pb: [1.8, 6], cap: [50, 1400] },
+    { name: "传媒", price: [5, 36], pe: [16, 55], pb: [1.4, 5], cap: [30, 700] }
+  ];
+
+  const NAME_HEAD = ["华", "中", "东", "南", "北", "金", "宏", "恒", "瑞", "天", "海", "广", "新",
+    "长", "润", "泰", "嘉", "德", "顺", "通", "安", "兴", "盛", "远", "联", "创", "正", "大", "同", "立"];
+  const NAME_TAIL = ["科技", "电子", "材料", "能源", "股份", "实业", "智能", "光电", "精工", "高科",
+    "控股", "集团", "重工", "机电", "环保", "生物", "制药", "传媒", "网络", "数据"];
+  const PY_LETTERS = "abcdefghjklmnopqrstwxyz";
+
+  /* 六个板块的代码段轮转取号，避免重复 */
+  function genCode(boardDef, index) {
+    const prefix = boardDef.prefixes[index % boardDef.prefixes.length];
+    const serial = 100 + Math.floor(index / boardDef.prefixes.length);
+    return prefix + String(serial).padStart(3, "0");
+  }
+
+  const allStocks = (function () {
+    const rnd = mulberry32(20260918);
+    const out = [];
+    const used = {};
+    let seed = 9000;
+
+    BOARD_DEFS.forEach(function (bd) {
+      for (let i = 0; i < bd.count; i++) {
+        const code = genCode(bd, i);
+        if (used[code] || stockByCode[code]) continue;   /* 与精选股冲突则跳过，精选优先 */
+        used[code] = 1;
+
+        const ind = IND_DEFS[Math.floor(rnd() * IND_DEFS.length)];
+        const price = +(ind.price[0] + rnd() * (ind.price[1] - ind.price[0])).toFixed(2);
+        const pct = +((rnd() - 0.48) * 2 * bd.limit * 0.55).toFixed(2);
+        const pe = rnd() < 0.12 ? 0 : +(ind.pe[0] + rnd() * (ind.pe[1] - ind.pe[0])).toFixed(1);
+        const pb = +(ind.pb[0] + rnd() * (ind.pb[1] - ind.pb[0])).toFixed(2);
+        const cap = +(ind.cap[0] + rnd() * (ind.cap[1] - ind.cap[0])).toFixed(0);
+        const roe = +((rnd() - 0.25) * 30).toFixed(1);
+
+        seed++;
+        out.push({
+          code: code,
+          name: NAME_HEAD[Math.floor(rnd() * NAME_HEAD.length)] + NAME_TAIL[Math.floor(rnd() * NAME_TAIL.length)],
+          py: (function () {
+            let s = "";
+            const n = 2 + Math.floor(rnd() * 3);
+            for (let k = 0; k < n; k++) s += PY_LETTERS[Math.floor(rnd() * PY_LETTERS.length)];
+            return s;
+          })(),
+          board: bd.board,
+          industry: ind.name,
+          price: price,
+          chg: +(price * pct / 100).toFixed(2),
+          pct: pct,
+          volRatio: +(0.4 + rnd() * 3.6).toFixed(2),
+          turnover: +(0.08 + rnd() * 12).toFixed(2),
+          pe: pe,
+          pb: pb,
+          cap: cap,
+          roe: roe,
+          mainFlow: +((rnd() - 0.45) * 16).toFixed(2),
+          spark: line(seed, 30, price * 0.96, pct / 100, 0.012 + rnd() * 0.01)
+        });
+      }
+    });
+
+    /* 精选股优先：同代码时用精选股替换生成股 */
+    const byCode = {};
+    out.forEach(function (s) { byCode[s.code] = s; });
+    stocks.forEach(function (s) { byCode[s.code] = s; });
+    return Object.keys(byCode).sort().map(function (c) { return byCode[c]; });
+  })();
+
+  const allStockByCode = {};
+  allStocks.forEach(function (s) { allStockByCode[s.code] = s; });
+
+  /* ============================================================
      3. 主演示股 300750 宁德时代 —— 明细数据
      ============================================================ */
   const FOCUS = "300750";
@@ -1019,6 +1138,8 @@
     rankings: rankings,
     stocks: stocks,
     stockByCode: stockByCode,
+    allStocks: allStocks,
+    allStockByCode: allStockByCode,
     focusProfile: focusProfile,
     focusKline: focusKline,
     focusWeekly: focusWeekly,

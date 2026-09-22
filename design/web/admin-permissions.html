@@ -99,9 +99,7 @@
               <button class="btn btn-outline btn-block" id="btnSelectAll">全选当前角色</button>
               <button class="btn btn-outline btn-block" id="btnClearAll">清空当前角色</button>
               <button class="btn btn-outline btn-block" id="btnReadonly">设为只读分析权限</button>
-              <div class="legend-block mt-2">
-                「只读分析权限」= 全部模块访问 + 数据范围全市场，不含导出、编辑与后台管理。
-              </div>
+
             </div>
           </div>
         </div>
@@ -111,7 +109,7 @@
           <div class="card">
             <div class="card-head">
               <span class="card-title">功能点矩阵</span>
-              <span class="card-sub">行 = 功能点 · 列 = 角色 · 表头可整列全选</span>
+              <span class="card-sub">行 = 功能点 · 列 = 角色</span>
               <div class="card-tools">
                 <input class="input input-sm" id="fFp" placeholder="搜索功能点" style="width:170px">
                 <span class="tag tag-outline" id="fpCount"></span>
@@ -194,13 +192,6 @@
         </div>
       </div>
 
-      <div class="legend-block mt-4">
-        <b>权限模型说明</b><br>
-        功能点（function point）是全系统最小的授权单位，采用「角色 → 功能点」的多对多关系（对应后续数据库的
-        <code>Role</code> / <code>FunctionPoint</code> / <code>RoleFunctionPoint</code> 三张表）。
-        后端用策略式授权在 API 层校验，前端按同一份配置裁剪路由与菜单，避免「看不到但能调」的漏洞。
-        本页勾选即时写入本地配置并影响左侧导航，用于直观演示权限效果。
-      </div>
 
     </div>
   </main>
@@ -231,6 +222,7 @@
 <script src="_shared/vendor/echarts.min.js"></script>
 <script src="_shared/data.js"></script>
 <script src="_shared/charts.js"></script>
+<script src="_shared/spec.js"></script>
 <script src="_shared/app.js"></script>
 <script>
 (function () {

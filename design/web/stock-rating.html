@@ -107,14 +107,11 @@
           <div class="card">
             <div class="card-head">
               <span class="card-title">评级分布与平均目标价走势</span>
-              <span class="card-sub">堆叠柱 = 各评级机构数 · 折线 = 平均目标价（元）</span>
+              <span class="card-sub">柱 = 机构数 · 线 = 目标价</span>
             </div>
             <div class="card-body">
               <div id="ratingHistory" class="chart chart-lg"></div>
-              <div class="legend-block mt-3">
-                <b>趋势</b>：近 12 个月买入评级从 12 家增至 18 家，平均目标价由 268 元升至 308 元，
-                评级与目标价同步上行；唯一的减持评级出现在 2025-10 并已过期。
-              </div>
+
             </div>
           </div>
 
@@ -122,7 +119,7 @@
           <div class="card">
             <div class="card-head">
               <span class="card-title">机构目标价分布</span>
-              <span class="card-sub">横轴 = 发布时间 · 纵轴 = 目标价（元）· 虚线 = 当前价</span>
+              <span class="card-sub">纵轴 = 目标价（元）</span>
               <div class="card-tools">
                 <span class="tag tag-up">买入</span><span class="tag tag-brand">增持</span>
                 <span class="tag">中性</span><span class="tag tag-down">减持</span>
@@ -160,10 +157,7 @@
                   <div class="kpi"><span class="kpi-label">2026E PE</span><span class="kpi-value is-sm t-up">16.9</span><span class="kpi-delta t-up">↓ 31.9%</span></div>
                   <div class="kpi"><span class="kpi-label">2028E PE</span><span class="kpi-value is-sm t-up">11.4</span><span class="kpi-delta t-up">↓ 54.0%</span></div>
                 </div>
-                <div class="legend-block mt-3">
-                  若业绩兑现一致预期，2028 年预测 PE 降至 11.4 倍，
-                  低于电池行业当前中位数 26.8 倍，估值随业绩增长自然消化。
-                </div>
+
               </div>
             </div>
           </div>
@@ -176,10 +170,7 @@
             </div>
             <div class="card-body">
               <div id="reviseChart" class="chart chart-lg"></div>
-              <div class="legend-block mt-3">
-                2026 年净利一致预期由年初 712 亿元上修至 786 亿元（+10.4%），
-                近 1 个月上调幅度最大（+4.2%），主要由储能业务与海外订单驱动。
-              </div>
+
             </div>
           </div>
 
@@ -187,7 +178,7 @@
           <div class="card">
             <div class="card-head">
               <span class="card-title">评级明细</span>
-              <span class="card-sub">机构 / 分析师 / 日期 / 评级 / 目标价 / 距现价 · 点击表头排序</span>
+              <span class="card-sub">点击表头排序</span>
               <div class="card-tools">
                 <select class="select input-sm" id="fRating" style="width:120px">
                   <option value="all">全部评级</option>
@@ -282,12 +273,7 @@
           <div class="card">
             <div class="card-head"><span class="card-title">数据口径</span></div>
             <div class="card-body">
-              <div class="legend-block">
-                数据来源：公开机构评级汇总（不含研报全文），每交易日 20:00 更新；<br>
-                目标价为机构公开给出的目标价，非本项目预测；<br>
-                一致预期 = 各机构预测值的中位数；<br>
-                本页内容为演示数据，<b>不构成任何投资建议</b>。
-              </div>
+
             </div>
           </div>
         </aside>
