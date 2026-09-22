@@ -58,7 +58,6 @@ export function NotificationsPage() {
   return (
     <>
       <Head unread={data.unread} />
-
       <div className="row gap-2 wrap" style={{ alignItems: 'center' }}>
         <span className="segmented">
           <span className={!unreadOnly ? 'is-active' : undefined} onClick={() => setUnreadOnly(false)}>
@@ -68,7 +67,6 @@ export function NotificationsPage() {
             未读 {data.unread}
           </span>
         </span>
-
         <span className="row gap-2" style={{ marginLeft: 'auto' }}>
           <button
             type="button"
@@ -83,7 +81,6 @@ export function NotificationsPage() {
           </Link>
         </span>
       </div>
-
       <div className="card mt-3">
         <div className="card-head">
           <span className="card-title">通知记录</span>
@@ -135,17 +132,6 @@ export function NotificationsPage() {
             </div>
           )}
         </div>
-      </div>
-
-      <div className="legend-block mt-4">
-        <b>数据来源与口径</b>
-        <br />
-        通知由提醒规则触发产生；评估每 30 秒一轮，同一条规则触发后冷却 30 分钟。
-        <br />
-        已读状态按账号保存；删除提醒规则不会删除已产生的通知，历史仍可回溯（规则 Id 会保留）。
-        <br />
-        实时推送仅在本页打开时生效（经 <code>/hubs/quotes</code> 的用户分组下发），
-        离线期间产生的通知会在下次打开时列出。
       </div>
     </>
   );

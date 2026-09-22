@@ -131,7 +131,6 @@ export function MarketPage() {
                 </button>
               ))}
             </span>
-
             <form
               onSubmit={(event) => {
                 event.preventDefault();
@@ -150,7 +149,6 @@ export function MarketPage() {
             </form>
           </div>
         </div>
-
         <div className="card-body is-flush">
           {stocks.isPending && !data ? (
             <div className="sa-boot">正在载入全市场行情…</div>
@@ -192,7 +190,6 @@ export function MarketPage() {
                   </tbody>
                 </table>
               </div>
-
               <div className="card-foot row-between">
                 <span className="fs-11 t-3">
                   第 {data.page} / {pages} 页

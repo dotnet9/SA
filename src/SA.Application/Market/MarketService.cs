@@ -197,7 +197,9 @@ public sealed class MarketService(
             Price: quote.Price <= 0 ? null : quote.Price,
             Chg: quote.Price <= 0 ? null : quote.Change,
             Pct: quote.Price <= 0 ? null : quote.Pct,
-            VolRatio: quote.Price <= 0 ? null : quote.VolRatio,
+            // 量比不可能真的是 0（它是相对 5 日均量的比值）：0 表示上游未提供，
+            // 与 Pe/Pb 同一约定按 null 处理，界面显示「—」而不是「0.00」
+            VolRatio: quote.Price <= 0 || quote.VolRatio <= 0 ? null : quote.VolRatio,
             Turnover: quote.Price <= 0 ? null : quote.Turnover,
             Pe: quote.Pe <= 0 ? null : quote.Pe,
             Pb: quote.Pb <= 0 ? null : quote.Pb,

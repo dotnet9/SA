@@ -10,7 +10,7 @@ import { fetchRisk, type Risk } from '@/features/rating/api';
  * 结构与 `design/web/stock-risk.html` 对应：风险分 → 风险清单 → 关键指标对照 → 口径说明。
  *
  * 每条风险都同时给出「实际值」与「阈值」，因此不需要相信一个黑箱结论。
- * 诉讼、监管问询与舆情需要公告与新闻数据源，本轮没有，页面明确说明不提供该维度。
+ * 诉讼、监管问询与舆情需要公告正文解析，暂不提供，页面明确说明不含该维度。
  */
 export function StockRiskPage() {
   const { code = '' } = useParams();
@@ -136,7 +136,6 @@ function Content({ data }: { data: Risk }) {
           )}
         </div>
       </div>
-
       <FreshnessNote asOf={data.asOf} source="本地日线 + 业绩报表 + 股权质押 + 全市场快照（不新增采集源）" />
 
     </>

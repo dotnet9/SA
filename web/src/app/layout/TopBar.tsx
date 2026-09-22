@@ -20,7 +20,6 @@ export function TopBar({ asOf }: { asOf?: string }) {
     <>
       <header className="sa-topbar">
         <GlobalSearch />
-
         <div className="sa-topactions">
           {asOf ? (
             <span className="tag tag-outline hide-mobile" title="数据截止时间">
@@ -36,7 +35,6 @@ export function TopBar({ asOf }: { asOf?: string }) {
           >
             ⓘ
           </button>
-
           <button
             type="button"
             className="icon-btn"
@@ -48,7 +46,6 @@ export function TopBar({ asOf }: { asOf?: string }) {
           >
             ⇅
           </button>
-
           <button
             type="button"
             className="icon-btn"
@@ -60,17 +57,14 @@ export function TopBar({ asOf }: { asOf?: string }) {
           >
             {theme === 'dark' ? '☾' : '☀'}
           </button>
-
           <NavLink className="icon-btn" to="/notifications" title="通知中心">
             ◍
           </NavLink>
-
           <NavLink className="icon-btn" to="/settings" title="设置">
             ⚒
           </NavLink>
         </div>
       </header>
-
       <CaliberDrawer open={specOpen} onClose={() => setSpecOpen(false)} />
     </>
   );

@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 /**
  * 会话状态。本应用**没有登录**，因此恒为 `authenticated`。
@@ -8,10 +8,10 @@ export type AuthStatus = 'authenticated';
 /**
  * 当前身份。
  *
- * 保留这个形状（而不是把 `useAuth()` 整个删掉）是因为导航裁剪、实时推送、设置页、
- * 自选页等处仍在读 `me.nickname` / `me.functionPoints`，并写 `me === null` 的分支。
- * 全部改成「本机用户 + 全部功能点」后，那些调用点一行都不用改——
- * `me === null` 的分支自然变成永不触发的死分支（例如自选页的「需要登录」提示）。
+ * 保留这个形状（而不是把 `useAuth()` 整个删掉）是因为移动端外壳、移动端页面、搜索页
+ * 等处仍在读 `me.nickname` / `can(...)`，并写 `me === null` 的分支。
+ * 统一返回常量身份后，那些调用点一行都不用改——`me === null` 的分支自然变成
+ * 永不触发的死分支（例如自选页的「需要登录」提示）。
  */
 export interface Me {
   id: string;
@@ -42,7 +42,8 @@ const LocalUser: Me = {
   quotas: {}
 };
 
-interface AuthContextValue {
+/** 会话视图。 */
+export interface AuthContextValue {
   status: AuthStatus;
   /** 恒为 {@link LocalUser}；类型保留可空是为了不改动既有调用点。 */
   me: Me | null;
@@ -50,38 +51,22 @@ interface AuthContextValue {
   can: (...functionPoints: string[]) => boolean;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+/** 唯一的身份取值。 */
+const Value: AuthContextValue = {
+  status: 'authenticated',
+  me: LocalUser,
+  can: () => true
+};
 
 /**
- * 本机身份。
+ * 取当前身份与权限判断。
  *
- * 用户决定去掉登录与权限、所有功能免费开放，因此这里不再有会话恢复、令牌刷新、
- * 登出等逻辑——只提供一个常量身份，让依赖 `useAuth()` 的既有代码继续工作。
- *
- * `can()` 恒为 true 而不是「按功能点判断」：既然不做权限控制，
- * 再让某个菜单或按钮因为功能点缺失而消失，就与「所有功能都开放」自相矛盾。
+ * 直接返回常量，**不需要 Provider**：没有会话要恢复、没有令牌要刷新，
+ * 用 Context 只会多一层「可能忘记挂载」的依赖——去掉登录时正是这样让移动端崩过一次
+ * （`useAuth` 抛「必须在 AuthProvider 内使用」）。常量返回值从根上消除这类失败。
  */
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const value = useMemo<AuthContextValue>(
-    () => ({
-      status: 'authenticated',
-      me: LocalUser,
-      can: () => true
-    }),
-    []
-  );
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-/** 取当前身份与权限判断。 */
 export function useAuth(): AuthContextValue {
-  const value = useContext(AuthContext);
-  if (!value) {
-    throw new Error('useAuth 必须在 AuthProvider 内使用');
-  }
-
-  return value;
+  return Value;
 }
 
 /**
@@ -90,5 +75,16 @@ export function useAuth(): AuthContextValue {
  * 本应用不做权限控制，恒为 true；保留函数是为了不改动既有调用点。
  */
 export function useCan(...functionPoints: string[]): boolean {
-  return useAuth().can(...functionPoints);
+  void functionPoints;
+  return true;
+}
+
+/**
+ * 兼容用的空壳 Provider。
+ *
+ * 已不需要（`useAuth` 不再依赖 Context），保留是为了让「包一层 Provider」的旧写法不报错。
+ * 新代码不必使用。
+ */
+export function AuthProvider({ children }: { children: ReactNode }) {
+  return <>{children}</>;
 }

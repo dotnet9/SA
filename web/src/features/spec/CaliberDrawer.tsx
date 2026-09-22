@@ -25,7 +25,6 @@ export function CaliberDrawer({ open, onClose }: { open: boolean; onClose: () =>
             ✕
           </button>
         </div>
-
         <div className="drawer-body">
           {CaliberGroups.map((group) => {
             const isOpen = expanded === group.title;

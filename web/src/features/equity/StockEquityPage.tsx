@@ -140,7 +140,6 @@ function Content({ data }: { data: Equity }) {
             )}
           </div>
         </div>
-
         <div className="card">
           <div className="card-head">
             <span className="card-title">户均持股</span>

@@ -194,7 +194,6 @@ function Content({
             </div>
           </div>
         </div>
-
         <div className="card">
           <div className="card-head">
             <span className="card-title">相对强弱</span>
@@ -221,7 +220,6 @@ function Content({
             <div className="chart-note">口径：个股累计收益 − 基准累计收益（同区间、逐日对齐）。</div>
           </div>
         </div>
-
               </div>
 
       {/* 布林带 */}

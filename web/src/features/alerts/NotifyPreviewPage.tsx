@@ -13,9 +13,9 @@ import { fetchNotifications, type Notification } from '@/features/alerts/api';
  *
  * <b>两处与原型不同的处理（页面都写明了）</b>：
  * 1. 预览内容优先用<b>真实的最近一条通知</b>；没有通知时才给一条示例并标注「示例」，
- *    避免把演示文案当成本账号的真实提醒；
+ *    避免把演示文案当成真实提醒；
  * 2. 浏览器通知栏与锁屏通知在原型里是纯样式示意，本实现同样只是样式示意，但会显示
- *    浏览器的真实通知权限状态，并说明本轮未实现 Service Worker（页面关闭后收不到通知）。
+ *    浏览器的真实通知权限状态，并指向设置页的推送订阅入口（订阅后页面关闭也能收到通知）。
  */
 export function NotifyPreviewPage() {
   const toast = useToast();
@@ -89,14 +89,13 @@ export function NotifyPreviewPage() {
           </span>
         </div>
       </div>
-
       <div className="grid grid-2">
         <div className="col gap-3">
           {/* ① 站内通知 */}
           <div className="card">
             <div className="card-head">
               <span className="card-title">① 站内通知（通知中心）</span>
-              <span className="card-sub">{real ? '本账号最近一条' : '示例内容'}</span>
+              <span className="card-sub">{real ? '最近一条真实通知' : '示例内容'}</span>
             </div>
             <div className="card-body">
               <div className="mock-banner" style={{ borderLeft: '3px solid var(--up)' }}>
@@ -153,10 +152,10 @@ export function NotifyPreviewPage() {
                   否则每段行内文本都会变成一个 flex item，间距与换行会错乱（实测） */}
               <div className="chart-note">
                 <span>
-                  需要 HTTPS + 通知权限授权。<b>本轮未实现 Service Worker 与 Web Push</b>，
-                  因此页面关闭后收不到通知——这条通道目前只在页面打开时（经 SignalR）有效。
+                  需要 HTTPS + 通知权限授权。推送通道已在<b>设置页</b>提供（注册 Service Worker → 申请权限 → 订阅），
+                  订阅后页面关闭也能收到通知；未订阅时只有页面打开期间（经 SignalR）会提示。
                   <br />
-                  iOS 还必须先在 Safari 中「添加到主屏幕」并从主屏图标启动才能申请权限，本实现同样未覆盖。
+                  iOS 还必须先在 Safari 中「添加到主屏幕」并从主屏图标启动，才能申请通知权限。
                 </span>
               </div>
               <div className="row gap-2 mt-3">
@@ -171,7 +170,6 @@ export function NotifyPreviewPage() {
             </div>
           </div>
         </div>
-
         <div className="col gap-3">
           {/* ③ 锁屏通知 */}
           <div className="card">
@@ -252,10 +250,9 @@ export function NotifyPreviewPage() {
             </div>
             <div className="card-body col gap-2 fs-12 t-2">
               <div>· 桌面小组件：需要原生壳或第三方 App，本项目是响应式 Web。</div>
-              <div>· 页面关闭后的推送：需要 Service Worker + Web Push，本轮未实现。</div>
               <div>· 邮件通知：需要邮件服务与模板，未接入。</div>
               <div className="legend-block mt-3">
-                以上三项在设置页都标注为「未接入」或「未注册」，不显示为可用状态——
+                以上两项在设置页都标注为「未接入」或「未注册」，不显示为可用状态——
                 给出做不到的开关比不给开关更容易误导。
               </div>
             </div>
@@ -267,7 +264,7 @@ export function NotifyPreviewPage() {
         <div className="mt-4">
           <EmptyState
             title="当前没有真实通知可预览"
-            hint="上面展示的是示例内容。新建一条提醒规则并等它触发后，这里会显示本账号最近一条真实通知。"
+            hint="上面展示的是示例内容。新建一条提醒规则并等它触发后，这里会显示最近一条真实通知。"
             action={
               <Link className="btn btn-sm btn-primary" to="/alerts">
                 去建提醒规则

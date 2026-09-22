@@ -110,7 +110,6 @@ function Content({ data }: { data: Finance }) {
         <MetricCard label="加权 ROE" value={num(latest?.roe, '%')} delta={latest?.bps === null || latest?.bps === undefined ? undefined : `每股净资产 ${num(latest.bps)} 元`} />
         <MetricCard label="销售毛利率" value={num(latest?.grossMargin, '%')} delta={`每股收益 ${num(latest?.eps)} 元`} />
       </div>
-
       <div className="grid grid-4 mt-3">
         <MetricCard label="每股经营现金流" value={num(latest?.operatingCashFlowPerShare)} delta={cashFlowHint(latest?.operatingCashFlowPerShare, latest?.eps)} deltaTone={latest?.operatingCashFlowPerShare} />
         <MetricCard label="扣非每股收益" value={num(latest?.deductedEps)} />
@@ -132,7 +131,6 @@ function Content({ data }: { data: Finance }) {
           )}
         </div>
       </div>
-
       <div className="grid grid-2 mt-4">
         {/* 同比增速 */}
         <div className="card">
@@ -174,7 +172,6 @@ function Content({ data }: { data: Finance }) {
             </div>
           </div>
         </div>
-
         <div className="card">
           <div className="card-head">
             <span className="card-title">业绩预告</span>
@@ -261,7 +258,6 @@ function Content({ data }: { data: Finance }) {
           </div>
         </div>
       </div>
-
       <FreshnessNote asOf={data.asOf} source="东方财富公开报表接口（业绩报表 / 业绩预告）" />
 
     </>

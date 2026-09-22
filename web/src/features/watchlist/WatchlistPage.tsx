@@ -57,7 +57,6 @@ export function WatchlistPage() {
             </button>
           </div>
         </div>
-
         <div className="card-body is-flush">
           {codes.length === 0 ? (
             <div className="fs-12 t-3" style={{ padding: 16 }}>

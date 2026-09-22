@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/providers/AuthProvider';
 import { useRealtime } from '@/providers/RealtimeProvider';
 import { fetchNotifications } from '@/features/alerts/api';
 import { useSiteInfo } from '@/app/layout/useSiteInfo';
@@ -16,7 +15,6 @@ import { useSiteInfo } from '@/app/layout/useSiteInfo';
 export function MobileShell({ children }: { children: ReactNode }) {
   const site = useSiteInfo();
   const realtime = useRealtime();
-  const { me } = useAuth();
   const location = useLocation();
 
   const { data: notifications } = useQuery({
@@ -46,19 +44,21 @@ export function MobileShell({ children }: { children: ReactNode }) {
       {site.notice ? <div className="sa-notice m-notice">{site.notice}</div> : null}
 
       <main className="m-main">{children}</main>
-
       <nav className="m-tabbar">
-        <MobileTab to="/m" icon="◈" text="市场" active={location.pathname === '/m'} />
-        <MobileTab to="/m/watchlist" icon="★" text="自选" active={location.pathname.startsWith('/m/watchlist')} />
-        <MobileTab to="/m/screener" icon="⚙" text="选股" active={location.pathname.startsWith('/m/screener')} />
+        <MobileTab to="/m" icon="◈" text="大盘" active={location.pathname === '/m'} />
         <MobileTab
-          to="/m/notifications"
-          icon="◍"
-          text="通知"
-          active={location.pathname.startsWith('/m/notifications')}
+          to="/m/watchlist"
+          icon="★"
+          text="自选"
+          active={location.pathname.startsWith('/m/watchlist')}
+        />
+        <MobileTab
+          to="/m/more"
+          icon="☰"
+          text="更多"
+          active={location.pathname.startsWith('/m/more')}
           badge={notifications?.unread}
         />
-        <MobileTab to="/m/settings" icon="⚒" text="我的" active={location.pathname.startsWith('/m/settings')} />
       </nav>
 
       {/* 桌面壳里没有的东西：底部一行实时状态，手机上看不到页头工具条 */}
@@ -70,11 +70,7 @@ export function MobileShell({ children }: { children: ReactNode }) {
           切到桌面版 →
         </Link>
       </div>
-
       <div className="m-tabbar-space" />
-
-      {/* me 仅用于确认已登录：移动端不做权限提示，受限页面由路由守卫处理 */}
-      {me ? null : null}
     </div>
   );
 }

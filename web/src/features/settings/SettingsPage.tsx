@@ -16,7 +16,7 @@ import { usePwa } from './usePwa';
  * 个人设置。
  *
  * 结构与 `design/web/settings.html` 对应：外观 → 刷新与推送 → 指标参数 → 通知偏好 → 安装与通知能力，
- * 右侧为账号、我的数据、数据口径与关于。
+ * 右侧为我的数据、数据口径与关于。
  *
  * 三处与原型不同、且都是「不写假的」：
  * 1. 安装与通知能力区展示<b>浏览器与服务端的真实状态</b>（Service Worker 是否注册、
@@ -191,7 +191,6 @@ export function SettingsPage() {
           </button>
         </div>
       </div>
-
       <div className="sa-split">
         <div className="col gap-4">
           {/* 外观 */}
@@ -205,15 +204,14 @@ export function SettingsPage() {
                 <label className="label">主题</label>
                 <div className="segmented">
                   <span className={theme.theme === 'dark' ? 'is-active' : undefined} onClick={() => theme.setTheme('dark')}>
-                    深色（默认）
+                    浅色（默认）
                   </span>
                   <span className={theme.theme === 'light' ? 'is-active' : undefined} onClick={() => theme.setTheme('light')}>
                     浅色
                   </span>
                 </div>
-                <span className="hint">深色为默认主题，适合长时间盯盘；浅色在强光环境下更易读。</span>
+                <span className="hint">浅色为默认，深色适合长时间盯盘。</span>
               </div>
-
               <div className="field">
                 <label className="label">涨跌颜色</label>
                 <div className="segmented">
@@ -226,7 +224,6 @@ export function SettingsPage() {
                 </div>
                 <span className="hint">影响所有图表、表格与数字颜色，切换后立即重建图表。</span>
               </div>
-
               <div className="field">
                 <label className="label">表格密度</label>
                 <div className="segmented">
@@ -241,7 +238,6 @@ export function SettingsPage() {
                   </span>
                 </div>
               </div>
-
               <div className="field">
                 <label className="label">数字字体</label>
                 <div className="segmented">
@@ -282,7 +278,6 @@ export function SettingsPage() {
                   当前连接状态：{realtime.status === 'connected' ? `已连接（订阅 ${realtime.subscribed.length} 只）` : '未连接'}。
                 </span>
               </div>
-
               <div className="field">
                 <label className="label">默认首页</label>
                 <select className="input input-sm" value={homePath} onChange={(event) => setHomePath(event.target.value)}>
@@ -291,9 +286,8 @@ export function SettingsPage() {
                   <option value="/screener">条件选股器</option>
                   <option value="/notifications">通知中心</option>
                 </select>
-                <span className="hint">登录后跳转到该页面。</span>
+                <span className="hint">打开应用时进入该页面。</span>
               </div>
-
               <div className="field">
                 <label className="label">数字变动闪烁</label>
                 <label className="check">
@@ -302,7 +296,6 @@ export function SettingsPage() {
                 </label>
                 <span className="hint">仅改变底色，不做位移，避免列表跳动。</span>
               </div>
-
               <div className="field">
                 <label className="label">行情时间戳</label>
                 <label className="check">
@@ -339,7 +332,6 @@ export function SettingsPage() {
                 </div>
                 <span className="hint">日线默认 5/10/20/60。</span>
               </div>
-
               <div className="field">
                 <label className="label">复权方式</label>
                 <div className="segmented">
@@ -358,7 +350,6 @@ export function SettingsPage() {
                   不改变服务端已算好的数值（避免同一份指标出现两套口径）。
                 </span>
               </div>
-
               <div className="field">
                 <label className="label">MACD 参数</label>
                 <div className="row gap-2">
@@ -378,7 +369,6 @@ export function SettingsPage() {
                 </div>
                 <span className="hint">服务端按 12/26/9 计算，此处仅记录偏好。</span>
               </div>
-
               <div className="field">
                 <label className="label">主力资金口径</label>
                 <select
@@ -439,7 +429,6 @@ export function SettingsPage() {
                   不能只用一个复选框表示。
                 </span>
               </div>
-
               <div className="field">
                 <label className="label">免打扰</label>
                 <div className="row gap-2" style={{ alignItems: 'center' }}>
@@ -508,7 +497,6 @@ export function SettingsPage() {
                     推送订阅：{pwa.state.subscribed ? '已订阅' : '未订阅'}
                   </span>
                 </div>
-
                 <div className="col gap-2">
                   {!pwa.state.serviceWorkerRegistered ? (
                     <button
@@ -541,7 +529,6 @@ export function SettingsPage() {
                     </div>
                   ) : null}
                 </div>
-
                 <div className="fold">
                   <div className="fold-head">
                     Android（Chrome / Edge）与 iOS（Safari）<span className="caret">▼</span>
@@ -555,7 +542,6 @@ export function SettingsPage() {
                   </div>
                 </div>
               </div>
-
               <div className="col gap-3">
                 <div className="kpi">
                   <span className="kpi-label">实时通道（页面打开时）</span>
@@ -566,16 +552,6 @@ export function SettingsPage() {
                     页面内即时到达；关闭页面后由浏览器推送接力
                   </span>
                 </div>
-                <div className="legend-block">
-                  <b>两条通道的分工</b>
-                  <br />
-                  SignalR 负责页面打开时的秒级到达（自选行情与提醒）；
-                  浏览器推送（Web Push）负责页面关闭后的到达。
-                  免打扰期间服务端只写站内通知、不发起推送，因此「不打扰」不等于「丢消息」。
-                  <br />
-                  <b>为什么需要 HTTPS</b>：Service Worker、Web Push、通知与震动 API 都只在安全上下文下可用；
-                  本机调试用 http://localhost 即可，手机访问必须走域名 HTTPS。
-                </div>
               </div>
             </div>
           </div>
@@ -585,18 +561,10 @@ export function SettingsPage() {
         <aside className="col gap-4">
           <div className="card">
             <div className="card-head">
-              <span className="card-title">本地数据</span>
+              <span className="card-title">本地缓存</span>
               <span className="card-sub">存在这台浏览器里</span>
             </div>
             <div className="card-body col gap-3">
-              <div className="row-between">
-                <span className="fs-12 t-2">自选股</span>
-                <span className="mono fs-12">{watchlist.codes.length} 只</span>
-              </div>
-              <div className="row-between">
-                <span className="fs-12 t-2">提醒规则</span>
-                <span className="mono fs-12">{alerts?.total ?? 0} 条</span>
-              </div>
               <div className="row-between">
                 <span className="fs-12 t-2">接口缓存</span>
                 <span className="mono fs-12">{cacheLabel}</span>
@@ -619,7 +587,6 @@ export function SettingsPage() {
               </button>
             </div>
           </div>
-
           <div className="card">
             <div className="card-head">
               <span className="card-title">我的数据</span>
@@ -645,28 +612,13 @@ export function SettingsPage() {
               </div>
             </div>
           </div>
-
           <div className="card">
             <div className="card-head">
               <span className="card-title">数据口径</span>
             </div>
             <div className="card-body">
-              <div className="legend-block">
-                <b>行情</b>：东方财富公开接口；<b>全市场</b>按扫描周期整体刷新（端点单页上限 100 行，一轮约 60 次请求），非逐笔。
-                <br />
-                <b>自选股</b>：多标的快照端点经 SignalR 推送，间隔可选 3/5/10 秒；失败自动降级到腾讯备源。
-                <br />
-                <b>日线</b>：前复权，落本地 Parquet；指标（MA / MACD / KDJ / RSI / BOLL）由服务端批量计算。
-                <br />
-                <b>财务 / 股权</b>：东财公开报表，季频；<b>资金流与两融</b>：逐日。
-                <br />
-                <b>行业分类</b>：东财行业（申万一级无公开直取源）。
-                <br />
-                <b>北向资金</b>：公开接口已不再提供逐日净买入，本实现不提供该数值，也不以估算替代。
-              </div>
             </div>
           </div>
-
           <div className="card">
             <div className="card-head">
               <span className="card-title">关于</span>
@@ -692,12 +644,11 @@ export function SettingsPage() {
           </div>
         </aside>
       </div>
-
       <div className="legend-block mt-4">
         <b>说明</b>
         <br />
         本页大部分设置保存在浏览器本地（<code>sa.*</code> 键），换设备或清缓存后会恢复默认；
-        推送间隔、数据范围、权限等功能性设置由服务端按账号生效。
+        推送间隔等少数设置由服务端按「本机用户」保存（提醒的后台巡检要用）。
         <br />
         <b>免打扰与推送开关存在服务端</b>：浏览器关掉时前端无从判断「现在该不该响」，
         因此这两个开关必须在服务端执行才有意义（页面上点「保存设置」即写入服务端）。

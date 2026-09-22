@@ -42,12 +42,9 @@ rem ============================================================
 
 title 股析 SA - 一键启动
 
-rem ---- 可调参数（改这里即可换端口与初始密码）------------------
+rem ---- 可调参数（改这里即可换端口） ----
 set "API_PORT=5180"
 set "WEB_PORT=5173"
-rem 首次运行会用它创建 admin；改这个值不会影响已存在的账号。
-rem 这是「本机自用」的便利默认值，若把服务暴露到局域网/公网，请先改掉它。
-set "ADMIN_PASSWORD=Sa@2026Admin"
 rem ---- ---------------------------------------------------------
 
 rem %~dp0 带结尾反斜杠，而 "路径\" 会把引号转义掉，因此先去掉结尾反斜杠
@@ -156,29 +153,7 @@ echo.
 echo   前端与接口同源：界面在 %WEB_PORT%，/api 与 /hubs 由它反代到 %API_PORT%，
 echo   与线上 nginx 的三个 location 是同一形态（部署前可用本脚本验证）。
 echo.
-echo   ┌── 登录账号 ──────────────────────────────────────────
-echo   │  用户名      admin
-echo   │  密码        %ADMIN_PASSWORD%
-echo   │
-echo   │  首次启动用上面的密码创建管理员。
-echo   │  若 data 目录下已有数据库，密码是你之前用的那个
-echo   │  （本脚本不会重置已存在账号的密码）。
-echo   └─────────────────────────────────────────────────────
-echo.
-echo   免登录可见：市场概览、搜索、个股全部模块、价值研究、四种拓扑图、行业景气度
-echo   需登录使用：自选股、条件选股器、提醒规则、通知中心、个人设置、后台管理
-echo.
-
-rem 已有数据库时明确提示：脚本无法知道旧密码，给出可操作的处理方式
-if exist "%DATA_DIR%\sa.db" (
-    echo   [提示] 检测到既有数据库：%DATA_DIR%\sa.db
-    echo          管理员密码沿用你之前设置的那个，不是上面这句。
-    echo          忘记密码时：
-    echo            a^) 关闭全部服务，删除或改名 data\sa.db 后重新运行本脚本
-    echo            b^) 或让管理员在后台「用户与权限」里重置密码
-    echo.
-)
-
+echo   无需登录：所有功能直接可用。自选股与提醒设置存在本机，换设备不会同步。
 echo   首次启动需要先采集数据，属正常现象：
 echo     - 市场概览 / 搜索 / 自选    约 1 分钟内可用
 echo     - 个股趋势 / 财务 / 股权    首次访问该股时按需补齐（几秒）
@@ -192,7 +167,7 @@ echo.
 
 rem ---------- 5a. 启动后端（独立窗口，便于单独看采集日志）----------
 rem 用 start /D 指定工作目录，避免在带引号的命令串里再嵌 cd 造成引号转义问题
-start "SA 后端 API (端口 %API_PORT%)" /D "%ROOT%" cmd /k "set "ASPNETCORE_URLS=http://localhost:%API_PORT%"&&set "Sa__DataDirectory=%DATA_DIR%"&&set "Sa__Auth__AdminInitialPassword=%ADMIN_PASSWORD%"&&dotnet run --project src\SA.Api --no-build"
+start "SA 后端 API (端口 %API_PORT%)" /D "%ROOT%" cmd /k "set "ASPNETCORE_URLS=http://localhost:%API_PORT%"&&set "Sa__DataDirectory=%DATA_DIR%"&&dotnet run --project src\SA.Api --no-build"
 
 call :waitport %API_PORT% 90
 if errorlevel 1 (

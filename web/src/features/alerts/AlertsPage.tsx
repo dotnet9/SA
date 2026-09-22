@@ -116,7 +116,6 @@ function Content({ data }: { data: Awaited<ReturnType<typeof fetchAlertRules>> }
   return (
     <>
       <Head total={data.total} quota={data.quota} />
-
       <div className="grid grid-4">
         <StatCard label="规则总数" value={`${data.total} / ${data.quota}`} />
         <StatCard label="启用中" value={String(enabled)} />
@@ -144,7 +143,6 @@ function Content({ data }: { data: Awaited<ReturnType<typeof fetchAlertRules>> }
                 onChange={(event) => setCode(event.target.value)}
               />
             </label>
-
             <label className="col gap-1">
               <span className="label" style={{ width: 'auto' }}>
                 规则类型
@@ -162,7 +160,6 @@ function Content({ data }: { data: Awaited<ReturnType<typeof fetchAlertRules>> }
                 ))}
               </select>
             </label>
-
             <label className="col gap-1">
               <span className="label" style={{ width: 'auto' }}>
                 阈值 {selectedType?.unit ? `（${selectedType.unit}）` : '（无需填）'}
@@ -176,7 +173,6 @@ function Content({ data }: { data: Awaited<ReturnType<typeof fetchAlertRules>> }
                 onChange={(event) => setThreshold(event.target.value)}
               />
             </label>
-
             <label className="col gap-1">
               <span className="label" style={{ width: 'auto' }}>
                 备注
@@ -189,7 +185,6 @@ function Content({ data }: { data: Awaited<ReturnType<typeof fetchAlertRules>> }
                 onChange={(event) => setNote(event.target.value)}
               />
             </label>
-
             <button
               type="button"
               className="btn btn-sm btn-primary"
@@ -248,22 +243,7 @@ function Content({ data }: { data: Awaited<ReturnType<typeof fetchAlertRules>> }
           )}
         </div>
       </div>
-
       <FreshnessNote asOf={data.asOf} source="行情快照 + 本地日线（评估节拍 30 秒，单条规则冷却 30 分钟）" />
-
-      <div className="legend-block mt-4">
-        <b>数据来源与口径</b>
-        <br />
-        规则评估每 30 秒一轮，判定只用当前快照与本地日线的确定值，不做预测或模糊匹配。
-        <br />
-        同一条规则触发后进入 30 分钟冷却，避免价格在阈值附近震荡时反复通知。
-        <br />
-        数据不足时保持沉默（例如日线不足 20 根无法判断「跌破均线」），并在规则状态里给出原因。
-        <br />
-        规则数量受角色配额 <code>alert.max</code> 限制；删除规则不会删除已产生的通知（历史可回溯）。
-        <br />
-        「事件触发」类规则由事件链路直接产生通知，评估器不重复判定，避免同一条事件推两次。
-      </div>
     </>
   );
 }

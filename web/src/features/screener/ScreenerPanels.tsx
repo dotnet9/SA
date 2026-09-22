@@ -63,9 +63,7 @@ export function ScreenerDistributionPanel({
         <QuantileCell label="P75" value={data.p75} unit={data.unit} />
         <QuantileCell label="最大" value={data.max} unit={data.unit} />
       </div>
-
       <HistogramChart data={data} />
-
       <div className="chart-note">
         <span>
           样本 {data.count} 个（缺失值不参与统计）；分位数用线性插值，直方图 {data.bins.length} 个等宽分箱。
@@ -321,7 +319,6 @@ export function ScreenerHistoryPanel() {
           </div>
         )}
       </div>
-
       <div className="card-head mt-4">
         <span className="card-title">导出记录</span>
         <span className="card-sub">{exports?.length ?? 0} 条</span>

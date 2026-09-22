@@ -203,7 +203,8 @@ public sealed class SearchService(
             Price: quote?.Price,
             Chg: quote?.Change,
             Pct: quote?.Pct,
-            VolRatio: quote?.VolRatio,
+            // 同 MarketService：0 表示上游未提供（量比不可能是 0），按 null 处理
+            VolRatio: quote is null || quote.VolRatio <= 0 ? null : quote.VolRatio,
             Turnover: quote?.Turnover,
             Pe: quote is null || quote.Pe <= 0 ? null : quote.Pe,
             Pb: quote is null || quote.Pb <= 0 ? null : quote.Pb,

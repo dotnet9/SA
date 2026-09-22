@@ -40,7 +40,6 @@ export function AdminDataSourcesPage() {
   return (
     <>
       <Head degraded={data.degradedCount} total={data.sources.length} />
-
       <div className="grid grid-3">
         <StatCard label="数据源总数" value={String(data.sources.length)} />
         <StatCard label="正常" value={String(healthy)} />
@@ -148,18 +147,6 @@ export function AdminDataSourcesPage() {
             </div>
           )}
         </div>
-      </div>
-
-      <div className="legend-block mt-4">
-        <b>数据来源与口径</b>
-        <br />
-        状态由采集任务在每轮执行后写入：成功则清零连续失败并刷新延迟，失败则累加。
-        <br />
-        连续失败达到阈值（默认 3 次）后该源标记为不可用并进入冷却期（默认 5 分钟），期间不再请求上游。
-        <br />
-        任务日志保留最近 2000 条，界面展示最近 30 条。
-        <br />
-        单个数据源失败不会中断调度：失败明细会记在此页，相关页面按区块降级并标注数据时间。
       </div>
     </>
   );

@@ -85,7 +85,7 @@ export function saveNotifySettings(settings: NotifySettings): Promise<number> {
   return apiPut<number>('/api/notifications/settings', settings);
 }
 
-/** 取当前账号的推送订阅（界面展示「哪台设备还收得到」）。 */
+/** 取当前设备的推送订阅（界面展示「哪台设备还收得到」）。 */
 export function fetchPushSubscriptions(): Promise<PushSubscriptionRow[]> {
   return apiGet<PushSubscriptionRow[]>('/api/notifications/push/subscriptions');
 }

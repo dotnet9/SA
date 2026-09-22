@@ -48,7 +48,7 @@ export interface ModuleKpi {
 export interface ModuleCard {
   key: string;
   name: string;
-  /** ready：有真实数据；collecting：本批未接入或正在采集。 */
+  /** ready：有真实数据；collecting：数据源未接入或正在采集。 */
   status: 'ready' | 'collecting' | 'failed';
   tags: ModuleTag[];
   kpis: ModuleKpi[];

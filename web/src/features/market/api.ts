@@ -13,7 +13,7 @@ export interface IndexCard {
   chg: number;
   pct: number;
   amount: number;
-  /** 近 40 日收盘序列；本批后端尚未接入指数日线，为空数组。 */
+  /** 近 40 日收盘序列；指数日线尚未接入，为空数组（界面据此不画缩略图）。 */
   spark: number[];
   asOf: string;
 }

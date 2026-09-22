@@ -321,7 +321,6 @@ function Content({ meta }: { meta: Awaited<ReturnType<typeof fetchScreenerMeta>>
               </select>
             </div>
           </div>
-
           <div className="row gap-3 wrap mt-3" style={{ alignItems: 'center' }}>
             <label className="row gap-2" style={{ alignItems: 'center' }}>
               <span className="fs-12 t-2">板块</span>
@@ -340,7 +339,6 @@ function Content({ meta }: { meta: Awaited<ReturnType<typeof fetchScreenerMeta>>
                 ))}
               </select>
             </label>
-
             <label className="row gap-2" style={{ alignItems: 'center' }}>
               <input
                 type="checkbox"
@@ -350,7 +348,6 @@ function Content({ meta }: { meta: Awaited<ReturnType<typeof fetchScreenerMeta>>
               />
               <span className="fs-12 t-2">排除 ST</span>
             </label>
-
             <label className="row gap-2" style={{ alignItems: 'center' }} title="金融业的毛利率、流动比率、速动比率、自由现金流、ROIC 上游返回空值，属行业口径不同而不是数据缺失">
               <input
                 type="checkbox"
@@ -360,7 +357,6 @@ function Content({ meta }: { meta: Awaited<ReturnType<typeof fetchScreenerMeta>>
               />
               <span className="fs-12 t-2">排除金融业</span>
             </label>
-
             <label className="row gap-2" style={{ alignItems: 'center' }}>
               <span className="fs-12 t-2">排序</span>
               <select
@@ -377,7 +373,6 @@ function Content({ meta }: { meta: Awaited<ReturnType<typeof fetchScreenerMeta>>
                 <option value="amount">成交额</option>
               </select>
             </label>
-
             <span className="row gap-2" style={{ marginLeft: 'auto' }}>
               <button
                 type="button"
@@ -556,32 +551,7 @@ function Content({ meta }: { meta: Awaited<ReturnType<typeof fetchScreenerMeta>>
       <div className="card mt-4">
         <ScreenerHistoryPanel />
       </div>
-
       <FreshnessNote asOf={result?.asOf} source="全市场快照（同一时点横截面）" />
-
-      <div className="legend-block mt-4">
-        <b>数据来源与口径</b>
-        <br />
-        全部基于内存中的全市场快照筛选：横截面条件（市值、PE、涨跌幅…）只有在同一时点的全市场数据上才有意义。
-        <br />
-        基本面字段来自「按报告期扫全市场」的基本面报表，与行情快照不同源；
-        {meta.fundamentalAsOf ? ` 当前口径报告期 ${meta.fundamentalAsOf}。` : ' 尚未采集。'}
-        <br />
-        缺失值不参与区间筛选：PE 为负（亏损）或为空的标的不会被当作「低 PE」筛出来；无财报数据的标的不按 0 处理。
-        <br />
-        停牌与退市标的（当日无价格）不进入结果，否则它们的比率字段会污染排序。
-        <br />
-        结果表上方会回显实际生效的条件；字段名写错时会被明确列出，而不是静默返回全市场。
-        <br />
-        导出为 CSV（UTF-8 BOM，Excel 直接打开不乱码），受 <code>export.data</code> 权限与每日配额约束。
-        {/* 口径提示由后端下发，避免前端与后端各写一份而漂移 */}
-        {meta.caliberNotes.map((note) => (
-          <span key={note}>
-            <br />
-            {note}
-          </span>
-        ))}
-      </div>
     </>
   );
 }

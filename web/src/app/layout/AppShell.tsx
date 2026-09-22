@@ -23,10 +23,8 @@ export function AppShell({ children, asOf }: { children: ReactNode; asOf?: strin
           <div className="sa-brand-sub">Stock Analysis</div>
         </div>
       </div>
-
       <TopBar asOf={asOf} />
       <SideNav />
-
       <main className="sa-main">
         {site.notice ? (
           <div className="sa-notice" role="status">
@@ -35,7 +33,6 @@ export function AppShell({ children, asOf }: { children: ReactNode; asOf?: strin
         ) : null}
         <div className="sa-page">{children}</div>
       </main>
-
       <MobileTabBar />
     </div>
   );

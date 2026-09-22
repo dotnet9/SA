@@ -39,7 +39,7 @@ export interface Watchlist {
   asOf: string | null;
   /** 是否可编辑（无 watchlist.edit 时界面隐藏编辑入口）。 */
   canEdit: boolean;
-  /** 自选数量上限（来自角色配额）。 */
+  /** 自选数量上限（服务端侧的固定值）。 */
   quota: number;
 }
 

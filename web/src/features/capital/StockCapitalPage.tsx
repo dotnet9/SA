@@ -11,7 +11,7 @@ import { fetchCapital, type Capital } from './api';
  * 结构与 `design/web/stock-capital.html` 对应：结论 → 资金流汇总卡 → 主力净额趋势
  * → 五档构成 → 两融趋势 → 陆股通（季频）→ 龙虎榜 → 大宗交易 → 口径说明。
  *
- * 「筹码分布」区块不渲染：分价位持仓数据本轮没有可用的公开源，
+ * 「筹码分布」区块不渲染：分价位持仓数据暂无公开源，
  * 页面在口径说明里明确写出，而不是画一个假的分布图。
  */
 export function StockCapitalPage() {
@@ -102,7 +102,6 @@ function Content({ data }: { data: Capital }) {
           )}
         </div>
       </div>
-
       <div className="grid grid-3 mt-4">
         {/* 五档构成 */}
         <div className="card">
@@ -263,7 +262,6 @@ function Content({ data }: { data: Capital }) {
           )}
         </div>
       </div>
-
       <FreshnessNote asOf={data.asOf} source="东方财富公开接口（资金流 / 龙虎榜 / 大宗交易 / 两融 / 陆股通）" />
 
     </>

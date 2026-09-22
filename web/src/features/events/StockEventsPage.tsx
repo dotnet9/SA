@@ -13,7 +13,7 @@ import { annotateEvent, fetchEvents, removeAnnotation, type EventItem, type Even
  * 结构与 `design/web/stock-events.html` 对应：结论 → 事件强度趋势 → 时间线 → 四种拓扑图 → 口径说明。
  *
  * 时间线与拓扑图都由本地已落地的结构化数据派生，因此点开一条事件能看到它与各模块页的数字同源。
- * 供应链拓扑需要专门的产业数据源，本轮没有，页面显式说明「不提供」而不是画一张推测图。
+ * 供应链拓扑需要专门的产业数据源，暂无公开源，页面显式说明「不提供」而不是画一张推测图。
  */
 export function StockEventsPage() {
   const { code = '' } = useParams();
@@ -137,7 +137,6 @@ function Content({ data }: { data: EventTimeline }) {
           <TopologyTabs topologies={data.topologies} />
         </div>
       </div>
-
       <FreshnessNote asOf={data.asOf} source="由本模块已落地的结构化数据派生（不新增采集源）" />
 
     </>

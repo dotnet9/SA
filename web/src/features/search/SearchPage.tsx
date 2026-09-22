@@ -1,20 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { EmptyState, ErrorState } from '@/components/ui/States';
-import { errorText } from '@/lib/errorText';
-import { addWatchItems, fetchWatchlist } from '@/features/watchlist/api';
-import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/providers/ToastProvider';
+import { MaxWatchItems, useWatchlist } from '@/features/watchlist/WatchlistProvider';
 import { searchStocks, type SearchRow } from './api';
 
 /**
  * 股票搜索。
  *
  * 结构与 `design/web/search-results.html` 对应：快捷筛选 → 结果表 → 搜索技巧。
- * 本批后端已支持「代码 / 名称 / 拼音首字母 / 行业」四种命中与板块过滤，并可直接加入自选；
- * 市值过滤、导出（第 12 批）、近 30 日走势（第 3 批已完成趋势页，搜索页缩略图待接入）尚未接入，
- * 因此不渲染这些控件，也不给假数据。
+ * 支持「代码 / 名称 / 拼音首字母 / 行业」四种命中与板块过滤，并可直接加入自选
+ * （自选存在浏览器本地，与顶栏搜索面板共用同一份）。
+ *
+ * 市值过滤与「导出结果」尚未实现，因此不渲染这两个控件，也不给假数据。
  */
 
 /** 板块筛选项（与需求规格 §5.3 的 Board 枚举一致）。 */
@@ -86,36 +85,17 @@ export function SearchPage() {
     enabled: query.trim().length > 0
   });
 
-  /* --- 加入自选（需 watchlist.edit；已在自选的不再重复提交） --- */
-  const auth = useAuth();
-  const queryClient = useQueryClient();
+  /* --- 加入自选（本地存储；已在自选的不再重复提交） --- */
+  const watchlist = useWatchlist();
   const toast = useToast();
-  const canEditWatchlist = auth.can('watchlist.edit');
 
-  const { data: watchlist } = useQuery({
-    queryKey: ['watchlist'],
-    queryFn: fetchWatchlist,
-    enabled: canEditWatchlist,
-    staleTime: 30_000
-  });
+  const added = useMemo(() => new Set(watchlist.codes), [watchlist.codes]);
 
-  const added = useMemo(
-    () => new Set((watchlist?.items ?? []).map((item) => item.code)),
-    [watchlist]
-  );
-
-  const [adding, setAdding] = useState<string | null>(null);
-
-  const addToWatchlist = async (code: string) => {
-    setAdding(code);
-    try {
-      await addWatchItems([code]);
+  const addToWatchlist = (code: string) => {
+    if (watchlist.add(code)) {
       toast.toast('已加入自选', 'ok');
-      await queryClient.invalidateQueries({ queryKey: ['watchlist'] });
-    } catch (addError) {
-      toast.toast(errorText(addError), 'error');
-    } finally {
-      setAdding(null);
+    } else {
+      toast.toast(`加入失败（已在自选或超出上限 ${MaxWatchItems}）`, 'error');
     }
   };
 
@@ -177,7 +157,6 @@ export function SearchPage() {
               </span>
             ))}
           </span>
-
           <span className="label" style={{ width: 'auto', marginLeft: 8 }}>
             行业
           </span>
@@ -224,7 +203,6 @@ export function SearchPage() {
           >
             重置
           </button>
-
           <span className="tag tag-outline" style={{ marginLeft: 'auto' }}>
             命中 {total} 只
           </span>
@@ -305,16 +283,14 @@ export function SearchPage() {
                             <Link className="btn btn-sm btn-outline" to={`/stock/${row.code}`}>
                               查看
                             </Link>
-                            {canEditWatchlist ? (
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-ghost"
-                                disabled={added.has(row.code) || adding === row.code}
-                                onClick={() => void addToWatchlist(row.code)}
-                              >
-                                {added.has(row.code) ? '已在自选' : adding === row.code ? '加入中' : '加自选'}
-                              </button>
-                            ) : null}
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-ghost"
+                              disabled={added.has(row.code)}
+                              onClick={() => addToWatchlist(row.code)}
+                            >
+                              {added.has(row.code) ? '已在自选' : '加自选'}
+                            </button>
                           </span>
                         </td>
                       </tr>
@@ -322,7 +298,6 @@ export function SearchPage() {
                   </tbody>
                 </table>
               </div>
-
               <div className="tbl-foot">
                 <span>
                   共 {total} 条
@@ -353,48 +328,30 @@ export function SearchPage() {
       </div>
 
       {/* 搜索技巧 */}
-      <div className="grid grid-2 mt-4">
-        <div className="card">
-          <div className="card-head">
-            <span className="card-title">搜索技巧</span>
-          </div>
-          <div className="card-body col gap-2">
-            <div className="row gap-3">
-              <span className="tag tag-outline mono">300750</span>
-              <span className="fs-12 t-2">6 位代码精确匹配（优先级最高）</span>
-            </div>
-            <div className="row gap-3">
-              <span className="tag tag-outline">宁德时代</span>
-              <span className="fs-12 t-2">中文名称模糊匹配</span>
-            </div>
-            <div className="row gap-3">
-              <span className="tag tag-outline mono">ndsd</span>
-              <span className="fs-12 t-2">拼音首字母前缀匹配</span>
-            </div>
-            <div className="row gap-3">
-              <span className="tag tag-outline">电池</span>
-              <span className="fs-12 t-2">行业关键词（返回该行业全部个股）</span>
-            </div>
-            <div className="row gap-3">
-              <span className="tag tag-outline mono">⌘/Ctrl + K</span>
-              <span className="fs-12 t-2">在任意页面唤起搜索框</span>
-            </div>
-          </div>
+      <div className="card">
+        <div className="card-head">
+          <span className="card-title">搜索技巧</span>
         </div>
-
-        <div className="card">
-          <div className="card-head">
-            <span className="card-title">本批尚未接入</span>
-            <span className="card-sub">按批次推进，不使用占位数据</span>
+        <div className="card-body col gap-2">
+          <div className="row gap-3">
+            <span className="tag tag-outline mono">300750</span>
+            <span className="fs-12 t-2">6 位代码精确匹配（优先级最高）</span>
           </div>
-          <div className="card-body col gap-2 fs-12 t-2">
-            <div>· 市值区间筛选（随条件选股器统一实现，第 12 批）</div>
-            <div>· 批量加入自选（第 4 批）</div>
-            <div>· 导出结果（第 12 批，受 `export.data` 权限与配额约束）</div>
-            <div>· 近 30 日走势缩略图（随日线采集接入，第 3 批）</div>
-            <div className="legend-block mt-3">
-              搜索基于东财行业口径与全市场股票池；命中方式在结果表最后一列标出，便于确认排序为什么是这样。
-            </div>
+          <div className="row gap-3">
+            <span className="tag tag-outline">宁德时代</span>
+            <span className="fs-12 t-2">中文名称模糊匹配</span>
+          </div>
+          <div className="row gap-3">
+            <span className="tag tag-outline mono">ndsd</span>
+            <span className="fs-12 t-2">拼音首字母前缀匹配</span>
+          </div>
+          <div className="row gap-3">
+            <span className="tag tag-outline">电池</span>
+            <span className="fs-12 t-2">行业关键词（返回该行业全部个股）</span>
+          </div>
+          <div className="row gap-3">
+            <span className="tag tag-outline mono">⌘/Ctrl + K</span>
+            <span className="fs-12 t-2">在任意页面唤起搜索框</span>
           </div>
         </div>
       </div>

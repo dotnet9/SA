@@ -130,7 +130,6 @@ function Content({ data }: { data: IndustryComparison }) {
             </div>
           </div>
         </div>
-
         <div className="card">
           <div className="card-body is-tight">
             <div className="kpi">
@@ -144,7 +143,6 @@ function Content({ data }: { data: IndustryComparison }) {
             </div>
           </div>
         </div>
-
         <div className="card">
           <div className="card-body is-tight">
             <div className="kpi">
@@ -160,7 +158,6 @@ function Content({ data }: { data: IndustryComparison }) {
             </div>
           </div>
         </div>
-
         <div className="card">
           <div className="card-body is-tight">
             <div className="kpi">
@@ -193,7 +190,6 @@ function Content({ data }: { data: IndustryComparison }) {
             )}
           </div>
         </div>
-
         <div className="card">
           <div className="card-head">
             <span className="card-title">行业热力</span>
@@ -272,7 +268,6 @@ function Content({ data }: { data: IndustryComparison }) {
           )}
         </div>
       </div>
-
       <FreshnessNote asOf={data.asOf} source="全市场快照 + 行业板块快照（本模块不新增采集源）" />
 
     </>

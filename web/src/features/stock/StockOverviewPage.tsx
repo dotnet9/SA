@@ -8,7 +8,7 @@ import type { ModuleCard, StockOverview } from './api';
  * 个股总览：8 个模块的摘要卡矩阵。
  *
  * 结构与 `design/web/stock.html` 对应：行情条 → 模块跳转标签 → 8 张摘要卡 → 口径说明。
- * 本批只有「趋势与价格结构」有真实数据，其余卡片由接口明确标注 `collecting`，
+ * 只有「趋势与价格结构」有真实数据，其余卡片由接口明确标注 `collecting`，
  * 这里渲染成显式的「采集中」空态——不显示空卡，也不显示任何占位数字。
  */
 export function StockOverviewPage() {

@@ -108,16 +108,6 @@ function Content({ data }: { data: ValueResearch }) {
       {data.groups.map((group) => (
         <GroupCard key={group.key} group={group} />
       ))}
-
-      <div className="legend-block mt-4">
-        <b>数据来源与口径</b>
-        {data.caliberNotes.map((note) => (
-          <span key={note}>
-            <br />
-            {note}
-          </span>
-        ))}
-      </div>
     </>
   );
 }

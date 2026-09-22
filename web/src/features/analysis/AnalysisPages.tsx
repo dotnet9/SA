@@ -65,7 +65,6 @@ export function ProsperityPage() {
             </span>
             <span className="fs-11 t-3">共 {data.items.length} 个行业 · 按综合景气分倒序</span>
           </div>
-
           <div className="grid grid-2 mt-3">
             {/* 排行 */}
             <div className="card">
@@ -164,7 +163,6 @@ export function ProsperityPage() {
                   </div>
                 </div>
               </div>
-
               <div className="card">
                 <div className="card-head">
                   <span className="card-title">景气分与带宽对照</span>
@@ -180,13 +178,6 @@ export function ProsperityPage() {
       )}
 
       <FreshnessNote asOf={data.asOf} source="行业板块快照 + 行业指数日线 + 全市场快照（规则引擎）" />
-
-      <div className="legend-block mt-4">
-        <b>数据来源与口径</b>
-        {data.notes.map((note) => (
-          <div key={note}>{note}</div>
-        ))}
-      </div>
     </>
   );
 }
@@ -350,7 +341,6 @@ function CausalContent({ data }: { data: CausalChain }) {
               </div>
             </div>
           </div>
-
           <div className="card">
             <div className="card-head">
               <span className="card-title">怎么读这张页</span>
@@ -365,7 +355,7 @@ function CausalContent({ data }: { data: CausalChain }) {
                 事件影响则需要事件日之后的行情样本才可信。
                 <br />
                 <b>相关性不等于因果</b>：本页回答「事件之后两者分别怎么走」，
-                不声称「谁导致了谁」——后者需要供货占比、成本占比等产业数据，本轮没有可用的公开源。
+                不声称「谁导致了谁」——后者需要供货占比、成本占比等产业数据，暂无公开源。
               </div>
               <div className="row gap-2 wrap mt-3">
                 <Link className="btn btn-sm btn-outline" to={`/stock/${data.code}/events`}>
@@ -382,15 +372,7 @@ function CausalContent({ data }: { data: CausalChain }) {
           </div>
         </div>
       </div>
-
       <FreshnessNote asOf={data.asOf} source="本地日线（个股 / 行业指数 90.BKxxxx / 沪深300）+ 已落地事件" />
-
-      <div className="legend-block mt-4">
-        <b>数据来源与口径</b>
-        {data.notes.map((note) => (
-          <div key={note}>{note}</div>
-        ))}
-      </div>
     </>
   );
 }

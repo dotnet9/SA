@@ -3,7 +3,6 @@ import { Link, useSearchParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { EmptyState, ErrorState, SourceDot } from '@/components/ui/States';
 import { errorText } from '@/lib/errorText';
-import { addWatchItems, fetchWatchlist, removeWatchItems } from '@/features/watchlist/api';
 import { useMarketOverview } from '@/features/market/hooks';
 import type { MarketOverview } from '@/features/market/api';
 import {
@@ -15,8 +14,9 @@ import {
 } from '@/features/alerts/api';
 import { fetchScreenerMeta, runScreener, type ScreenerResult } from '@/features/screener/api';
 import { searchStocks, type SearchRow } from '@/features/search/api';
-import { useAuth } from '@/providers/AuthProvider';
 import { useRealtime } from '@/providers/RealtimeProvider';
+import { MaxWatchItems, useWatchlist } from '@/features/watchlist/WatchlistProvider';
+import { fetchMarketQuotes } from '@/features/market/api';
 import { useToast } from '@/providers/ToastProvider';
 import { useTheme } from '@/providers/ThemeProvider';
 import { MobilePageHead } from './MobileShell';
@@ -159,15 +159,6 @@ export function MobileHomePage() {
           ))}
         </div>
       </div>
-
-      <div className="legend-block mt-3">
-        <b>口径</b>
-        <br />
-        指数与行情来自东方财富公开接口；涨跌家数与成交额由全市场个股快照在服务端聚合；
-        涨停 / 跌停取交易所专用口径（不用涨跌幅阈值反推）。
-        <br />
-        北向资金公开接口已不再提供逐日净买入，本页不提供该数值，也不以估算替代。
-      </div>
     </>
   );
 }
@@ -211,46 +202,24 @@ function MobileRanking({
    ------------------------------------------------------------------ */
 
 export function MobileWatchlistPage() {
-  const queryClient = useQueryClient();
+  const watchlist = useWatchlist();
   const toast = useToast();
   const realtime = useRealtime();
 
-  const { data, error, isPending, refetch, failureCount } = useQuery({
-    queryKey: ['watchlist'],
-    queryFn: fetchWatchlist
+  /* 自选代码在本地，名称与涨跌幅从批量行情取（一次请求拿全部） */
+  const quotes = useQuery({
+    queryKey: ['watchlist', 'quotes', watchlist.codes.join(',')],
+    queryFn: () => fetchMarketQuotes(watchlist.codes),
+    enabled: watchlist.codes.length > 0
   });
 
-  const removeMutation = useMutation({
-    mutationFn: (codes: string[]) => removeWatchItems(codes),
-    onSuccess: async () => {
-      toast.toast('已移出自选', 'ok');
-      await queryClient.invalidateQueries({ queryKey: ['watchlist'] });
-    },
-    onError: (mutationError) => toast.toast(errorText(mutationError), 'error')
-  });
-
-  if (isPending) {
-    return <div className="sa-boot">正在载入自选股…</div>;
-  }
-
-  if (!data) {
-    return (
-      <>
-        <MobilePageHead title="自选股" />
-        <div className="card">
-          <div className="card-body">
-            <ErrorState error={error} onRetry={() => void refetch()} retryCount={failureCount} />
-          </div>
-        </div>
-      </>
-    );
-  }
+  const byCode = new Map((quotes.data ?? []).map((row) => [row.code, row]));
 
   return (
     <>
       <MobilePageHead
         title="自选股"
-        sub={`${data.items.length} / ${data.quota} 只 · ${
+        sub={`${watchlist.codes.length} / ${MaxWatchItems} 只 · ${
           realtime.status === 'connected' ? `实时已连接（${realtime.intervalSeconds}s）` : '实时未连接'
         }`}
         actions={
@@ -268,7 +237,7 @@ export function MobileWatchlistPage() {
         }
       />
 
-      {data.items.length === 0 ? (
+      {watchlist.codes.length === 0 ? (
         <div className="card">
           <div className="card-body">
             <EmptyState
@@ -284,49 +253,52 @@ export function MobileWatchlistPage() {
         </div>
       ) : (
         <div className="col gap-2">
-          {data.items.map((item) => {
+          {watchlist.codes.map((code) => {
+            const item = byCode.get(code);
+            const name = item?.name ?? code;
+            const industry = item?.industry ?? null;
+            const isSt = item?.isSt ?? false;
+            const turnover = item?.turnover ?? null;
             // 推送值优先，未收到推送时回落到快照值，并标出数据时间
-            const live = realtime.quotes[item.code];
-            const price = live?.price ?? item.price;
-            const pct = live?.pct ?? item.pct;
+            const live = realtime.quotes[code];
+            const price = live?.price ?? item?.price ?? null;
+            const pct = live?.pct ?? item?.pct ?? null;
 
             return (
-              <div key={item.code} className="card">
+              <div key={code} className="card">
                 <div className="card-body is-tight" style={{ padding: 12 }}>
                   <div className="row-between">
-                    <Link className="stock-cell" to={`/m/stock/${item.code}`}>
+                    <Link className="stock-cell" to={`/m/stock/${code}`}>
                       <span className="sc-name">
-                        {item.name}
-                        {item.isSt ? <span className="tag tag-danger" style={{ marginLeft: 6 }}>ST</span> : null}
+                        {name}
+                        {isSt ? <span className="tag tag-danger" style={{ marginLeft: 6 }}>ST</span> : null}
                         {live ? <span className="tag tag-up" style={{ marginLeft: 6 }}>实时</span> : null}
                       </span>
-                      <span className="sc-code">{item.code}</span>
+                      <span className="sc-code">{code}</span>
                     </Link>
                     <span className="col" style={{ alignItems: 'flex-end' }}>
                       <span className={`mono fs-15 fw-700 ${tone(pct)}`}>{fmt(price)}</span>
                       <span className={`fs-11 ${tone(pct)}`}>{signed(pct)}%</span>
                     </span>
                   </div>
-
                   <div className="row-between mt-2">
                     <span className="fs-10 t-3">
-                      {item.industry ?? '—'} · 换手 {item.turnover === null ? '—' : `${fmt(item.turnover)}%`} · 量比{' '}
-                      {fmt(item.volRatio)}
+                      {industry ?? '—'} · 换手 {turnover === null ? '—' : `${fmt(turnover)}%`}
                     </span>
                     <span className="row gap-2">
-                      <Link className="btn btn-sm btn-ghost" to={`/m/stock/${item.code}/trend`}>
+                      <Link className="btn btn-sm btn-ghost" to={`/m/stock/${code}/trend`}>
                         趋势
                       </Link>
-                      {data.canEdit ? (
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-ghost"
-                          disabled={removeMutation.isPending}
-                          onClick={() => removeMutation.mutate([item.code])}
-                        >
-                          移出
-                        </button>
-                      ) : null}
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-ghost"
+                        onClick={() => {
+                          watchlist.remove(code);
+                          toast.toast('已移出自选', 'ok');
+                        }}
+                      >
+                        移出
+                      </button>
                     </span>
                   </div>
                 </div>
@@ -335,14 +307,6 @@ export function MobileWatchlistPage() {
           })}
         </div>
       )}
-
-      <div className="legend-block mt-3">
-        <b>口径</b>
-        <br />
-        实时行情经 SignalR 推送（仅自选股），间隔可选 3 / 5 / 10 秒；未收到推送时显示最近一次快照值并标注时间。
-        <br />
-        非交易时段不轮询：表格显示最近一个交易日的收盘快照。
-      </div>
     </>
   );
 }
@@ -362,24 +326,12 @@ export function MobileSearchPage() {
     enabled: query.trim().length > 0
   });
 
-  const queryClient = useQueryClient();
   const toast = useToast();
-  const { can } = useAuth();
-  const canEdit = can('watchlist.edit');
-
-  const addMutation = useMutation({
-    mutationFn: (code: string) => addWatchItems([code]),
-    onSuccess: async () => {
-      toast.toast('已加入自选', 'ok');
-      await queryClient.invalidateQueries({ queryKey: ['watchlist'] });
-    },
-    onError: (mutationError) => toast.toast(errorText(mutationError), 'error')
-  });
+  const watchlist = useWatchlist();
 
   return (
     <>
       <MobilePageHead title="搜索" sub="代码 / 名称 / 拼音首字母 / 行业关键词" />
-
       <div className="row gap-2">
         <input
           className="input"
@@ -449,16 +401,23 @@ export function MobileSearchPage() {
                     {row.board} · 市值 {row.cap === null ? '—' : `${fmt(row.cap)} 亿`} · PE{' '}
                     {row.pe === null ? '—' : fmt(row.pe)}
                   </span>
-                  {canEdit ? (
+                  {watchlist.has(row.code) ? (
+                    <span className="tag tag-outline">已在自选</span>
+                  ) : (
                     <button
                       type="button"
                       className="btn btn-sm btn-outline"
-                      disabled={addMutation.isPending}
-                      onClick={() => addMutation.mutate(row.code)}
+                      onClick={() => {
+                        if (watchlist.add(row.code)) {
+                          toast.toast('已加入自选', 'ok');
+                        } else {
+                          toast.toast(`加入失败（超出上限 ${MaxWatchItems}）`, 'error');
+                        }
+                      }}
                     >
                       加自选
                     </button>
-                  ) : null}
+                  )}
                 </div>
               </div>
             </div>
@@ -530,7 +489,6 @@ export function MobileAlertsPage() {
   return (
     <>
       <MobilePageHead title="提醒规则" sub={`${data.total} / ${data.quota} 条 · 触发后写入通知中心`} />
-
       <div className="card">
         <div className="card-head">
           <span className="card-title">新建规则</span>
@@ -566,7 +524,6 @@ export function MobileAlertsPage() {
           </button>
         </div>
       </div>
-
       <div className="col gap-2 mt-3">
         {data.rules.length === 0 ? (
           <div className="card">
@@ -610,16 +567,6 @@ export function MobileAlertsPage() {
             </div>
           ))
         )}
-      </div>
-
-      <div className="legend-block mt-3">
-        <b>口径</b>
-        <br />
-        评估每 30 秒一轮；同一规则触发后冷却 30 分钟，避免阈值附近震荡时刷屏。
-        <br />
-        一轮内同一用户的多条提醒会合并成一条通知（正文逐条列出），级别取其中最强的一条。
-        <br />
-        免打扰时段只写站内通知、不发起浏览器推送；免打扰在服务端执行（见「我的 → 通知偏好」）。
       </div>
     </>
   );
@@ -690,7 +637,6 @@ export function MobileNotificationsPage() {
           未读 {data.unread}
         </span>
       </div>
-
       <div className="col gap-2 mt-3">
         {data.items.length === 0 ? (
           <div className="card">
@@ -779,7 +725,6 @@ export function MobileScreenerPage() {
   return (
     <>
       <MobilePageHead title="条件选股器" sub="横截面筛选 · 同一时点全市场" />
-
       <div className="card">
         <div className="card-head">
           <span className="card-title">预设</span>
@@ -806,7 +751,6 @@ export function MobileScreenerPage() {
           ))}
         </div>
       </div>
-
       <div className="card mt-3">
         <div className="card-head">
           <span className="card-title">条件</span>
@@ -873,27 +817,17 @@ export function MobileScreenerPage() {
               </Link>
             ))}
             <span className="fs-11 t-3">
-              导出建议在桌面版完成（CSV 受 export.data 权限与每日配额约束）。
+              导出建议在桌面版完成。
             </span>
           </div>
         </div>
       ) : null}
-
-      <div className="legend-block mt-3">
-        <b>口径</b>
-        <br />
-        全部基于内存中的全市场快照筛选；缺失值（PE 为负）不参与区间条件，停牌与退市标的（当日无价格）不进入结果。
-        <br />
-        结果上方会回显实际生效的条件；字段名写错时会被明确列出，而不是静默返回全市场。
-        <br />
-        移动端只提供最常用的三个条件；完整条件、策略保存、分布统计与历史在桌面版选股器里。
-      </div>
     </>
   );
 }
 
 /* ------------------------------------------------------------------
-   我的（设置入口 + 账号 + 数据口径）
+   我的（设置入口 + 数据口径）
    ------------------------------------------------------------------ */
 
 export function MobileSettingsPage() {
@@ -903,7 +837,6 @@ export function MobileSettingsPage() {
   return (
     <>
       <MobilePageHead title="我的" />
-
       <div className="card mt-3">
         <div className="card-head">
           <span className="card-title">外观</span>
@@ -947,7 +880,6 @@ export function MobileSettingsPage() {
           </div>
         </div>
       </div>
-
       <div className="card mt-3">
         <div className="card-head">
           <span className="card-title">更多设置</span>
@@ -1014,26 +946,13 @@ export function MobileAboutPage() {
   return (
     <>
       <MobilePageHead title="数据口径与关于" back={{ to: '/m/settings', text: '我的' }} />
-
       <div className="card">
         <div className="card-head">
           <span className="card-title">行情</span>
         </div>
         <div className="card-body">
-          <div className="legend-block">
-            东方财富公开接口；<b>全市场</b>按扫描周期整体刷新（端点单页上限 100 行，一轮约 60 次请求），非逐笔。
-            <br />
-            <b>自选股</b>：多标的快照经 SignalR 推送，间隔 3/5/10 秒；失败自动降级到腾讯备源。
-            <br />
-            <b>日线</b>：前复权，落本地 Parquet；指标由服务端批量计算。
-            <br />
-            <b>行业分类</b>：东财行业（申万一级无公开直取源）。
-            <br />
-            <b>北向资金</b>：公开接口已不再提供逐日净买入，本实现不提供该数值，也不以估算替代。
-          </div>
         </div>
       </div>
-
       <div className="card mt-3">
         <div className="card-head">
           <span className="card-title">规则引擎推算</span>
@@ -1044,24 +963,15 @@ export function MobileAboutPage() {
             加权打分，权重与得分都在页面上列出，可逐项核对。
             <br />
             <b>因果链与传导带宽</b>：每一环给出可复算的证据与置信度；相关不代表因果，
-            产业链上下游关系需要专门的产业数据源，本轮不提供。
+            产业链上下游关系需要专门的产业数据源，暂不提供。
           </div>
         </div>
       </div>
-
       <div className="card mt-3">
         <div className="card-head">
           <span className="card-title">移动端与桌面端</span>
         </div>
         <div className="card-body">
-          <div className="legend-block">
-            移动端路由在 <code>/m/*</code>，桌面端在根路径；两者共用同一套接口与口径，
-            只是排布不同（移动端用底部 Tab 与卡片，桌面端用侧边导航与表格）。
-            <br />
-            个股模块页在移动端复用桌面组件（它们本身就是卡片式布局）。
-            <br />
-            <code>/m/*</code> 之外还提供：完整设置、预警形态预览、管理后台（桌面体验更好）。
-          </div>
         </div>
       </div>
     </>

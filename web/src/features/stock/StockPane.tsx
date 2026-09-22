@@ -81,7 +81,6 @@ export function StockPane({ listPath }: { listPath: string | null }) {
           {profile?.board ? <span className="tag tag-outline">{profile.board}</span> : null}
           {profile?.industry ? <span className="tag tag-brand">{profile.industry}</span> : null}
         </div>
-
         <div className="row gap-3" style={{ marginLeft: 'auto', alignItems: 'baseline' }}>
           <span className={`mono fs-20 fw-700 ${tone(profile?.pct)}`}>{fmt(profile?.price)}</span>
           <span className={`mono fs-12 ${tone(profile?.pct)}`}>
@@ -90,7 +89,6 @@ export function StockPane({ listPath }: { listPath: string | null }) {
               : `${profile.pct >= 0 ? '+' : ''}${fmt(profile.pct)}%`}
           </span>
         </div>
-
         <div className="row gap-4 fs-11 t-3">
           <span>
             成交 <b className="mono t-1">{profile?.amount === null || profile?.amount === undefined ? '—' : `${fmt(profile.amount)} 亿`}</b>
@@ -103,7 +101,6 @@ export function StockPane({ listPath }: { listPath: string | null }) {
           </span>
         </div>
       </div>
-
       <div className="stock-tabs">
         <div className="tabbar is-pill">
           {StockTabKeys.map((key) => (
