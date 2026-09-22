@@ -21,15 +21,15 @@ design/
 │   ├── market.html           市场概览（首页）
 │   ├── search-results.html   搜索结果
 │   ├── stock.html            个股总览（分析矩阵 · 卡片堆叠 + 标签专注）
-│   ├── stock-trend.html      ① 趋势与价格结构
-│   ├── stock-finance.html    ② 盈利与财务表现
-│   ├── stock-equity.html     ③ 公司投资与股权结构
-│   ├── stock-capital.html    ④ 资金面与筹码
-│   ├── stock-industry.html   ⑤ 行业与同业对比
-│   ├── stock-events.html     ⑥ 事件时间线与影响（四种拓扑图）
-│   ├── stock-risk.html       ⑦ 风险与舆情监控
-│   ├── stock-rating.html     ⑧ 机构评级与盈利预测
-│   ├── topology.html         四种拓扑图集中对照
+│   ├── stock.html#trend      ① 趋势与价格结构
+│   ├── stock.html#finance    ② 盈利与财务表现
+│   ├── stock.html#equity     ③ 公司投资与股权结构
+│   ├── stock.html#capital    ④ 资金面与筹码
+│   ├── stock.html#industry   ⑤ 行业与同业对比
+│   ├── stock.html#events     ⑥ 事件时间线与影响（四种拓扑图）
+│   ├── stock.html#risk       ⑦ 风险与舆情监控
+│   ├── stock.html#rating     ⑧ 机构评级与盈利预测
+│   ├── stock.html#events         四种拓扑图集中对照
 │   ├── watchlist.html        自选股盯盘
 │   ├── screener.html         条件选股器
 │   ├── alerts.html           提醒规则
@@ -45,14 +45,14 @@ design/
     ├── home.html             市场概览
     ├── search.html           搜索
     ├── stock.html            个股总览
-    ├── stock-trend.html      趋势与价格结构
-    ├── stock-finance.html    盈利与财务表现
-    ├── stock-equity.html     投资与股权结构
-    ├── stock-capital.html    资金面与筹码
-    ├── stock-industry.html   行业与同业对比
-    ├── stock-events.html     事件时间线与影响
-    ├── stock-risk.html       风险与舆情监控
-    ├── stock-rating.html     机构评级与预测
+    ├── stock.html#trend      趋势与价格结构
+    ├── stock.html#finance    盈利与财务表现
+    ├── stock.html#equity     投资与股权结构
+    ├── stock.html#capital    资金面与筹码
+    ├── stock.html#industry   行业与同业对比
+    ├── stock.html#events     事件时间线与影响
+    ├── stock.html#risk       风险与舆情监控
+    ├── stock.html#rating     机构评级与预测
     ├── watchlist.html        自选股盯盘
     ├── screener.html         条件选股器
     ├── notifications.html    通知中心

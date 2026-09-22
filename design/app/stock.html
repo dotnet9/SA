@@ -117,14 +117,14 @@
 
   /* 八模块入口：名称 + 关键数字 */
   var mods = [
-    { name: "趋势与价格", href: "stock-trend.html", val: "+22.4%", cls: "t-up", sub: "20 日涨幅" },
-    { name: "盈利与财务", href: "stock-finance.html", val: "+22.8%", cls: "t-up", sub: "净利同比" },
-    { name: "投资与股权", href: "stock-equity.html", val: "2.4%", cls: "", sub: "质押比例" },
-    { name: "资金与筹码", href: "stock-capital.html", val: "+18.6 亿", cls: "t-up", sub: "主力净流入" },
-    { name: "行业与同业", href: "stock-industry.html", val: "第 1", cls: "", sub: "全球市占 36.8%" },
-    { name: "事件与影响", href: "stock-events.html", val: "12 件", cls: "", sub: "近 30 日" },
-    { name: "风险与舆情", href: "stock-risk.html", val: "4 / 5", cls: "t-danger", sub: "最高风险等级" },
-    { name: "机构评级", href: "stock-rating.html", val: "320.0", cls: "t-up", sub: "目标价" }
+    { name: "趋势与价格", href: "stock.html#trend", val: "+22.4%", cls: "t-up", sub: "20 日涨幅" },
+    { name: "盈利与财务", href: "stock.html#finance", val: "+22.8%", cls: "t-up", sub: "净利同比" },
+    { name: "投资与股权", href: "stock.html#equity", val: "2.4%", cls: "", sub: "质押比例" },
+    { name: "资金与筹码", href: "stock.html#capital", val: "+18.6 亿", cls: "t-up", sub: "主力净流入" },
+    { name: "行业与同业", href: "stock.html#industry", val: "第 1", cls: "", sub: "全球市占 36.8%" },
+    { name: "事件与影响", href: "stock.html#events", val: "12 件", cls: "", sub: "近 30 日" },
+    { name: "风险与舆情", href: "stock.html#risk", val: "4 / 5", cls: "t-danger", sub: "最高风险等级" },
+    { name: "机构评级", href: "stock.html#rating", val: "320.0", cls: "t-up", sub: "目标价" }
   ];
   document.getElementById("modGrid").innerHTML = mods.map(function (m) {
     return '<a class="mod-tile" href="' + m.href + '">' +

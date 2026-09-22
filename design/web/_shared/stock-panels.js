@@ -105,6 +105,7 @@
       });
     }
     state.listEl = listSel ? qs(listSel) : null;
+    state.standalone = !listSel;
     return host;
   }
 
@@ -153,6 +154,9 @@
 
     if (state.listEl) state.listEl.classList.add("text-none");
     if (state.mounted) state.mounted.classList.add("is-active");
+    /* 独立页没有列表：隐藏「返回列表」按钮 */
+    var backBtn = qs("[data-pane-back]");
+    if (backBtn) backBtn.style.display = state.listEl ? "" : "none";
 
     showTab(tab || TABS[0].key);
     writeUrl(code, tab || TABS[0].key);
