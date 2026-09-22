@@ -2,6 +2,7 @@
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using SA.Api.Auth;
 using SA.Api.Endpoints;
 using SA.Api.Http;
@@ -85,6 +86,32 @@ builder.Services.AddSingleton<IAuthorizationHandler, FunctionPointAuthorizationH
 builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, SaAuthorizationResultHandler>();
 
 var app = builder.Build();
+
+// 反向代理（nginx）终止 TLS 后，应用侧看到的是 http。不加这一层，
+// Request.IsHttps 恒为 false，刷新令牌 Cookie 的 Secure 标记就永远拿不到
+// （AuthEndpoints.cs 里 Secure = context.Request.IsHttps），登录态少一层保护。
+//
+// 只信任回环与显式配置的代理（Sa:TrustedProxies）：默认的 KnownNetworks 会放宽到整个
+// 内网段，而 X-Forwarded-For / X-Forwarded-Proto 是客户端可伪造的头，
+// 无差别信任等于让外部请求自己声明来源与协议。
+var forwardedOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+};
+forwardedOptions.KnownIPNetworks.Clear();
+forwardedOptions.KnownProxies.Clear();
+forwardedOptions.KnownProxies.Add(System.Net.IPAddress.Loopback);
+forwardedOptions.KnownProxies.Add(System.Net.IPAddress.IPv6Loopback);
+foreach (var proxy in builder.Configuration.GetSection("Sa:TrustedProxies").Get<string[]>() ?? [])
+{
+    if (System.Net.IPAddress.TryParse(proxy, out var address))
+    {
+        forwardedOptions.KnownProxies.Add(address);
+    }
+}
+
+// 必须排在最前：后面的中间件（含认证与 Cookie 写入）都要看到修正后的协议与来源 IP
+app.UseForwardedHeaders(forwardedOptions);
 
 // 启动初始化：建库迁移、开启 WAL、确定签名密钥、播种功能点与内置角色、创建初始管理员
 using (var scope = app.Services.CreateScope())

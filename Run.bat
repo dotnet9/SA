@@ -2,15 +2,25 @@
 setlocal EnableDelayedExpansion
 
 rem ============================================================
-rem  股析 SA · 一键启动脚本
+rem  股析 SA · 一键启动脚本（线上形态：单域名）
 rem
-rem  做四件事：
+rem  形态等价于 nginx 部署，便于部署前在本机先验证：
+rem    静态产物 web\dist 由静态服务器在 5173 提供（根路径 ./ 直接访问），
+rem    它把 /api 与 /hubs 反代到后端 5180。前端全部走同源相对路径，
+rem    因此没有跨域，也不需要在后端开 CORS。
+rem
+rem  做六件事：
 rem    1. 检查运行环境（.NET SDK 11+、Node.js 20+）并校验版本
 rem    2. 检查端口占用
-rem    3. 编译后端、必要时安装前端依赖
-rem    4. 分别启动后端与前端，并打印全部访问地址与账号
+rem    3. 编译后端
+rem    4. 构建前端产物（npm run build）
+rem    5. 启动后端与静态服务器（各一个窗口）
+rem    6. 打印全部访问地址与账号
 rem
 rem  停止：关闭弹出的两个服务窗口即可（或在本窗口按 Ctrl+C 后手动关闭）。
+rem
+rem  要「改前端代码即时热更新」请用 npm run dev（vite dev 同样带 /api 与 /hubs 代理）；
+rem  本脚本走的是构建产物，改完前端代码需要重新运行本脚本才会生效。
 rem
 rem  ！！改这个文件时必须保持两个格式要求，实测缺一不可 ！！
 rem
@@ -45,12 +55,13 @@ set "ROOT=%~dp0"
 set "ROOT=%ROOT:~0,-1%"
 set "DATA_DIR=%ROOT%\data"
 set "WEB_DIR=%ROOT%\web"
+set "DIST_DIR=%WEB_DIR%\dist"
 
 cd /d "%ROOT%"
 
 echo.
 echo ============================================================
-echo   股析 SA · 本地股票分析工作台
+echo   股析 SA · 本地股票分析工作台（线上形态预览）
 echo ============================================================
 echo.
 
@@ -75,19 +86,19 @@ call :checkdotnet
 if errorlevel 1 goto :fail
 call :checknode
 if errorlevel 1 goto :fail
-echo [1/4] 环境检查通过：.NET SDK !DOTNET_MAJOR! / Node !NODE_VER!
+echo [1/6] 环境检查通过：.NET SDK !DOTNET_MAJOR! / Node !NODE_VER!
 echo.
 
 rem ---------- 2. 端口占用检查 ----------
 call :checkport %API_PORT% "后端 API"
 if errorlevel 1 goto :fail
-call :checkport %WEB_PORT% "前端"
+call :checkport %WEB_PORT% "前端静态服务"
 if errorlevel 1 goto :fail
-echo [2/4] 端口 %API_PORT% 与 %WEB_PORT% 均可用
+echo [2/6] 端口 %API_PORT% 与 %WEB_PORT% 均可用
 echo.
 
 rem ---------- 3. 编译后端 ----------
-echo [3/4] 正在编译后端（首次编译需要一两分钟）...
+echo [3/6] 正在编译后端（首次编译需要一两分钟）...
 dotnet build "%ROOT%\src\SA.Api\SA.Api.csproj" -c Debug --nologo -v quiet
 if errorlevel 1 (
     echo.
@@ -97,9 +108,11 @@ if errorlevel 1 (
 echo       后端编译完成。
 echo.
 
-rem ---------- 4. 准备前端依赖 ----------
+rem ---------- 4. 构建前端产物 ----------
+rem 线上形态服务的是构建产物而不是 vite dev，因此这一步是必须的：
+rem dist 不存在时 npm run preview 会直接失败。
 if not exist "%WEB_DIR%\node_modules" (
-    echo [4/4] 首次运行，正在安装前端依赖（npm install，可能需要几分钟）...
+    echo [4/6] 首次运行，正在安装前端依赖（npm install，可能需要几分钟）...
     pushd "%WEB_DIR%"
     call npm install --no-audit --no-fund
     if errorlevel 1 (
@@ -109,9 +122,25 @@ if not exist "%WEB_DIR%\node_modules" (
         goto :fail
     )
     popd
-) else (
-    echo [4/4] 前端依赖已就绪。
 )
+
+echo [4/6] 正在构建前端产物（含 TypeScript 类型检查，首次约 1 分钟）...
+pushd "%WEB_DIR%"
+call npm run build
+if errorlevel 1 (
+    popd
+    echo.
+    echo [错误] 前端构建失败，请向上滚动查看具体错误（类型检查不通过也会走到这里）。
+    goto :fail
+)
+popd
+
+if not exist "%DIST_DIR%\index.html" (
+    echo.
+    echo [错误] 构建完成但没有找到 %DIST_DIR%\index.html。
+    goto :fail
+)
+echo       前端产物已就绪：%DIST_DIR%
 echo.
 
 rem ---------- 打印访问信息 ----------
@@ -124,6 +153,9 @@ echo   移动端界面    http://localhost:%WEB_PORT%/m
 echo   后端 API      http://localhost:%API_PORT%/
 echo   健康检查      http://localhost:%API_PORT%/api/health
 echo.
+echo   前端与接口同源：界面在 %WEB_PORT%，/api 与 /hubs 由它反代到 %API_PORT%，
+echo   与线上 nginx 的三个 location 是同一形态（部署前可用本脚本验证）。
+echo.
 echo   ┌── 登录账号 ──────────────────────────────────────────
 echo   │  用户名      admin
 echo   │  密码        %ADMIN_PASSWORD%
@@ -133,7 +165,7 @@ echo   │  若 data 目录下已有数据库，密码是你之前用的那个
 echo   │  （本脚本不会重置已存在账号的密码）。
 echo   └─────────────────────────────────────────────────────
 echo.
-echo   免登录可见：市场概览、搜索、个股全部模块、四种拓扑图、行业景气度
+echo   免登录可见：市场概览、搜索、个股全部模块、价值研究、四种拓扑图、行业景气度
 echo   需登录使用：自选股、条件选股器、提醒规则、通知中心、个人设置、后台管理
 echo.
 
@@ -158,9 +190,9 @@ echo.
 echo ============================================================
 echo.
 
-rem ---------- 启动后端（独立窗口，便于单独看采集日志）----------
+rem ---------- 5a. 启动后端（独立窗口，便于单独看采集日志）----------
 rem 用 start /D 指定工作目录，避免在带引号的命令串里再嵌 cd 造成引号转义问题
-start "SA 后端 API (端口 %API_PORT%)" /D "%ROOT%" cmd /k "set ASPNETCORE_URLS=http://localhost:%API_PORT% && set Sa__DataDirectory=%DATA_DIR% && set Sa__Auth__AdminInitialPassword=%ADMIN_PASSWORD% && dotnet run --project src\SA.Api --no-build"
+start "SA 后端 API (端口 %API_PORT%)" /D "%ROOT%" cmd /k "set "ASPNETCORE_URLS=http://localhost:%API_PORT%"&&set "Sa__DataDirectory=%DATA_DIR%"&&set "Sa__Auth__AdminInitialPassword=%ADMIN_PASSWORD%"&&dotnet run --project src\SA.Api --no-build"
 
 call :waitport %API_PORT% 90
 if errorlevel 1 (
@@ -168,12 +200,14 @@ if errorlevel 1 (
     echo        常见原因是端口被占用、数据库被其它进程锁住，或上游接口不通。
     echo        前端仍会启动，但接口会报错。
 ) else (
-    echo       后端已就绪，正在启动前端...
+    echo       后端已就绪，正在启动前端静态服务...
 )
 echo.
 
-rem ---------- 启动前端 ----------
-start "SA 前端 (端口 %WEB_PORT%)" /D "%WEB_DIR%" cmd /k "npm run dev"
+rem ---------- 5b. 启动前端静态服务 ----------
+rem npm run preview 服务 web\dist 并把 /api 与 /hubs 反代到后端，
+rem 与线上 nginx 同形态：前端走同源相对路径，不需要后端开 CORS。
+start "SA 前端 (端口 %WEB_PORT%)" /D "%WEB_DIR%" cmd /k "npm run preview"
 
 call :waitport %WEB_PORT% 90
 if errorlevel 1 (
@@ -253,7 +287,8 @@ rem 脚本一旦被重定向运行（如 > log 2>&1）就会报
 rem 「ERROR: Input redirection is not supported」并立刻返回，等待逻辑形同虚设。
 :waitport
 set "PORT=%~1"
-set /a "MAX=%~2"
+set "MAX=%~2"
+set "MAX=%MAX:"=%"
 set /a "WAITED=0"
 :waitloop
 ping -n 2 127.0.0.1 >nul

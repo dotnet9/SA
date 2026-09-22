@@ -32,5 +32,28 @@ export default defineConfig({
         ws: true
       }
     }
+  },
+
+  /*
+   * 预览（`npm run preview`）服务构建产物，用来在本机复现「线上单域名」形态：
+   * 静态文件 + /api 与 /hubs 反代到后端，等价于 nginx 的三个 location。
+   *
+   * Vite 4+ 的 preview.proxy 默认继承 server.proxy，这里仍显式写一遍——
+   * 不依赖版本默认行为，也让「预览与开发走同一套代理」在配置里看得见。
+   */
+  preview: {
+    port: 5173,
+    strictPort: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5180',
+        changeOrigin: true
+      },
+      '/hubs': {
+        target: 'http://localhost:5180',
+        changeOrigin: true,
+        ws: true
+      }
+    }
   }
 });
