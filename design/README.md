@@ -15,22 +15,13 @@
 
 ```
 design/
-├── web/                      桌面端原型（23 页，1440 宽设计 + 响应式）
+├── web/                      桌面端原型（1440 宽设计 + 响应式）
 │   ├── index.html            登录
 │   ├── styleguide.html       设计规范与组件库（视觉语言基准）
-│   ├── market.html           市场概览（首页）
+│   ├── market.html           大盘概况（首页：指数横条 + 全市场表 + 内联个股区）
+│   ├── watchlist.html        自选股（名称 + 涨跌幅两列 + 内联个股区）
+│   ├── stock.html            个股页（整页即个股区，支持 ?code=xxx#tab）
 │   ├── search-results.html   搜索结果
-│   ├── stock.html            个股总览（分析矩阵 · 卡片堆叠 + 标签专注）
-│   ├── stock.html#trend      ① 趋势与价格结构
-│   ├── stock.html#finance    ② 盈利与财务表现
-│   ├── stock.html#equity     ③ 公司投资与股权结构
-│   ├── stock.html#capital    ④ 资金面与筹码
-│   ├── stock.html#industry   ⑤ 行业与同业对比
-│   ├── stock.html#events     ⑥ 事件时间线与影响（四种拓扑图）
-│   ├── stock.html#risk       ⑦ 风险与舆情监控
-│   ├── stock.html#rating     ⑧ 机构评级与盈利预测
-│   ├── stock.html#events         四种拓扑图集中对照
-│   ├── watchlist.html        自选股盯盘
 │   ├── screener.html         条件选股器
 │   ├── alerts.html           提醒规则
 │   ├── notifications.html    通知中心
@@ -39,28 +30,23 @@ design/
 │   ├── admin-permissions.html 后台 · 角色与功能点开关矩阵
 │   ├── admin-datasource.html 后台 · 数据源与采集监控
 │   ├── admin-security.html   后台 · 登录与安全
+│   ├── stock-*.html          8 个旧模块页 → 跳转桩（指向 stock.html#tab）
+│   ├── topology.html         旧拓扑总览页 → 跳转桩（内容已并入 stock.html#events）
 │   └── _shared/              共享资产（见下）
-└── app/                      移动端原型（19 页，390×844 竖屏）
+└── app/                      移动端原型（390×844 竖屏）
     ├── index.html            登录
-    ├── home.html             市场概览
+    ├── home.html             大盘概况
     ├── search.html           搜索
-    ├── stock.html            个股总览
-    ├── stock.html#trend      趋势与价格结构
-    ├── stock.html#finance    盈利与财务表现
-    ├── stock.html#equity     投资与股权结构
-    ├── stock.html#capital    资金面与筹码
-    ├── stock.html#industry   行业与同业对比
-    ├── stock.html#events     事件时间线与影响
-    ├── stock.html#risk       风险与舆情监控
-    ├── stock.html#rating     机构评级与预测
-    ├── watchlist.html        自选股盯盘
+    ├── stock.html            个股页（9 个 Tab）
+    ├── watchlist.html        自选股
     ├── screener.html         条件选股器
     ├── notifications.html    通知中心
     ├── alerts.html           提醒规则
     ├── notify-preview.html   提醒形态预览（通知栏 / 锁屏 / 震动）
     ├── settings.html         我的
+    ├── more.html             更多（选股 / 提醒 / 通知 / 设置入口）
     └── styleguide-mobile.html 移动端设计规范
-```
+``````
 
 ## 共享资产（`design/web/_shared/`）
 
@@ -72,19 +58,31 @@ design/
 | `app.js` | 主题与涨跌色、按角色裁剪导航、全局搜索、表格排序、Tab、卡片折叠与拖拽、Toast、实时闪烁 |
 | `charts.js` | ECharts 6 主题注册与 16 种图表工厂（K 线 / 桑基 / 关系图 / 热力 / 筹码 / 泳道 …） |
 | `data.js` | 全部演示数据（含确定性伪随机序列生成器，保证每次打开一致） |
+| `spec.js` | 数据口径（9 组）：原先散在各页页底的说明集中到这里，由顶栏「数据口径」抽屉呈现 |
+| `stock-panels.js` | 个股区控制器：骨架、9 个 Tab、面板懒渲染、`?code=xxx#tab` 同步 |
+| `panels/*.js` | 9 个个股面板（概览 / 趋势 / 财务 / 股权 / 资金 / 行业 / 事件 / 风险 / 评级） |
 | `mock-frame.js` | 移动端手机外框与底部 Tab 栏（仅 `design/app` 引用） |
 | `vendor/echarts.min.js` | ECharts 6.1.0 本地副本（离线可用） |
 
 移动端通过 `../web/_shared/...` 复用同一套令牌、组件、数据与图表封装，保证两端一致。
 
+## 信息架构
+
+- **左侧只有两项**：大盘概况、自选股。其余功能收进侧栏底部可折叠的「更多」区（默认收起）。
+- **大盘概况一页搞定全市场**：指数横条 + 全市场表（654 只，板块页签 / 搜索 / 排序 / 分页）。
+- **自选股只有两列**：名称 + 涨跌幅。
+- **个股信息在右侧以 Tab 呈现**：点列表任一行，右侧整块换成个股区（9 个 Tab + 返回列表）。
+- 三个入口共用同一份个股区实现：`market.html`、`watchlist.html`、`stock.html`。
+- Tab 与 URL 同步（`?code=xxx#tab`），浏览器前进后退可用；旧模块页链接会跳转到对应 Tab。
+
 ## 视觉语言要点
 
 - **大气简约**：中性沉稳的底色 + 单一品牌色，**无装饰性渐变、无光晕**；卡片无描边、16px 圆角，层次靠底色差与留白表达。
-- **深色为主 + 可切换浅色**；**红涨绿跌**为默认，可一键切为国际习惯（全站图表、表格、数字同步）。
+- **浅色为默认 + 可切换深色**；**红涨绿跌**为默认，可一键切为国际习惯（全站图表、表格、数字同步）。
 - 数字一律等宽 + `tabular-nums` 右对齐，保证小数点竖直对齐；关键数字（行情价、目标价、命中数）放大做视觉锚点。
-- **小屏聚焦**：移动端每页只有一个视觉主角，板块 ≤ 5 个，口径说明统一放页底灰字，不做逐卡片标注。
+- **每页唯一主角**：页面正文不放解释性文字；口径说明集中在顶栏「数据口径」抽屉，字段级口径保留 hover 问号。
 - 表格行左侧 2px 涨跌色细条；浮层统一玻璃拟态（`backdrop-filter: blur(20px)`，仅浮层使用）。
-- 每个数据卡片右上角有弱化的「数据口径」问号（hover 恢复），悬浮显示字段口径与更新时间。
+- 字段级口径用弱化的 hover 问号（`infoq`）标注，悬浮显示；不占版面，不写整句说明。
 - 完整说明见 `web/styleguide.html`（13 节）与 `app/styleguide-mobile.html`（8 节）。
 
 ## 演示数据说明

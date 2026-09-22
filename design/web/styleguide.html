@@ -69,7 +69,7 @@
 
       <!-- ============ 色彩 ============ -->
       <h2 class="mt-6" id="c-color" style="font-size:18px;font-weight:700">1. 色彩</h2>
-      <p class="hint mt-2">令牌定义于 <code>tokens.css</code>。深色为默认主题；<code>[data-theme="light"]</code> 覆盖；涨跌色由 <code>[data-updown]</code> 控制，<code>--up</code> / <code>--down</code> 整组交换。</p>
+      <p class="hint mt-2">令牌定义于 <code>tokens.css</code>。浅色为默认主题；<code>[data-theme="dark"]</code> 覆盖；涨跌色由 <code>[data-updown]</code> 控制，<code>--up</code> / <code>--down</code> 整组交换。</p>
 
       <div class="grid grid-2 mt-4">
         <div class="card">
@@ -201,8 +201,10 @@
           <div class="card-body grid grid-4">
             <div class="kpi"><span class="kpi-label">表格行高（紧凑）</span><span class="kpi-value is-sm">32px</span><span class="kpi-delta t-3">默认</span></div>
             <div class="kpi"><span class="kpi-label">表格行高（舒适）</span><span class="kpi-value is-sm">40px</span><span class="kpi-delta t-3">设置可切</span></div>
-            <div class="kpi"><span class="kpi-label">顶栏高度</span><span class="kpi-value is-sm">52px</span><span class="kpi-delta t-3">--topbar-h</span></div>
-            <div class="kpi"><span class="kpi-label">侧导航宽度</span><span class="kpi-value is-sm">240 / 64px</span><span class="kpi-delta t-3">展开 / 图标条</span></div>
+            <div class="kpi"><span class="kpi-label">顶栏高度</span><span class="kpi-value is-sm">56px</span><span class="kpi-delta t-3">--topbar-h</span></div>
+            <div class="kpi"><span class="kpi-label">侧导航宽度</span><span class="kpi-value is-sm">232 / 64px</span><span class="kpi-delta t-3">展开 / 图标条</span></div>
+            <div class="kpi"><span class="kpi-label">自选横条高度</span><span class="kpi-value is-sm">44px</span><span class="kpi-delta t-3">--strip-h</span></div>
+            <div class="kpi"><span class="kpi-label">主导航项数</span><span class="kpi-value is-sm">2</span><span class="kpi-delta t-3">大盘概况 / 自选股</span></div>
             <div class="kpi"><span class="kpi-label">右侧信息栏</span><span class="kpi-value is-sm">320px</span><span class="kpi-delta t-3">--rail-w</span></div>
             <div class="kpi"><span class="kpi-label">按钮高度</span><span class="kpi-value is-sm">32 / 26 / 40</span><span class="kpi-delta t-3">默认 / sm / lg</span></div>
             <div class="kpi"><span class="kpi-label">触摸热区（移动端）</span><span class="kpi-value is-sm">≥ 44px</span><span class="kpi-delta t-3">.tap-44</span></div>
@@ -663,7 +665,7 @@
           </div>
         </div>
         <div class="card">
-          <div class="card-head"><span class="card-title">数据口径说明块</span><span class="card-sub">每个图表/表格下方必配</span></div>
+          <div class="card-head"><span class="card-title">数据口径说明块</span><span class="card-sub">已废弃 · 口径集中到顶栏抽屉</span></div>
           <div class="card-body">
 
           </div>
@@ -726,7 +728,7 @@
               <tr><td class="num">5</td><td class="fw-600">无描边卡片分层</td><td>卡片一律无描边、16px 圆角，靠底色一档差与留白分层；深色主题零投影，浅色主题仅 0.05 透明度极淡投影</td><td class="t-3">本页卡片</td></tr>
               <tr><td class="num">6</td><td class="fw-600">玻璃拟态浮层</td><td>下拉 / tooltip / 抽屉 / Toast 统一 <code>backdrop-filter: blur(20px)</code> + 半透明底，仅浮层使用模糊，页面本身保持纯净</td><td><a class="t-brand" href="#c-overlay">见第 10 节</a></td></tr>
               <tr><td class="num">7</td><td class="fw-600">骨架屏 + 过渡</td><td>首屏骨架占位；切换股票时图表 400ms 过渡；尊重 <code>prefers-reduced-motion</code></td><td><a class="t-brand" href="#c-state">见第 11 节</a></td></tr>
-              <tr><td class="num">8</td><td class="fw-600">数据口径问号</td><td>每个数据卡片右上角 <code>.infoq[data-tip]</code>，hover 显示字段口径与更新时间</td><td><a class="t-brand" href="#c-tag">见第 6 节</a></td></tr>
+              <tr><td class="num">8</td><td class="fw-600">数据口径问号</td><td>字段级口径用 <code>.infoq[data-tip]</code>，hover 显示；整段口径说明集中到顶栏「数据口径」抽屉口径与更新时间</td><td><a class="t-brand" href="#c-tag">见第 6 节</a></td></tr>
               <tr><td class="num">9</td><td class="fw-600">全局演示数据角标</td><td>右下角固定「演示数据 · 非实时 · 不构成投资建议」，全站统一</td><td class="t-3">右下角</td></tr>
             </tbody>
           </table>

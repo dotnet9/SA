@@ -114,7 +114,7 @@
           </div>
           <div class="tbl-foot">
             <span id="taskFoot">共 12 个任务</span>
-            <span class="hint" style="margin-left:auto">所有时间均为服务器本地时间（Asia/Shanghai）</span>
+            <span class="hint" style="margin-left:auto">服务器本地时间</span>
           </div>
         </div>
       </div>
@@ -156,7 +156,7 @@
             <div class="row gap-2 mt-3">
               <button class="btn btn-sm btn-ghost" id="btnAutoScroll">暂停自动滚动</button>
               <button class="btn btn-sm btn-ghost" id="btnClearLog">清空显示</button>
-              <span class="hint" style="margin-left:auto">日志保留 7 天，完整日志见服务器文件</span>
+              <span class="hint" style="margin-left:auto">日志保留 7 天</span>
             </div>
           </div>
         </div>
@@ -299,7 +299,7 @@
     });
   });
   document.getElementById("btnClearLog").addEventListener("click", function () {
-    document.getElementById("logBox").innerHTML = '<div class="hint">显示已清空（服务端日志仍保留）</div>';
+    document.getElementById("logBox").innerHTML = '<div class="hint">服务端日志仍保留</div>';
   });
   document.getElementById("btnAutoScroll").addEventListener("click", function () {
     var paused = this.textContent.indexOf("暂停") >= 0;
