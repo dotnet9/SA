@@ -1,27 +1,20 @@
 import { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router';
-import { useAuth } from '@/providers/AuthProvider';
+import { NavLink } from 'react-router';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useToast } from '@/providers/ToastProvider';
 import { CaliberDrawer } from '@/features/spec/CaliberDrawer';
 import { GlobalSearch } from './GlobalSearch';
 
 /**
- * 顶栏：全局搜索、数据口径入口、涨跌色与主题切换、通知入口、账号入口。
+ * 顶栏：全局搜索、数据口径入口、涨跌色与主题切换、通知入口、设置入口。
  *
- * 与原型的 `renderTopbar()` 一致，差别是角色来自真实登录身份而不是本地切换。
- * 未登录时把「通知」与「账号」换成登录入口：通知中心与个人设置都需要登录，
- * 留着按钮只会点一下弹一次错误。
+ * 与原型的 `renderTopbar()` 一致。本应用**没有登录**，因此这里不再有
+ * 登录/退出按钮与用户头像——原来那个「账号入口」换成直接进设置页。
  */
 export function TopBar({ asOf }: { asOf?: string }) {
-  const { me, signOut } = useAuth();
   const { theme, updown, toggleTheme, toggleUpdown } = useTheme();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [specOpen, setSpecOpen] = useState(false);
-
-  const isAdmin = me?.roleId === 'admin';
-  const anonymous = me === null;
 
   return (
     <>
@@ -68,42 +61,13 @@ export function TopBar({ asOf }: { asOf?: string }) {
             {theme === 'dark' ? '☾' : '☀'}
           </button>
 
-          {anonymous ? (
-            <NavLink className="btn btn-primary btn-sm" to="/login" title="登录后可查看自选、选股与提醒">
-              登录
-            </NavLink>
-          ) : (
-            <>
-              <NavLink className="icon-btn" to="/notifications" title="通知中心">
-                ◍
-              </NavLink>
+          <NavLink className="icon-btn" to="/notifications" title="通知中心">
+            ◍
+          </NavLink>
 
-              <button
-                type="button"
-                className="user-chip"
-                title="当前登录用户与角色"
-                onClick={() => {
-                  navigate(isAdmin ? '/admin/users' : '/settings');
-                }}
-              >
-                <span className="avatar">{(me?.nickname ?? me?.username ?? '?').charAt(0)}</span>
-                <span className="fs-12 hide-mobile">{me?.nickname ?? me?.username}</span>
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                title="退出登录"
-                onClick={() => {
-                  void signOut().then(() => {
-                    navigate('/login', { replace: true });
-                  });
-                }}
-              >
-                退出
-              </button>
-            </>
-          )}
+          <NavLink className="icon-btn" to="/settings" title="设置">
+            ⚒
+          </NavLink>
         </div>
       </header>
 

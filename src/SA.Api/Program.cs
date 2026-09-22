@@ -45,8 +45,6 @@ builder.Services.AddSaHistory();
 builder.Services.AddSaCollect();
 builder.Services.AddSaSecurity();
 
-// 访问令牌校验。签名密钥要到启动初始化才确定（配置 → 库 → 生成），因此这里用延迟配置：
-// JwtBearerOptions 在首个请求时才解析，届时密钥已就绪。
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer();
 
@@ -76,14 +74,10 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
         };
     });
 
-// 默认要求已登录，避免新增端点时忘记声明认证而意外裸奔（需求规格 §7.3）
-// 注意：PWA 的静态资源（/sw.js、/manifest.webmanifest、/icon-*.png）由前端服务器提供
-// （文件在 web/public 下），不经过本 API，因此不需要在这里为它们开白名单。
-builder.Services.AddAuthorizationBuilder()
-    .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
-
-builder.Services.AddSingleton<IAuthorizationHandler, FunctionPointAuthorizationHandler>();
-builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, SaAuthorizationResultHandler>();
+// 本应用不做权限控制：所有功能对所有访问者开放（用户决定去掉登录与权限）。
+// 因此不设 fallback policy —— 默认即匿名放行；也不再注册功能点授权处理器。
+// 保留 AddAuthorization() 是因为 SignalR Hub 与部分中间件仍会解析授权元数据。
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -129,15 +123,9 @@ app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseAuthentication();
 
-// 带了令牌但校验失败的请求直接拒掉，不退回匿名——公开读接口允许匿名访问，
-// 若放行则「仅自选」角色的过期令牌会在公开页上看到全市场数据（数据范围被绕过）。
-app.UseMiddleware<RejectInvalidTokenMiddleware>();
-
 app.UseAuthorization();
 
 app.MapSystemEndpoints();
-app.MapAuthEndpoints();
-app.MapMeEndpoints();
 app.MapMarketEndpoints();
 app.MapSearchEndpoints();
 app.MapStockEndpoints();

@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { searchStocks } from '@/features/search/api';
 import { fetchMarketStocks } from '@/features/market/api';
+import { MaxWatchItems, useWatchlist } from '@/features/watchlist/WatchlistProvider';
+import { useToast } from '@/providers/ToastProvider';
 
 /**
  * 全局搜索：聚焦即开面板、输入即出结果、点结果进个股、底部进完整搜索结果页。
@@ -43,6 +45,8 @@ export function GlobalSearch() {
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { has, add, remove } = useWatchlist();
+  const { toast } = useToast();
 
   /* 防抖：输入停顿后再打接口 */
   useEffect(() => {
@@ -169,30 +173,56 @@ export function GlobalSearch() {
               没有匹配的股票
             </div>
           ) : (
-            rows.slice(0, MaxItems).map((row) => (
-              <Link
-                key={row.code}
-                className="sa-search-item"
-                to={`/market/${row.code}`}
-                onClick={() => setOpen(false)}
-              >
-                <span className="stock-cell" style={{ minWidth: 0 }}>
-                  <span className="sc-name">{row.name}</span>
-                  <span className="sc-code">
-                    {row.code} · {row.board}
+            rows.slice(0, MaxItems).map((row) => {
+              const added = has(row.code);
+
+              return (
+                <div key={row.code} className="sa-search-item is-row">
+                  {/* 主体仍是链接：点名称/代码进个股页 */}
+                  <Link
+                    className="grow row gap-2"
+                    to={`/market/${row.code}`}
+                    onClick={() => setOpen(false)}
+                    style={{ minWidth: 0, textDecoration: 'none', color: 'inherit' }}
+                  >
+                    <span className="stock-cell" style={{ minWidth: 0 }}>
+                      <span className="sc-name">{row.name}</span>
+                      <span className="sc-code">
+                        {row.code} · {row.board}
+                      </span>
+                    </span>
+                  </Link>
+
+                  {row.industry ? (
+                    <span className="tag tag-outline hide-mobile">{row.industry}</span>
+                  ) : null}
+
+                  <span className={`chg ${tone(row.pct)}`} style={{ width: 78, textAlign: 'right' }}>
+                    {fmt(row.price)}
+                    <span> {row.pct === null ? '' : `${row.pct >= 0 ? '+' : ''}${fmt(row.pct)}%`}</span>
                   </span>
-                </span>
-                {row.industry ? (
-                  <span className="tag tag-outline" style={{ marginLeft: 'auto' }}>
-                    {row.industry}
-                  </span>
-                ) : null}
-                <span className={`chg ${tone(row.pct)}`} style={{ width: 78, textAlign: 'right' }}>
-                  {fmt(row.price)}
-                  <span> {row.pct === null ? '' : `${row.pct >= 0 ? '+' : ''}${fmt(row.pct)}%`}</span>
-                </span>
-              </Link>
-            ))
+
+                  {/* 一键加自选：不必先跳进个股页 */}
+                  <button
+                    type="button"
+                    className={`icon-btn${added ? ' is-on' : ''}`}
+                    title={added ? '已加入自选（点击移除）' : '加入自选'}
+                    onClick={() => {
+                      if (added) {
+                        remove(row.code);
+                        toast('已从自选股移除', 'info');
+                      } else if (add(row.code)) {
+                        toast(`已把 ${row.name} 加入自选`, 'ok');
+                      } else {
+                        toast(`加入失败（已达上限 ${MaxWatchItems}）`, 'error');
+                      }
+                    }}
+                  >
+                    {added ? '★' : '☆'}
+                  </button>
+                </div>
+              );
+            })
           )}
 
           <div className="menu-sep" />

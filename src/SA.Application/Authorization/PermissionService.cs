@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Caching.Memory;
 using SA.Application.Abstractions;
 using SA.Domain.Authorization;
+using SA.Domain.Entities.Identity;
 
 namespace SA.Application.Authorization;
 
@@ -40,6 +41,13 @@ public sealed class PermissionService(IRoleStore roleStore, IUserStore userStore
     /// </summary>
     public async Task<ResolvedPermissions?> ResolveAsync(string userId, CancellationToken cancellationToken = default)
     {
+        // 本机用户：应用不做登录与权限控制，它不落库，因此直接给「全部功能点 + 默认配额」。
+        // 若走查库分支会拿不到用户而返回 null，端点会把「解析失败」当成 401 拒绝访问。
+        if (LocalUser.Is(userId))
+        {
+            return LocalPermissions;
+        }
+
         var user = await _userStore.FindByIdAsync(userId, cancellationToken).ConfigureAwait(false);
         if (user is null)
         {
@@ -82,6 +90,28 @@ public sealed class PermissionService(IRoleStore roleStore, IUserStore userStore
     /// 使某个角色的所有用户权限缓存失效（权限矩阵保存后调用）。
     /// </summary>
     public void InvalidateRole(string roleId) => RoleVersions.AddOrUpdate(roleId, 1, (_, current) => current + 1);
+
+    /// <summary>
+    /// 本机用户的权限：全部功能点 + 默认配额。
+    /// </summary>
+    /// <remarks>
+    /// 配额取「够用即可」的固定值：本机自用场景不需要配额约束，
+    /// 但保留这几个键是为了让导出、历史年限、策略数量等逻辑不必到处判空。
+    /// </remarks>
+    private static readonly ResolvedPermissions LocalPermissions = new(
+        RoleId: LocalUser.RoleId,
+        RoleName: LocalUser.RoleName,
+        FunctionPoints: FunctionPointCatalog.AllCodes,
+        Quotas: new Dictionary<string, int>(StringComparer.Ordinal)
+        {
+            [QuotaKeys.ExportRows] = 50_000,
+            [QuotaKeys.HistoryYears] = 10,
+            [QuotaKeys.DailyQueries] = 2000,
+            [QuotaKeys.AlertMax] = 200,
+            [QuotaKeys.StrategyMax] = 100,
+            [QuotaKeys.WatchlistMax] = 500
+        },
+        DataScope: DataScope.All);
 
     private static string CacheKey(string userId) => $"sa:perm:{userId}";
 

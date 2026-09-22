@@ -38,27 +38,27 @@ public static class ScreenerEndpoints
     {
         var group = app.MapGroup("/api/screener").WithTags("screener");
 
-        group.MapGet("/meta", GetMetaAsync).RequireFunctionPoint(FunctionPointCatalog.StockSearch);
+        group.MapGet("/meta", GetMetaAsync);
 
         // 显式筛选：界面上的「开始筛选」走这条，会写入筛选日志
-        group.MapPost(string.Empty, RunAsync).RequireFunctionPoint(FunctionPointCatalog.StockSearch);
+        group.MapPost(string.Empty, RunAsync);
 
         // 分布统计：只读且不留痕（同一条件下反复看分布不该刷满日志）
-        group.MapPost("/distribution", DistributionAsync).RequireFunctionPoint(FunctionPointCatalog.StockSearch);
+        group.MapPost("/distribution", DistributionAsync);
 
         // 筛选日志与我的策略（同一张表的两种用法）
-        group.MapGet("/history", GetHistoryAsync).RequireFunctionPoint(FunctionPointCatalog.StockSearch);
-        group.MapGet("/strategies", GetStrategiesAsync).RequireFunctionPoint(FunctionPointCatalog.StockSearch);
-        group.MapPost("/strategies", SaveStrategyAsync).RequireFunctionPoint(FunctionPointCatalog.StockSearch);
-        group.MapPut("/strategies/{id:long}", RenameStrategyAsync).RequireFunctionPoint(FunctionPointCatalog.StockSearch);
-        group.MapDelete("/strategies/{id:long}", DeleteRunAsync).RequireFunctionPoint(FunctionPointCatalog.StockSearch);
-        group.MapPost("/strategies/{id:long}/replay", ReplayAsync).RequireFunctionPoint(FunctionPointCatalog.StockSearch);
+        group.MapGet("/history", GetHistoryAsync);
+        group.MapGet("/strategies", GetStrategiesAsync);
+        group.MapPost("/strategies", SaveStrategyAsync);
+        group.MapPut("/strategies/{id:long}", RenameStrategyAsync);
+        group.MapDelete("/strategies/{id:long}", DeleteRunAsync);
+        group.MapPost("/strategies/{id:long}/replay", ReplayAsync);
 
         // 导出记录（选股器页的「导出记录」区块）
-        group.MapGet("/exports", GetExportsAsync).RequireFunctionPoint(FunctionPointCatalog.StockSearch);
+        group.MapGet("/exports", GetExportsAsync);
 
         // 导出走单独的权限点：它把数据带出系统，与「在界面里看看」不是同一件事
-        group.MapPost("/export", ExportAsync).RequireFunctionPoint(FunctionPointCatalog.ExportData);
+        group.MapPost("/export", ExportAsync);
 
         return app;
     }
@@ -82,7 +82,7 @@ public static class ScreenerEndpoints
         ScreenerService screener,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -112,7 +112,7 @@ public static class ScreenerEndpoints
         SA.Application.Authorization.QuotaService quotaService,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -131,7 +131,7 @@ public static class ScreenerEndpoints
         SA.Application.Authorization.QuotaService quotaService,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -151,7 +151,7 @@ public static class ScreenerEndpoints
         SA.Application.Authorization.QuotaService quotaService,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -170,7 +170,7 @@ public static class ScreenerEndpoints
         ScreenerService screener,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -186,7 +186,7 @@ public static class ScreenerEndpoints
         ScreenerService screener,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -202,7 +202,7 @@ public static class ScreenerEndpoints
         ScreenerService screener,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -217,7 +217,7 @@ public static class ScreenerEndpoints
         ScreenerService screener,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -234,7 +234,7 @@ public static class ScreenerEndpoints
         SA.Application.Authorization.QuotaService quotaService,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -280,7 +280,7 @@ public static class ScreenerEndpoints
         SA.Application.Authorization.QuotaService quotaService,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return (-1, FallbackExportRows, -1);

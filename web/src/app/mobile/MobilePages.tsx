@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { EmptyState, ErrorState, SourceDot } from '@/components/ui/States';
 import { errorText } from '@/lib/errorText';
@@ -897,29 +897,12 @@ export function MobileScreenerPage() {
    ------------------------------------------------------------------ */
 
 export function MobileSettingsPage() {
-  const { me, signOut } = useAuth();
   const theme = useTheme();
   const realtime = useRealtime();
-  const navigate = useNavigate();
 
   return (
     <>
       <MobilePageHead title="我的" />
-
-      <div className="card">
-        <div className="card-body row gap-3" style={{ alignItems: 'center' }}>
-          <span className="avatar" style={{ width: 40, height: 40, fontSize: 15 }}>
-            {(me?.nickname ?? me?.username ?? '—').slice(0, 1)}
-          </span>
-          <div className="grow">
-            <div className="fs-14 fw-600">{me?.nickname ?? '—'}</div>
-            <div className="hint">
-              {me?.username ?? '—'} · {me?.roleName ?? '—'}
-            </div>
-          </div>
-          <span className="tag tag-brand">{me?.dataScope === 'watchlist' ? '仅自选' : '全市场'}</span>
-        </div>
-      </div>
 
       <div className="card mt-3">
         <div className="card-head">
@@ -983,20 +966,6 @@ export function MobileSettingsPage() {
         </div>
       </div>
 
-      <div className="card mt-3">
-        <div className="card-body">
-          <button
-            type="button"
-            className="btn btn-outline btn-block"
-            onClick={() => {
-              void signOut();
-              navigate('/login');
-            }}
-          >
-            退出登录
-          </button>
-        </div>
-      </div>
     </>
   );
 }

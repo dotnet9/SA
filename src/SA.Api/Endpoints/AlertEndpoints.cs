@@ -20,14 +20,14 @@ public static class AlertEndpoints
     public static IEndpointRouteBuilder MapAlertEndpoints(this IEndpointRouteBuilder app)
     {
         var alerts = app.MapGroup("/api/alerts").WithTags("alerts");
-        alerts.MapGet(string.Empty, GetRulesAsync).RequireFunctionPoint(FunctionPointCatalog.AlertManage);
-        alerts.MapPost(string.Empty, CreateRuleAsync).RequireFunctionPoint(FunctionPointCatalog.AlertManage);
-        alerts.MapPut("/{ruleId}", UpdateRuleAsync).RequireFunctionPoint(FunctionPointCatalog.AlertManage);
-        alerts.MapDelete("/{ruleId}", RemoveRuleAsync).RequireFunctionPoint(FunctionPointCatalog.AlertManage);
+        alerts.MapGet(string.Empty, GetRulesAsync);
+        alerts.MapPost(string.Empty, CreateRuleAsync);
+        alerts.MapPut("/{ruleId}", UpdateRuleAsync);
+        alerts.MapDelete("/{ruleId}", RemoveRuleAsync);
 
         var notifications = app.MapGroup("/api/notifications").WithTags("notifications");
-        notifications.MapGet(string.Empty, GetNotificationsAsync).RequireFunctionPoint(FunctionPointCatalog.NotifyView);
-        notifications.MapPost("/read", MarkReadAsync).RequireFunctionPoint(FunctionPointCatalog.NotifyView);
+        notifications.MapGet(string.Empty, GetNotificationsAsync);
+        notifications.MapPost("/read", MarkReadAsync);
 
         return app;
     }
@@ -38,7 +38,7 @@ public static class AlertEndpoints
         SA.Application.Authorization.PermissionService permissions,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -58,7 +58,7 @@ public static class AlertEndpoints
         SA.Application.Authorization.PermissionService permissions,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -78,7 +78,7 @@ public static class AlertEndpoints
         AlertService alerts,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -94,7 +94,7 @@ public static class AlertEndpoints
         AlertService alerts,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -111,7 +111,7 @@ public static class AlertEndpoints
         bool unreadOnly = false,
         int limit = 50)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -127,7 +127,7 @@ public static class AlertEndpoints
         AlertService alerts,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");

@@ -53,18 +53,4 @@ public class HealthEndpointTests(ApiFactory factory)
         Assert.Equal("probe-1234", document.RootElement.GetProperty("traceId").GetString());
     }
 
-    [Fact]
-    public async Task 未登录访问受保护接口返回两千零一错误码()
-    {
-        using var client = factory.CreateClient();
-
-        using var response = await client.GetAsync("/api/me");
-
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Equal(2001, document.RootElement.GetProperty("code").GetInt32());
-        Assert.False(string.IsNullOrWhiteSpace(document.RootElement.GetProperty("traceId").GetString()));
-        Assert.Equal(JsonValueKind.Null, document.RootElement.GetProperty("data").ValueKind);
-    }
 }

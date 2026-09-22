@@ -258,3 +258,30 @@ public sealed record MarketStocksDto(
     IReadOnlyList<string> Boards,
     string? AsOf,
     string? ScopeNote);
+
+/// <summary>
+/// 多只标的的行情快照（自选股列表用）。
+/// </summary>
+/// <remarks>
+/// 自选股存在浏览器本地，页面需要按一组代码取行情。逐个调 <c>/api/stocks/{code}/quote</c>
+/// 会产生 N 次请求，因此提供这个批量入口；一次最多 500 只，超出的部分被忽略。
+/// </remarks>
+/// <param name="Code">代码。</param>
+/// <param name="Name">名称。</param>
+/// <param name="Price">最新价（元）；无快照时为 null。</param>
+/// <param name="Pct">涨跌幅（百分数）。</param>
+/// <param name="Chg">涨跌额（元）。</param>
+/// <param name="Turnover">换手率（百分数）。</param>
+/// <param name="Cap">总市值（亿元）。</param>
+/// <param name="Industry">东财行业。</param>
+/// <param name="IsSt">是否 ST。</param>
+public sealed record MarketQuoteDto(
+    string Code,
+    string Name,
+    decimal? Price,
+    decimal? Pct,
+    decimal? Chg,
+    decimal? Turnover,
+    decimal? Cap,
+    string? Industry,
+    bool IsSt);

@@ -25,8 +25,13 @@ export type SignalRHandler = (args: unknown[]) => void;
 export interface SignalROptions {
   /** 中心地址，如 `/hubs/quotes`。 */
   hubUrl: string;
-  /** 取访问令牌；返回 null 时不带令牌连接（会收到 401）。 */
-  accessToken: () => string | null;
+  /**
+   * 取访问令牌。
+   *
+   * 本应用没有登录，因此通常不传；保留这个口子是因为 SignalR 在需要鉴权的部署下
+   * 仍要把令牌放进查询串（浏览器 WebSocket 不能带自定义头）。
+   */
+  accessToken?: () => string | null;
   /** 状态变化回调。 */
   onStatus?: (status: SignalRStatus) => void;
   /** 连接成功（含重连成功）后回调，用于重新订阅。 */
@@ -131,7 +136,7 @@ export class SignalRConnection {
   private open(): void {
     this.setStatus(this.attempt === 0 ? 'connecting' : 'reconnecting');
 
-    const token = this.options.accessToken();
+    const token = this.options.accessToken?.() ?? null;
     const scheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
     const query = token ? `?access_token=${encodeURIComponent(token)}` : '';
     const url = `${scheme}://${window.location.host}${this.options.hubUrl}${query}`;

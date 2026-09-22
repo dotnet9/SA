@@ -117,39 +117,6 @@ public class FinancePipelineTests : IClassFixture<FinanceApiFactory>
         Assert.Equal(1003, document.RootElement.GetProperty("code").GetInt32());
     }
 
-    /// <summary>
-    /// 财务是公开数据：即便角色的功能点里没有 <c>stock.finance</c>，也能读到（不登录同样能读）。
-    /// </summary>
-    /// <remarks>
-    /// 早期实现要求 <c>stock.finance</c>，返回 2002；改为公开读之后该功能点不再参与判定。
-    /// 这条用例把「不再拦截」固定下来，避免日后有人凭直觉把校验加回去，
-    /// 从而让公开页对该角色静默变成拒绝页。
-    /// </remarks>
-    [Fact]
-    public async Task 无财务功能点的角色仍可读财务数据()
-    {
-        await _factory.CollectAsync();
-
-        using var client = await _factory.CreateNoFinanceClientAsync();
-
-        using var response = await client.GetAsync("/api/stocks/300750/finance");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Equal(0, document.RootElement.GetProperty("code").GetInt32());
-
-        // 匿名同样可读，且拿到的是同一份数据
-        using var anonymous = _factory.CreateClient(
-            new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions { HandleCookies = false });
-        using var anonymousResponse = await anonymous.GetAsync("/api/stocks/300750/finance");
-
-        Assert.Equal(HttpStatusCode.OK, anonymousResponse.StatusCode);
-        using var anonymousDocument = JsonDocument.Parse(await anonymousResponse.Content.ReadAsStringAsync());
-        Assert.Equal(
-            document.RootElement.GetProperty("data").GetRawText(),
-            anonymousDocument.RootElement.GetProperty("data").GetRawText());
-    }
-
     [Fact]
     public async Task 总览页财务卡已接入真实数据()
     {
@@ -217,19 +184,9 @@ public sealed class FinanceApiFactory : WebApplicationFactory<Program>
         _collected = true;
     }
 
-    /// <summary>取管理员客户端。</summary>
-    public async Task<HttpClient> CreateAdminClientAsync()
-    {
-        await SeedNoFinanceUserAsync();
-        return await SignInAsync("admin", AdminPassword);
-    }
-
-    /// <summary>取无财务权限的客户端。</summary>
-    public async Task<HttpClient> CreateNoFinanceClientAsync()
-    {
-        await SeedNoFinanceUserAsync();
-        return await SignInAsync(NoFinanceUser, NoFinancePassword);
-    }
+    /// <summary>取一个用于调用接口的客户端（本应用无登录，匿名即可）。</summary>
+    public Task<HttpClient> CreateAdminClientAsync() =>
+        Task.FromResult(CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false }));
 
     private async Task SeedNoFinanceUserAsync()
     {
@@ -284,21 +241,6 @@ public sealed class FinanceApiFactory : WebApplicationFactory<Program>
         await unitOfWork.SaveChangesAsync();
 
         _seeded = true;
-    }
-
-    private async Task<HttpClient> SignInAsync(string username, string password)
-    {
-        var client = CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
-        using var response = await client.PostAsJsonAsync(
-            "/api/auth/login",
-            new { username, password, totpCode = (string?)null, rememberMe = true });
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        var token = document.RootElement.GetProperty("data").GetProperty("accessToken").GetString();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
     }
 
     /// <inheritdoc />

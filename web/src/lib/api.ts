@@ -1,4 +1,5 @@
 import { ApiError, defaultMessage, ErrorCode } from './errors';
+import { cacheGet, cachePut } from './idb-cache';
 
 /**
  * 后端统一响应包，见 docs/详细设计.md §1.1。
@@ -24,32 +25,18 @@ export interface ApiRequestOptions {
   headers?: Record<string, string>;
   /** 外部取消信号。 */
   signal?: AbortSignal;
-  /** 置为 true 时不附带访问令牌（登录、刷新、健康检查）。 */
-  anonymous?: boolean;
-}
-
-/* ------------------------------------------------------------------
-   访问令牌与刷新协调
-   访问令牌只放内存：刷新页面即失效，靠 HttpOnly Cookie 换新，
-   避免 XSS 读到长期凭证（详细设计 §8「JWT + 刷新令牌」）。
-   ------------------------------------------------------------------ */
-
-let accessToken: string | null = null;
-let refreshHandler: (() => Promise<string | null>) | null = null;
-
-/** 设置当前访问令牌。 */
-export function setAccessToken(token: string | null): void {
-  accessToken = token;
-}
-
-/** 取当前访问令牌（SignalR 握手等场景需要）。 */
-export function getAccessToken(): string | null {
-  return accessToken;
-}
-
-/** 注册「令牌失效时如何换新」的回调，由 AuthProvider 注入。 */
-export function setRefreshHandler(handler: (() => Promise<string | null>) | null): void {
-  refreshHandler = handler;
+  /**
+   * 客户端缓存时长（毫秒）。
+   *
+   * 大于 0 时：命中的缓存**先**通过 {@link ApiRequestOptions.onCache} 回填，
+   * 同时照常发起请求并用新结果更新缓存——即「先出缓存再更新」。
+   * 请求失败时若已有缓存，不抛错（调用方已拿到可用数据）。
+   *
+   * 只对 GET 生效：写操作缓存没有意义。
+   */
+  cacheMs?: number;
+  /** 缓存命中时的回调（在请求返回之前调用）。 */
+  onCache?: (value: unknown, savedAt: number) => void;
 }
 
 /** 构建带查询串的 URL。 */
@@ -64,16 +51,15 @@ function buildUrl(path: string, query?: ApiRequestOptions['query']): string {
   return qs ? `${path}${path.includes('?') ? '&' : '?'}${qs}` : path;
 }
 
-function send(path: string, options: ApiRequestOptions): Promise<Response> {
-  const { method = 'GET', body, query, headers, signal, anonymous } = options;
+function send(url: string, options: ApiRequestOptions): Promise<Response> {
+  const { method = 'GET', body, headers, signal } = options;
 
-  return fetch(buildUrl(path, query), {
+  return fetch(url, {
     method,
     credentials: 'same-origin',
     headers: {
       Accept: 'application/json',
       ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
-      ...(!anonymous && accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...headers
     },
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -98,31 +84,49 @@ async function readEnvelope<T>(response: Response): Promise<ApiEnvelope<T>> {
  * 调用后端接口并解包统一响应包。
  *
  * - 成功返回 `data`；失败抛 {@link ApiError}，保留业务错误码与 traceId。
- * - 遇到 2001（令牌失效）自动尝试刷新一次并重放请求；再失败则抛错，由上层跳登录页。
+ * - 本应用<b>没有登录</b>：不带任何凭证，也不再处理 401 换令牌。
+ * - 传了 `cacheMs` 的 GET 走「先出缓存再更新」，并在请求失败时用缓存兜底。
  */
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
-  let response = await send(path, options);
-  let envelope = await readEnvelope<T>(response);
+  const url = buildUrl(path, options.query);
+  const cacheable = (options.cacheMs ?? 0) > 0 && (options.method ?? 'GET') === 'GET';
 
-  const unauthorized = response.status === 401 || envelope.code === ErrorCode.Unauthenticated;
-  if (unauthorized && !options.anonymous && refreshHandler) {
-    const token = await refreshHandler();
-    if (token) {
-      response = await send(path, options);
-      envelope = await readEnvelope<T>(response);
+  let cached: { value: T; savedAt: number } | null = null;
+  if (cacheable) {
+    const hit = await cacheGet<T>(url);
+    if (hit) {
+      cached = { value: hit.value, savedAt: hit.savedAt };
+      options.onCache?.(hit.value, hit.savedAt);
     }
   }
 
-  if (!response.ok || envelope.code !== ErrorCode.Success) {
-    throw new ApiError(
-      envelope.code,
-      envelope.message || defaultMessage(envelope.code),
-      envelope.traceId ?? '',
-      response.status
-    );
-  }
+  try {
+    const response = await send(url, options);
+    const envelope = await readEnvelope<T>(response);
 
-  return envelope.data as T;
+    if (!response.ok || envelope.code !== ErrorCode.Success) {
+      throw new ApiError(
+        envelope.code,
+        envelope.message || defaultMessage(envelope.code),
+        envelope.traceId ?? '',
+        response.status
+      );
+    }
+
+    if (cacheable) {
+      void cachePut(url, envelope.data, options.cacheMs!);
+    }
+
+    return envelope.data as T;
+  } catch (error) {
+    // 有缓存时不让请求失败变成白屏：调用方已经通过 onCache 拿到数据，
+    // 这里返回缓存值而不是抛错，界面照常渲染（只是数据是上次的）。
+    if (cached) {
+      return cached.value;
+    }
+
+    throw error;
+  }
 }
 
 /** GET 便捷方法。 */

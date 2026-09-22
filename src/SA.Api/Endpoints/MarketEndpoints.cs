@@ -28,6 +28,7 @@ public static class MarketEndpoints
 
         group.MapGet("/overview", GetOverviewAsync);
         group.MapGet("/stocks", GetStocksAsync);
+        group.MapGet("/quotes", GetQuotesAsync).AllowPublicRead();
         group.MapGet("/indices", GetIndicesAsync);
         group.MapGet("/breadth", GetBreadthAsync);
         group.MapGet("/fundflow", GetFundFlowAsync);
@@ -45,6 +46,24 @@ public static class MarketEndpoints
         CancellationToken cancellationToken)
     {
         var result = await market.GetOverviewAsync(cancellationToken).ConfigureAwait(false);
+        return ApiResults.From(context, result);
+    }
+
+    /// <summary>
+    /// 按代码批量取行情。查询参数 <c>codes</c> 为逗号分隔的代码，一次最多 500 只。
+    /// </summary>
+    private static async Task<IResult> GetQuotesAsync(
+        HttpContext context,
+        MarketService market,
+        CancellationToken cancellationToken,
+        string? codes = null)
+    {
+        var list = (codes ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        var result = await market.GetQuotesAsync(list, cancellationToken).ConfigureAwait(false);
         return ApiResults.From(context, result);
     }
 

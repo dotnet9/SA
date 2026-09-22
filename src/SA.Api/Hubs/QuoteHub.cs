@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using SA.Application.Abstractions;
 using SA.Application.Authorization;
@@ -19,7 +18,6 @@ namespace SA.Api.Hubs;
 /// 中心只负责登记订阅意图，不在每连接里请求上游。
 /// </para>
 /// </remarks>
-[Authorize]
 public sealed class QuoteHub(
     SubscriptionRegistry subscriptions,
     DataScopeFilter scopeFilter,

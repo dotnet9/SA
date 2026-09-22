@@ -24,27 +24,20 @@ public static class WatchlistEndpoints
         var group = app.MapGroup("/api/watchlist").WithTags("watchlist");
 
         // 列表与分组：只读
-        group.MapGet("/groups", GetGroupsAsync)
-            .RequireFunctionPoint(FunctionPointCatalog.WatchlistView);
+        group.MapGet("/groups", GetGroupsAsync);
 
-        group.MapGet(string.Empty, GetAsync)
-            .RequireFunctionPoint(FunctionPointCatalog.WatchlistView);
+        group.MapGet(string.Empty, GetAsync);
 
         // 增删改：需要编辑权限
-        group.MapPost("/items", AddAsync)
-            .RequireFunctionPoint(FunctionPointCatalog.WatchlistEdit);
+        group.MapPost("/items", AddAsync);
 
-        group.MapDelete("/items", RemoveAsync)
-            .RequireFunctionPoint(FunctionPointCatalog.WatchlistEdit);
+        group.MapDelete("/items", RemoveAsync);
 
-        group.MapPost("/groups", CreateGroupAsync)
-            .RequireFunctionPoint(FunctionPointCatalog.WatchlistEdit);
+        group.MapPost("/groups", CreateGroupAsync);
 
-        group.MapDelete("/groups/{groupId}", RemoveGroupAsync)
-            .RequireFunctionPoint(FunctionPointCatalog.WatchlistEdit);
+        group.MapDelete("/groups/{groupId}", RemoveGroupAsync);
 
-        group.MapPut("/order", ReorderAsync)
-            .RequireFunctionPoint(FunctionPointCatalog.WatchlistEdit);
+        group.MapPut("/order", ReorderAsync);
 
         return app;
     }
@@ -56,7 +49,7 @@ public static class WatchlistEndpoints
         PermissionService permissions,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -84,7 +77,7 @@ public static class WatchlistEndpoints
         PermissionService permissions,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -117,7 +110,7 @@ public static class WatchlistEndpoints
         PermissionService permissions,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -143,7 +136,7 @@ public static class WatchlistEndpoints
         WatchlistService watchlist,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -159,7 +152,7 @@ public static class WatchlistEndpoints
         WatchlistService watchlist,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -175,7 +168,7 @@ public static class WatchlistEndpoints
         WatchlistService watchlist,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -191,7 +184,7 @@ public static class WatchlistEndpoints
         WatchlistService watchlist,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");

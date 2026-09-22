@@ -29,22 +29,19 @@ public static class PushEndpoints
     {
         var group = app.MapGroup("/api/notifications/push").WithTags("notifications");
 
-        // 公钥：订阅前必须拿到，且不涉及任何用户数据
-        group.MapGet("/key", GetKeyAsync).RequireAuthorization();
+        // 公钥：订阅前必须拿到，且不涉及任何用户数据（本应用无登录，匿名即可）
+        group.MapGet("/key", GetKeyAsync);
 
-        group.MapPost("/subscribe", SubscribeAsync)
-            .RequireFunctionPoint(FunctionPointCatalog.NotifyView);
+        group.MapPost("/subscribe", SubscribeAsync);
 
-        group.MapDelete("/subscribe", UnsubscribeAsync)
-            .RequireFunctionPoint(FunctionPointCatalog.NotifyView);
+        group.MapDelete("/subscribe", UnsubscribeAsync);
 
-        group.MapGet("/subscriptions", ListAsync)
-            .RequireFunctionPoint(FunctionPointCatalog.NotifyView);
+        group.MapGet("/subscriptions", ListAsync);
 
         // 提醒偏好（免打扰与渠道开关）：写在服务端才会真正生效
         var settings = app.MapGroup("/api/notifications/settings").WithTags("notifications");
-        settings.MapGet(string.Empty, GetSettingsAsync).RequireFunctionPoint(FunctionPointCatalog.NotifyView);
-        settings.MapPut(string.Empty, SaveSettingsAsync).RequireFunctionPoint(FunctionPointCatalog.NotifyView);
+        settings.MapGet(string.Empty, GetSettingsAsync);
+        settings.MapPut(string.Empty, SaveSettingsAsync);
 
         return app;
     }
@@ -60,7 +57,7 @@ public static class PushEndpoints
         IPushSubscriptionStore store,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -115,7 +112,7 @@ public static class PushEndpoints
         IPushSubscriptionStore store,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -141,7 +138,7 @@ public static class PushEndpoints
         ISettingsStore settings,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
@@ -158,7 +155,7 @@ public static class PushEndpoints
         ISettingsStore settings,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");

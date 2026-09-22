@@ -4,13 +4,12 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useToast } from '@/providers/ToastProvider';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useRealtime } from '@/providers/RealtimeProvider';
-import { useAuth } from '@/providers/AuthProvider';
 import { apiGet, apiPut } from '@/lib/api';
 import { errorText } from '@/lib/errorText';
 import { readBool, readJson, readString, StorageKeys, writeBool, writeJson, writeString } from '@/lib/storage';
-import { fetchWatchlist } from '@/features/watchlist/api';
-import { fetchAlertRules } from '@/features/alerts/api';
-import { fetchNotifications, type NotifySettings } from '@/features/alerts/api';
+import { fetchAlertRules, fetchNotifications, type NotifySettings } from '@/features/alerts/api';
+import { useWatchlist } from '@/features/watchlist/WatchlistProvider';
+import { cacheClear, cacheStats } from '@/lib/idb-cache';
 import { usePwa } from './usePwa';
 
 /**
@@ -32,8 +31,16 @@ export function SettingsPage() {
   const toast = useToast();
   const theme = useTheme();
   const realtime = useRealtime();
-  const { me } = useAuth();
+  const watchlist = useWatchlist();
   const pwa = usePwa();
+
+  /* 本地数据卡：缓存条数与占用（IndexedDB 的统计） */
+  const [cacheLabel, setCacheLabel] = useState('—');
+  useEffect(() => {
+    void cacheStats().then((s) => {
+      setCacheLabel(s.count === 0 ? '空' : `${s.count} 项 · ${Math.round(s.bytes / 1024)} KB`);
+    });
+  }, []);
 
   /* --- 外观 --- */
   const [numFont, setNumFont] = useState<'mono' | 'ui'>(() => (readString(StorageKeys.NumFont, 'mono') === 'ui' ? 'ui' : 'mono'));
@@ -99,8 +106,6 @@ export function SettingsPage() {
   }, [numFont]);
 
   /* --- 右侧：我的数据（真实计数） --- */
-  const { data: watchlist } = useQuery({ queryKey: ['watchlist'], queryFn: fetchWatchlist, staleTime: 60_000 });
-  const { data: alerts } = useQuery({ queryKey: ['alerts'], queryFn: fetchAlertRules, staleTime: 60_000 });
   const { data: notifications } = useQuery({
     queryKey: ['notifications', true],
     queryFn: () => fetchNotifications(true),
@@ -162,6 +167,7 @@ export function SettingsPage() {
     toast.toast(error ?? '已发送一条测试通知（由浏览器本地发出）', error ? 'warn' : 'ok');
   };
 
+  const { data: alerts } = useQuery({ queryKey: ['alerts'], queryFn: fetchAlertRules, staleTime: 60_000 });
   const activeAlerts = alerts?.rules.filter((rule) => rule.enabled).length ?? 0;
 
   return (
@@ -579,39 +585,38 @@ export function SettingsPage() {
         <aside className="col gap-4">
           <div className="card">
             <div className="card-head">
-              <span className="card-title">账号</span>
+              <span className="card-title">本地数据</span>
+              <span className="card-sub">存在这台浏览器里</span>
             </div>
             <div className="card-body col gap-3">
-              <div className="row gap-3">
-                <span className="avatar" style={{ width: 38, height: 38, fontSize: 14 }}>
-                  {(me?.nickname ?? me?.username ?? '—').slice(0, 1)}
-                </span>
-                <div className="grow">
-                  <div className="fs-14 fw-600">{me?.nickname ?? '—'}</div>
-                  <div className="hint">{me?.username ?? '—'}</div>
-                </div>
+              <div className="row-between">
+                <span className="fs-12 t-2">自选股</span>
+                <span className="mono fs-12">{watchlist.codes.length} 只</span>
               </div>
               <div className="row-between">
-                <span className="fs-12 t-2">角色</span>
-                <span className="tag tag-brand">{me?.roleName ?? '—'}</span>
+                <span className="fs-12 t-2">提醒规则</span>
+                <span className="mono fs-12">{alerts?.total ?? 0} 条</span>
               </div>
               <div className="row-between">
-                <span className="fs-12 t-2">权限功能点</span>
-                <span className="mono fs-12">{me?.functionPoints.length ?? 0} 项</span>
+                <span className="fs-12 t-2">接口缓存</span>
+                <span className="mono fs-12">{cacheLabel}</span>
               </div>
-              <div className="row-between">
-                <span className="fs-12 t-2">数据范围</span>
-                <span className="mono fs-12">{me?.dataScope === 'watchlist' ? '仅自选股' : '全市场'}</span>
+              <div className="hint" style={{ lineHeight: 1.7 }}>
+                本应用不需要登录，自选股、提醒规则与接口缓存都保存在这台浏览器里：
+                换浏览器或清除站点数据会丢失，也不会在多设备之间同步。
               </div>
-              <div className="row-between">
-                <span className="fs-12 t-2">二次验证</span>
-                <span className={`tag ${me?.totpEnabled ? 'tag-up' : 'tag-outline'}`}>
-                  {me?.totpEnabled ? '已开启' : me?.totpRequired ? '未开启（强制）' : '未开启'}
-                </span>
-              </div>
-              <Link className="btn btn-outline btn-block" to="/admin/security">
-                安全设置与会话
-              </Link>
+              <button
+                type="button"
+                className="btn btn-outline btn-block"
+                onClick={() => {
+                  void cacheClear().then(() => {
+                    setCacheLabel('已清除');
+                    toast.toast('本地接口缓存已清除', 'info');
+                  });
+                }}
+              >
+                清除本地接口缓存
+              </button>
             </div>
           </div>
 
@@ -623,7 +628,7 @@ export function SettingsPage() {
               <div className="row-between">
                 <span className="fs-12 t-2">自选股</span>
                 <Link className="mono fs-12 t-brand" to="/watchlist">
-                  {watchlist?.items.length ?? 0} 只
+                  {watchlist.codes.length} 只
                 </Link>
               </div>
               <div className="row-between">

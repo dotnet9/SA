@@ -1,63 +1,57 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { ErrorState } from '@/components/ui/States';
-import { useAuth } from '@/providers/AuthProvider';
+import { fetchMarketQuotes, type MarketQuote } from '@/features/market/api';
+import { searchStocks } from '@/features/search/api';
 import { useLiveQuote } from '@/providers/RealtimeProvider';
 import { useToast } from '@/providers/ToastProvider';
-import { searchStocks } from '@/features/search/api';
-import { addWatchItems, fetchWatchlist, removeWatchItems, type WatchItem } from './api';
+import { MaxWatchItems, useWatchlist } from './WatchlistProvider';
 
 /**
  * 自选股：**只有两列**——名称、涨跌幅。
  *
- * 原来是一个 14 列的大表（分组页签、列设置、批量操作、分组概览 4 卡、
- * 行业分布环形图、资金流条形图），与「自选股就是列出添加的股票名称」相去甚远。
+ * 自选代码存在浏览器本地（{@link useWatchlist}），名称与涨跌幅从批量行情接口取。
+ * 代价要知道：换浏览器或清站点数据会丢自选，也不会多设备同步——这是「无需登录」的取舍。
  *
- * 保留：添加（搜索）、移除、**实时推送**（推送值优先于快照值，并标注数据时间）。
+ * 保留：添加（搜索）、移除、上移/下移、清空、**实时推送**（推送值优先于快照值）。
  * 点任一行进入 `/watchlist/:code`，右侧整块换成个股区。
  */
 export function WatchlistPage() {
-  const { me } = useAuth();
+  const { codes, remove, clear, moveUp, moveDown } = useWatchlist();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
 
-  const { data, error, isPending, refetch, failureCount } = useQuery({
-    queryKey: ['watchlist'],
-    queryFn: fetchWatchlist,
-    enabled: me !== null
+  const quotes = useQuery({
+    queryKey: ['watchlist', 'quotes', codes.join(',')],
+    queryFn: () => fetchMarketQuotes(codes),
+    enabled: codes.length > 0
   });
 
-  const remove = useMutation({
-    mutationFn: (code: string) => removeWatchItems([code]),
-    onSuccess: () => {
-      toast('已从自选股移除', 'info');
-      void queryClient.invalidateQueries({ queryKey: ['watchlist'] });
-    },
-    onError: () => toast('移除失败，请稍后重试', 'error')
-  });
-
-  if (me === null) {
-    return (
-      <div className="card">
-        <div className="card-body">
-          <div className="fs-13">自选股需要登录后使用。</div>
-          <Link className="btn btn-primary btn-sm" to="/login" style={{ marginTop: 12 }}>
-            去登录
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  // 后端只返回查得到的代码，这里按本地顺序取值，取不到就显示「暂无行情」
+  const byCode = new Map((quotes.data ?? []).map((row) => [row.code, row]));
 
   return (
     <>
       <div className="card">
         <div className="card-head">
           <span className="card-title">自选股</span>
-          <span className="card-sub">{data ? `${data.items.length} 只` : '—'}</span>
+          <span className="card-sub">
+            {codes.length} 只{codes.length >= MaxWatchItems ? `（已达上限 ${MaxWatchItems}）` : ''}
+          </span>
           <div className="card-tools">
+            {codes.length > 0 ? (
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => {
+                  clear();
+                  toast('已清空自选股', 'info');
+                }}
+              >
+                清空
+              </button>
+            ) : null}
             <button type="button" className="btn btn-outline btn-sm" onClick={() => setAddOpen(true)}>
               + 添加自选
             </button>
@@ -65,15 +59,19 @@ export function WatchlistPage() {
         </div>
 
         <div className="card-body is-flush">
-          {isPending && !data ? (
-            <div className="sa-boot">正在载入自选股…</div>
-          ) : !data ? (
-            <div style={{ padding: 16 }}>
-              <ErrorState error={error} onRetry={() => void refetch()} retryCount={failureCount} />
-            </div>
-          ) : data.items.length === 0 ? (
+          {codes.length === 0 ? (
             <div className="fs-12 t-3" style={{ padding: 16 }}>
-              还没有自选股，点右上角「+ 添加自选」。
+              还没有自选股。可以点右上角「+ 添加自选」，或在顶栏搜索框里直接把股票加入自选。
+            </div>
+          ) : quotes.isPending && !quotes.data ? (
+            <div className="sa-boot">正在载入自选股行情…</div>
+          ) : !quotes.data ? (
+            <div style={{ padding: 16 }}>
+              <ErrorState
+                error={quotes.error}
+                onRetry={() => void quotes.refetch()}
+                retryCount={quotes.failureCount}
+              />
             </div>
           ) : (
             <div className="tbl-wrap">
@@ -84,16 +82,23 @@ export function WatchlistPage() {
                     <th className="num" style={{ width: 130 }}>
                       涨跌幅
                     </th>
-                    <th style={{ width: 80 }} />
+                    <th style={{ width: 150 }} />
                   </tr>
                 </thead>
                 <tbody>
-                  {data.items.map((item) => (
+                  {codes.map((code, index) => (
                     <Row
-                      key={item.code}
-                      item={item}
-                      canEdit={data.canEdit}
-                      onRemove={() => remove.mutate(item.code)}
+                      key={code}
+                      code={code}
+                      quote={byCode.get(code)}
+                      first={index === 0}
+                      last={index === codes.length - 1}
+                      onRemove={() => {
+                        remove(code);
+                        toast('已从自选股移除', 'info');
+                      }}
+                      onMoveUp={() => moveUp(code)}
+                      onMoveDown={() => moveDown(code)}
                     />
                   ))}
                 </tbody>
@@ -108,36 +113,61 @@ export function WatchlistPage() {
   );
 }
 
-function Row({ item, canEdit, onRemove }: { item: WatchItem; canEdit: boolean; onRemove: () => void }) {
-  // 推送值优先，未收到推送时回落到快照值（不把快照当实时）
-  const live = useLiveQuote(item.code);
-  const pct = live?.pct ?? item.pct;
-  const cls = pct === null || pct === undefined || pct === 0 ? 'is-flat' : pct > 0 ? 'is-up' : 'is-down';
+function Row({
+  code,
+  quote,
+  first,
+  last,
+  onRemove,
+  onMoveUp,
+  onMoveDown
+}: {
+  code: string;
+  quote: MarketQuote | undefined;
+  first: boolean;
+  last: boolean;
+  onRemove: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+}) {
+  // 推送值优先，未收到推送时回落到批量快照（不把快照当实时）
+  const live = useLiveQuote(code);
+  const pct = live?.pct ?? quote?.pct ?? null;
+  const cls = pct === null || pct === 0 ? 'is-flat' : pct > 0 ? 'is-up' : 'is-down';
 
   return (
     <tr>
       <td>
-        <Link className="stock-cell" to={`/watchlist/${item.code}`}>
+        <Link className="stock-cell" to={`/watchlist/${code}`}>
           <span className="sc-name">
-            {item.name}
-            {item.isSt ? (
+            {quote?.name ?? code}
+            {quote?.isSt ? (
               <span className="tag tag-danger" style={{ marginLeft: 6 }}>
                 ST
               </span>
             ) : null}
           </span>
-          <span className="sc-code">{item.code}</span>
+          <span className="sc-code">
+            {code}
+            {quote?.industry ? ` · ${quote.industry}` : ''}
+          </span>
         </Link>
       </td>
       <td className={`num mono fs-14 ${cls}`}>
-        {pct === null || pct === undefined ? '—' : `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`}
+        {pct === null ? '—' : `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`}
       </td>
       <td>
-        {canEdit ? (
-          <button type="button" className="btn btn-ghost btn-sm" onClick={onRemove} title="移除">
+        <span className="row gap-1">
+          <button type="button" className="icon-btn" title="上移" disabled={first} onClick={onMoveUp}>
+            ↑
+          </button>
+          <button type="button" className="icon-btn" title="下移" disabled={last} onClick={onMoveDown}>
+            ↓
+          </button>
+          <button type="button" className="btn btn-ghost btn-sm" title="移除" onClick={onRemove}>
             移除
           </button>
-        ) : null}
+        </span>
       </td>
     </tr>
   );
@@ -145,24 +175,14 @@ function Row({ item, canEdit, onRemove }: { item: WatchItem; canEdit: boolean; o
 
 /** 添加自选：只留「搜索 + 加入」，不做分组与备注（低频，占地方）。 */
 function AddDialog({ onClose }: { onClose: () => void }) {
+  const { codes, add } = useWatchlist();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [keyword, setKeyword] = useState('');
 
   const search = useQuery({
     queryKey: ['search', 'add', keyword],
     queryFn: () => searchStocks({ q: keyword, pageSize: 8 }),
     enabled: keyword.trim().length > 0
-  });
-
-  const add = useMutation({
-    mutationFn: (code: string) => addWatchItems([code]),
-    onSuccess: () => {
-      toast('已加入自选', 'ok');
-      void queryClient.invalidateQueries({ queryKey: ['watchlist'] });
-      onClose();
-    },
-    onError: () => toast('加入失败（可能超出数量上限）', 'error')
   });
 
   return (
@@ -192,24 +212,34 @@ function AddDialog({ onClose }: { onClose: () => void }) {
             ) : (search.data?.rows.length ?? 0) === 0 ? (
               <span className="fs-12 t-3">没有匹配的股票</span>
             ) : (
-              search.data?.rows.map((row) => (
-                <div key={row.code} className="row-between" style={{ padding: '6px 0' }}>
-                  <span className="stock-cell">
-                    <span className="sc-name">{row.name}</span>
-                    <span className="sc-code">
-                      {row.code} · {row.board}
+              search.data?.rows.map((row) => {
+                const added = codes.includes(row.code);
+
+                return (
+                  <div key={row.code} className="row-between" style={{ padding: '6px 0' }}>
+                    <span className="stock-cell">
+                      <span className="sc-name">{row.name}</span>
+                      <span className="sc-code">
+                        {row.code} · {row.board}
+                      </span>
                     </span>
-                  </span>
-                  <button
-                    type="button"
-                    className="btn btn-outline btn-sm"
-                    disabled={add.isPending}
-                    onClick={() => add.mutate(row.code)}
-                  >
-                    加入
-                  </button>
-                </div>
-              ))
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      disabled={added}
+                      onClick={() => {
+                        if (add(row.code)) {
+                          toast('已加入自选', 'ok');
+                        } else {
+                          toast(`加入失败（已在自选或超出上限 ${MaxWatchItems}）`, 'error');
+                        }
+                      }}
+                    >
+                      {added ? '已在自选' : '加入'}
+                    </button>
+                  </div>
+                );
+              })
             )}
           </div>
         </div>

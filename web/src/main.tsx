@@ -15,7 +15,7 @@ import '@/styles/mobile.css';
 
 import { router } from '@/app/router';
 import { queryClient } from '@/lib/query';
-import { AuthProvider } from '@/providers/AuthProvider';
+import { WatchlistProvider } from '@/features/watchlist/WatchlistProvider';
 import { RealtimeProvider } from '@/providers/RealtimeProvider';
 import { ThemeProvider } from '@/providers/ThemeProvider';
 import { ToastProvider } from '@/providers/ToastProvider';
@@ -43,12 +43,14 @@ createRoot(host).render(
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <ToastProvider>
-          <AuthProvider>
-            {/* 实时行情是会话级的：放在 AuthProvider 内以便读取登录态，放在路由外以免切页断开 */}
+          {/* 自选股存在浏览器本地，因此放在最外层：搜索面板的「加自选」、
+              自选页列表、实时推送的订阅集合都读同一份状态 */}
+          <WatchlistProvider>
+            {/* 实时行情是会话级的：订阅集合来自本地自选，放在路由外以免切页断开 */}
             <RealtimeProvider>
               <RouterProvider router={router} />
             </RealtimeProvider>
-          </AuthProvider>
+          </WatchlistProvider>
         </ToastProvider>
       </ThemeProvider>
     </QueryClientProvider>

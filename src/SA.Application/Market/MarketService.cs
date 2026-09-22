@@ -237,6 +237,59 @@ public sealed class MarketService(
         cache.Replace(rows, instrumentRows.ToDictionary(item => item.Code, StringComparer.Ordinal));
     }
 
+    /// <summary>一次可取的代码数上限。</summary>
+    public const int MaxQuoteCodes = 500;
+
+    /// <summary>
+    /// 按代码批量取行情（自选股列表用）。
+    /// </summary>
+    /// <remarks>
+    /// 返回顺序与传入顺序无关（按代码升序），调用方自己按本地顺序排列；
+    /// 查不到的代码<b>不会出现在结果里</b>（而不是给一行空值），由调用方显示「暂无行情」。
+    /// </remarks>
+    /// <param name="codes">代码集合。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    public async Task<ServiceResult<IReadOnlyList<MarketQuoteDto>>> GetQuotesAsync(
+        IReadOnlyCollection<string> codes,
+        CancellationToken cancellationToken = default)
+    {
+        if (codes.Count == 0)
+        {
+            return ServiceResult<IReadOnlyList<MarketQuoteDto>>.Success([]);
+        }
+
+        await EnsureLoadedAsync(cancellationToken).ConfigureAwait(false);
+
+        var current = cache.Current;
+        if (current.Rows.Count == 0)
+        {
+            return ServiceResult<IReadOnlyList<MarketQuoteDto>>.Fail(ErrorCode.DataNotReady, "行情快照正在采集，请稍后重试");
+        }
+
+        var wanted = codes.Take(MaxQuoteCodes).ToHashSet(StringComparer.Ordinal);
+
+        var rows = current.Rows
+            .Where(row => wanted.Contains(row.Code))
+            .OrderBy(row => row.Code, StringComparer.Ordinal)
+            .Select(row =>
+            {
+                current.Instruments.TryGetValue(row.Code, out var instrument);
+                return new MarketQuoteDto(
+                    Code: row.Code,
+                    Name: instrument?.Name ?? row.Code,
+                    Price: row.Price <= 0 ? null : Trim(row.Price),
+                    Pct: row.Price <= 0 ? null : Trim(row.Pct),
+                    Chg: row.Price <= 0 ? null : Trim(row.Change),
+                    Turnover: row.Price <= 0 ? null : Trim(row.Turnover),
+                    Cap: row.MarketCap <= 0 ? null : Trim(ToYi(row.MarketCap)),
+                    Industry: instrument?.Industry,
+                    IsSt: instrument?.IsSt ?? false);
+            })
+            .ToList();
+
+        return ServiceResult<IReadOnlyList<MarketQuoteDto>>.Success(rows);
+    }
+
     /// <summary>指数卡片。</summary>
     public async Task<ServiceResult<IReadOnlyList<IndexCardDto>>> GetIndicesAsync(CancellationToken cancellationToken = default) =>
         await BuildIndicesAsync(cancellationToken).ConfigureAwait(false);

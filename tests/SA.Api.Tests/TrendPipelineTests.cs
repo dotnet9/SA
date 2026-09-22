@@ -335,20 +335,17 @@ public sealed class TrendApiFactory : WebApplicationFactory<Program>
         }
     }
 
-    /// <summary>以管理员身份登录并返回带令牌的客户端。</summary>
-    public async Task<HttpClient> CreateAdminClientAsync()
+    /// <summary>
+    /// 取一个用于调用接口的客户端。
+    /// </summary>
+    /// <remarks>
+    /// 本应用已去掉登录与权限，所有端点匿名可访问，因此不再需要登录取令牌。
+    /// 方法名与签名保持不变，避免改动几十处调用点。
+    /// </remarks>
+    public Task<HttpClient> CreateAdminClientAsync()
     {
         var client = CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
-        using var response = await client.PostAsJsonAsync(
-            "/api/auth/login",
-            new { username = "admin", password = AdminPassword, totpCode = (string?)null, rememberMe = true });
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        var token = document.RootElement.GetProperty("data").GetProperty("accessToken").GetString();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
+        return Task.FromResult(client);
     }
 
     /// <inheritdoc />

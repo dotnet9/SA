@@ -192,6 +192,39 @@ export function fetchMarketStocks(params: MarketStocksParams = {}): Promise<Mark
       desc: params.desc ?? true,
       page: params.page ?? 1,
       pageSize: params.pageSize ?? 60
-    }
+    },
+    // 行情每 3 秒刷新一次，缓存 30 秒：刷新页面先出上次的数据，再被新结果覆盖
+    cacheMs: 30_000
+  });
+}
+
+/** 多只标的的行情快照（自选股列表用）。 */
+export interface MarketQuote {
+  code: string;
+  name: string;
+  price: number | null;
+  pct: number | null;
+  chg: number | null;
+  turnover: number | null;
+  cap: number | null;
+  industry: string | null;
+  isSt: boolean;
+}
+
+/**
+ * 按代码批量取行情。
+ *
+ * 自选股存在浏览器本地，页面需要按一组代码取涨跌幅。逐个调个股接口会产生 N 次请求，
+ * 因此走这个批量入口；一次最多 500 只，超出的会被后端忽略。
+ * 查不到的代码**不会出现在结果里**（而不是给一行空值），调用方显示「暂无行情」。
+ */
+export function fetchMarketQuotes(codes: readonly string[]): Promise<MarketQuote[]> {
+  if (codes.length === 0) {
+    return Promise.resolve([]);
+  }
+
+  return apiGet<MarketQuote[]>('/api/market/quotes', {
+    query: { codes: codes.slice(0, 500).join(',') },
+    cacheMs: 30_000
   });
 }

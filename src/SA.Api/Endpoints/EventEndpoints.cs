@@ -29,11 +29,9 @@ public static class EventEndpoints
         group.MapGet("/events", GetAsync)
             .AllowPublicRead();
 
-        group.MapPut("/events/annotation", AnnotateAsync)
-            .RequireFunctionPoint(FunctionPointCatalog.EventEdit);
+        group.MapPut("/events/annotation", AnnotateAsync);
 
-        group.MapDelete("/events/annotation/{eventKey}", RemoveAnnotationAsync)
-            .RequireFunctionPoint(FunctionPointCatalog.EventEdit);
+        group.MapDelete("/events/annotation/{eventKey}", RemoveAnnotationAsync);
 
         return app;
     }
@@ -46,7 +44,7 @@ public static class EventEndpoints
         SA.Application.Authorization.PermissionService permissions,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         var canAnnotate = false;
 
         if (userId is not null)
@@ -69,7 +67,7 @@ public static class EventEndpoints
         IEventAnnotationStore store,
         CancellationToken cancellationToken)
     {
-        var userId = context.User.Id();
+        var userId = LocalUser.Id;
         if (userId is null)
         {
             return ApiResults.Fail(context, ErrorCode.Unauthenticated, "登录已失效，请重新登录");
