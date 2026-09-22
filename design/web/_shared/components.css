@@ -1753,3 +1753,63 @@ kbd {
   .sa-nav-more-sum { justify-content: center; padding: var(--sp-2) 0; }
   .sa-nav-more-sum span, .sa-nav-note { display: none; }
 }
+
+/* ---- 侧栏自选股组（复用 .sa-navgroup 作组头 + .sa-navsub 作个股列表） ---- */
+.sa-navgroup-head { display: flex; align-items: center; padding-right: var(--sp-2); }
+.sa-navgroup-head .sa-navgroup {
+  flex: 1 1 auto;
+  min-width: 0;
+  cursor: pointer;
+  border-radius: var(--r-btn);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.sa-navgroup-head .sa-navgroup:hover { color: var(--brand); }
+.sa-navgroup-head .sa-navgroup.is-active { color: var(--brand); }
+
+/* 自选数量：中性灰，不用红色徽标（那是「未读」的语义） */
+.sa-navgroup .ni-count {
+  margin-left: auto;
+  font-family: var(--font-num);
+  font-size: 10px;
+  letter-spacing: 0;
+  color: var(--text-3);
+  background: var(--bg-hover);
+  border-radius: var(--r-pill);
+  padding: 0 6px;
+}
+
+.sa-navgroup-toggle {
+  flex: 0 0 auto;
+  width: 20px;
+  font-size: 10px;
+  color: var(--text-3);
+}
+.sa-navgroup-toggle:hover { color: var(--brand); }
+
+/* 个股列表：名称省略 + 涨跌幅右对齐；最多 500 只，列表内再滚一层 */
+.sa-navsub {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+.sa-navsub .sa-navitem { gap: var(--sp-2); }
+.sa-navsub .ns-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sa-navsub .ns-pct { flex: 0 0 auto; font-size: 11px; }
+.sa-navsub-empty { padding: 4px var(--sp-3); font-size: var(--fs-11); color: var(--text-3); }
+
+/* 迷你侧栏（<1280px）只显示图标：隐藏自选个股列表与计数 */
+@media (max-width: 1279px) {
+  .sa-navsub,
+  .sa-navgroup-toggle,
+  .sa-navgroup .ni-count { display: none; }
+}

@@ -118,7 +118,7 @@ public sealed record ScreenerRowDto(
     decimal Price,
     decimal Pct,
     decimal Turnover,
-    decimal VolRatio,
+    decimal? VolRatio,
     decimal Amount,
     decimal? PeTtm,
     decimal? Pb,

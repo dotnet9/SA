@@ -907,7 +907,7 @@ public sealed class ScreenerService(
         {
             ScreenerFields.Pct => row => row.Pct,
             ScreenerFields.Turnover => row => row.Turnover,
-            ScreenerFields.VolRatio => row => row.VolRatio,
+            ScreenerFields.VolRatio => row => row.VolRatio ?? -1m,
             ScreenerFields.Cap => row => row.Cap,
             ScreenerFields.FloatCap => row => row.FloatCap,
             // 缺失估值的标的排在最后：用 -1 占位，倒序时自然落到末尾
@@ -1061,7 +1061,8 @@ public sealed class ScreenerService(
             Price: Display.Round(row.Price),
             Pct: Display.Round(row.Pct),
             Turnover: Display.Round(row.Turnover),
-            VolRatio: Display.Round(row.VolRatio),
+            // 量比 0 表示上游未提供：选股结果里显示「—」，排序时也不会被当成最小的真实值
+            VolRatio: row.VolRatio <= 0 ? null : Display.Round(row.VolRatio),
             Amount: Display.ToYi(row.Amount),
             PeTtm: row.PeTtm > 0 ? Display.Round(row.PeTtm) : null,
             Pb: row.Pb > 0 ? Display.Round(row.Pb) : null,

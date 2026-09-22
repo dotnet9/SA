@@ -11,7 +11,8 @@ export interface LiveQuote {
   volume: number;
   amount: number;
   turnover: number;
-  volRatio: number;
+  /** 量比；null 表示上游未提供（0 不是合法量比）。 */
+  volRatio: number | null;
   asOf: string | null;
 }
 

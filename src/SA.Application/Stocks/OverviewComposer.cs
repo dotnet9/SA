@@ -694,7 +694,8 @@ public sealed class OverviewComposer(
             Volume: quote is null ? null : quote.Volume,
             Amount: quote is null ? null : MarketService.ToYi(quote.Amount),
             Turnover: quote is null ? null : MarketService.Trim(quote.Turnover),
-            VolRatio: quote is null ? null : MarketService.Trim(quote.VolRatio),
+            // 量比 0 表示上游未提供（它不可能真的是 0），按 null 处理，界面显示「—」
+            VolRatio: quote is null || quote.VolRatio <= 0 ? null : MarketService.Trim(quote.VolRatio),
             Cap: quote is null ? null : MarketService.ToYi(quote.MarketCap),
             FloatCap: quote is null ? null : MarketService.ToYi(quote.FloatCap),
             Pe: quote is null || quote.Pe <= 0 ? null : MarketService.Trim(quote.Pe),

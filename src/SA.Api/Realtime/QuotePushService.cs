@@ -156,7 +156,8 @@ public sealed class QuotePushService(
                 // 与自选列表接口同一口径：金额统一为亿元（详细设计 §1.3）
                 Amount: Display.ToYi(row.Amount),
                 Turnover: Display.Round(row.Turnover),
-                VolRatio: Display.Round(row.VolRatio),
+                // 量比 0 表示上游未提供；推送里给 null，前端显示「—」而不是「0.00」
+                VolRatio: row.VolRatio <= 0 ? null : Display.Round(row.VolRatio),
                 AsOf: row.AsOf is null ? null : SaTime.Format(row.AsOf.Value));
         }
 

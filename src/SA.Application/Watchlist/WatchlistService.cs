@@ -65,7 +65,8 @@ public sealed class WatchlistService(
                 Volume: quote?.Volume,
                 Amount: quote is null ? null : MarketService.ToYi(quote.Amount),
                 Turnover: quote is null ? null : MarketService.Trim(quote.Turnover),
-                VolRatio: quote is null ? null : MarketService.Trim(quote.VolRatio),
+                // 量比 0 表示上游未提供，按 null 处理（与 MarketService 同一约定）
+            VolRatio: quote is null || quote.VolRatio <= 0 ? null : MarketService.Trim(quote.VolRatio),
                 Industry: instrument?.Industry,
                 IsSt: instrument?.IsSt ?? false,
                 AsOf: quote is null ? null : SaTime.Format(quote.AsOf));

@@ -25,7 +25,7 @@ public sealed record QuotePushDto(
     decimal Volume,
     decimal Amount,
     decimal Turnover,
-    decimal VolRatio,
+    decimal? VolRatio,
     string? AsOf);
 
 /// <summary>
