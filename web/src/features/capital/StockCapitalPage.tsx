@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Link, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { area, combo, donut, useChart } from '@/components/charts';
 import { EmptyState, ErrorState, FreshnessNote } from '@/components/ui/States';
@@ -30,7 +30,6 @@ export function StockCapitalPage() {
   if (!data) {
     return (
       <>
-        <Head code={code} name={code} />
         <div className="card">
           <div className="card-body">
             <ErrorState error={error} onRetry={() => void refetch()} retryCount={failureCount} />
@@ -43,36 +42,11 @@ export function StockCapitalPage() {
   return <Content data={data} />;
 }
 
-function Head({ code, name, data }: { code: string; name: string; data?: Capital }) {
-  return (
-    <div className="sa-pagehead">
-      <div>
-        <div className="breadcrumb">
-          <Link to={`/stock/${code}`}>个股总览</Link>
-          <span className="sep">/</span>
-          <span>资金面与筹码</span>
-        </div>
-        <h1>
-          {name}
-          <span className="mono fs-14 t-3" style={{ marginLeft: 8 }}>
-            {code}
-          </span>
-        </h1>
-        <div className="sub">
-          主力资金按日统计 · 金额单位亿元
-          {data?.fundFlow.length ? ` · 资金流至 ${data.fundFlow[data.fundFlow.length - 1].date}` : ''}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function Content({ data }: { data: Capital }) {
   const latestMargin = data.margins.length > 0 ? data.margins[data.margins.length - 1] : null;
 
   return (
     <>
-      <Head code={data.code} name={data.name} data={data} />
 
       {data.insights.length > 0 ? (
         <div className="row gap-2 wrap">
@@ -292,12 +266,6 @@ function Content({ data }: { data: Capital }) {
 
       <FreshnessNote asOf={data.asOf} source="东方财富公开接口（资金流 / 龙虎榜 / 大宗交易 / 两融 / 陆股通）" />
 
-      <div className="legend-block mt-4">
-        <b>数据来源与口径</b>
-        {data.notes.map((note) => (
-          <div key={note}>{note}</div>
-        ))}
-      </div>
     </>
   );
 }

@@ -71,6 +71,172 @@ public sealed class MarketService(
             new MarketOverviewDto(indices.Value!, breadth.Value!, fundFlow.Value!, sectors.Value!, rankings.Value!, status.Value));
     }
 
+    /// <summary>全市场列表每页条数上限（与搜索接口一致）。</summary>
+    public const int MaxStockPageSize = 200;
+
+    /// <summary>
+    /// 全市场列表：大盘概况页的主角。
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 与搜索接口分开：搜索的空查询返回空结果（搜索页依赖这个空态），
+    /// 而大盘页需要「不给关键词也要列出全市场」。
+    /// </para>
+    /// <para>
+    /// 排序在内存里做。全市场约 5,900 只，单次排序的开销远小于把快照搬进数据库查询的成本；
+    /// 且行情快照本就在内存里（<see cref="MarketSnapshotCache"/>），走库反而要 join 两张表。
+    /// </para>
+    /// </remarks>
+    /// <param name="board">板块过滤；为空表示全部。</param>
+    /// <param name="keyword">关键词（代码 / 名称 / 拼音）；为空表示不过滤。</param>
+    /// <param name="sortBy">排序字段：pct / price / turnover / volRatio / cap / pe；默认按市值降序。</param>
+    /// <param name="desc">是否降序。</param>
+    /// <param name="page">页码，1 起。</param>
+    /// <param name="pageSize">每页条数，最大 200。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    public async Task<ServiceResult<MarketStocksDto>> GetStocksAsync(
+        string? board,
+        string? keyword,
+        string? sortBy,
+        bool desc,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        await EnsureLoadedAsync(cancellationToken).ConfigureAwait(false);
+
+        var current = cache.Current;
+        if (current.Rows.Count == 0)
+        {
+            return ServiceResult<MarketStocksDto>.Fail(ErrorCode.DataNotReady, "全市场快照正在采集，请稍后重试");
+        }
+
+        var allowed = await scopeFilter.AllowedAsync(cancellationToken).ConfigureAwait(false);
+        var rows = current.Rows
+            .Where(row => DataScopeFilter.IsVisible(allowed, row.Code))
+            .ToList();
+
+        // 板块与关键词过滤（关键词同时匹配代码、名称、拼音）
+        if (!string.IsNullOrWhiteSpace(board))
+        {
+            rows = rows.Where(row => BoardOf(row.Code) == board).ToList();
+        }
+
+        var kw = keyword?.Trim().ToLowerInvariant();
+        if (!string.IsNullOrEmpty(kw))
+        {
+            rows = rows.Where(row =>
+            {
+                if (row.Code.Contains(kw, StringComparison.Ordinal)) return true;
+                if (!current.Instruments.TryGetValue(row.Code, out var instrument)) return false;
+                return instrument.Name.ToLowerInvariant().Contains(kw, StringComparison.Ordinal)
+                    || (instrument.Pinyin?.Contains(kw, StringComparison.Ordinal) ?? false);
+            }).ToList();
+        }
+
+        var total = rows.Count;
+        var ordered = Sort(rows, sortBy, desc);
+
+        var paged = ordered
+            .Skip((Math.Max(1, page) - 1) * Math.Clamp(pageSize <= 0 ? 60 : pageSize, 1, MaxStockPageSize))
+            .Take(Math.Clamp(pageSize <= 0 ? 60 : pageSize, 1, MaxStockPageSize))
+            .Select(row => TrimStockRow(ToStockRow(row, current)))
+            .ToList();
+
+        return ServiceResult<MarketStocksDto>.Success(new MarketStocksDto(
+            Total: total,
+            Page: Math.Max(1, page),
+            PageSize: Math.Clamp(pageSize <= 0 ? 60 : pageSize, 1, MaxStockPageSize),
+            Rows: paged,
+            Boards: [.. current.Rows.Select(row => BoardOf(row.Code)).Distinct().OrderBy(b => b, StringComparer.Ordinal)],
+            AsOf: current.AsOf == DateOnly.MinValue ? null : SaTime.Format(current.AsOf),
+            ScopeNote: allowed is null ? null : "当前账号的数据范围为「仅自选股」，列表已按自选范围过滤。"));
+    }
+
+    /// <summary>
+    /// 按字段排序。缺失值（无行情）一律排在最后，不参与「最便宜 / 最贵」的头部。
+    /// </summary>
+    private static List<QuoteSnapshot> Sort(IReadOnlyList<QuoteSnapshot> rows, string? sortBy, bool desc)
+    {
+        Func<QuoteSnapshot, decimal> key = sortBy switch
+        {
+            "price" => row => row.Price,
+            "turnover" => row => row.Turnover,
+            "volRatio" => row => row.VolRatio,
+            "pe" => row => row.Pe,
+            _ => row => row.MarketCap
+        };
+
+        // 涨跌幅是默认的「按什么看市场」，单独一支避免与市值混淆
+        if (sortBy == "pct")
+        {
+            return desc
+                ? [.. rows.OrderByDescending(row => row.Pct).ThenBy(row => row.Code, StringComparer.Ordinal)]
+                : [.. rows.OrderBy(row => row.Pct).ThenBy(row => row.Code, StringComparer.Ordinal)];
+        }
+
+        return desc
+            ? [.. rows.OrderByDescending(key).ThenBy(row => row.Code, StringComparer.Ordinal)]
+            : [.. rows.OrderBy(key).ThenBy(row => row.Code, StringComparer.Ordinal)];
+    }
+
+    /// <summary>板块由代码推导，与 <c>MarketCodes.BoardOf</c> 同一口径。</summary>
+    private static string BoardOf(string code) => MarketCodes.BoardOf(code);
+
+    private static MarketStockRowDto ToStockRow(QuoteSnapshot quote, MarketSnapshotCache.Snapshot snapshot)
+    {
+        snapshot.Instruments.TryGetValue(quote.Code, out var instrument);
+
+        return new MarketStockRowDto(
+            Code: quote.Code,
+            Name: instrument?.Name ?? quote.Code,
+            Py: instrument?.Pinyin,
+            Board: BoardOf(quote.Code),
+            Industry: instrument?.Industry,
+            // 停牌 / 未采集行情的标的这些字段为 null，界面显示「—」而不是 0
+            Price: quote.Price <= 0 ? null : quote.Price,
+            Chg: quote.Price <= 0 ? null : quote.Change,
+            Pct: quote.Price <= 0 ? null : quote.Pct,
+            VolRatio: quote.Price <= 0 ? null : quote.VolRatio,
+            Turnover: quote.Price <= 0 ? null : quote.Turnover,
+            Pe: quote.Pe <= 0 ? null : quote.Pe,
+            Pb: quote.Pb <= 0 ? null : quote.Pb,
+            Cap: quote.MarketCap <= 0 ? null : ToYi(quote.MarketCap),
+            IsSt: instrument?.IsSt ?? false);
+    }
+
+    /// <summary>与搜索行同样收敛精度（价格、比率、市值都经过 REAL 往返）。</summary>
+    internal static MarketStockRowDto TrimStockRow(MarketStockRowDto row) =>
+        row with
+        {
+            Price = row.Price is null ? null : Trim(row.Price.Value),
+            Chg = row.Chg is null ? null : Trim(row.Chg.Value),
+            Pct = row.Pct is null ? null : Trim(row.Pct.Value),
+            VolRatio = row.VolRatio is null ? null : Trim(row.VolRatio.Value),
+            Turnover = row.Turnover is null ? null : Trim(row.Turnover.Value),
+            Pe = row.Pe is null ? null : Trim(row.Pe.Value),
+            Pb = row.Pb is null ? null : Trim(row.Pb.Value),
+            Cap = row.Cap is null ? null : Trim(row.Cap.Value)
+        };
+
+    /// <summary>确保快照与基础信息已载入（与搜索服务同一套判断）。</summary>
+    private async Task EnsureLoadedAsync(CancellationToken cancellationToken)
+    {
+        if (!cache.IsEmpty)
+        {
+            return;
+        }
+
+        var rows = await quotes.GetAllAsync(cancellationToken).ConfigureAwait(false);
+        if (rows.Count == 0)
+        {
+            return;
+        }
+
+        var instrumentRows = await instruments.GetAllAsync(cancellationToken).ConfigureAwait(false);
+        cache.Replace(rows, instrumentRows.ToDictionary(item => item.Code, StringComparer.Ordinal));
+    }
+
     /// <summary>指数卡片。</summary>
     public async Task<ServiceResult<IReadOnlyList<IndexCardDto>>> GetIndicesAsync(CancellationToken cancellationToken = default) =>
         await BuildIndicesAsync(cancellationToken).ConfigureAwait(false);

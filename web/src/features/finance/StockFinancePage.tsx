@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Link, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { area, combo, gauge, useChart } from '@/components/charts';
 import { EmptyState, ErrorState, FreshnessNote } from '@/components/ui/States';
@@ -29,7 +29,6 @@ export function StockFinancePage() {
   if (!data) {
     return (
       <>
-        <Head code={code} name={code} />
         <div className="card">
           <div className="card-body">
             <ErrorState error={error} onRetry={() => void refetch()} retryCount={failureCount} />
@@ -40,31 +39,6 @@ export function StockFinancePage() {
   }
 
   return <Content data={data} />;
-}
-
-function Head({ code, name, data }: { code: string; name: string; data?: Finance }) {
-  return (
-    <div className="sa-pagehead">
-      <div>
-        <div className="breadcrumb">
-          <Link to={`/stock/${code}`}>个股总览</Link>
-          <span className="sep">/</span>
-          <span>盈利与财务表现</span>
-        </div>
-        <h1>
-          {name}
-          <span className="mono fs-14 t-3" style={{ marginLeft: 8 }}>
-            {code}
-          </span>
-        </h1>
-        <div className="sub">
-          报告期累计口径
-          {data?.latest ? ` · 最新 ${data.latest.reportType ?? ''}（${data.latest.reportDate}）` : ''}
-          {data?.latest?.noticeDate ? ` · 公告于 ${data.latest.noticeDate}` : ''}
-        </div>
-      </div>
-    </div>
-  );
 }
 
 function Content({ data }: { data: Finance }) {
@@ -117,7 +91,6 @@ function Content({ data }: { data: Finance }) {
 
   return (
     <>
-      <Head code={data.code} name={data.name} data={data} />
 
       {/* 结论标签 */}
       {data.insights.length > 0 ? (
@@ -291,12 +264,6 @@ function Content({ data }: { data: Finance }) {
 
       <FreshnessNote asOf={data.asOf} source="东方财富公开报表接口（业绩报表 / 业绩预告）" />
 
-      <div className="legend-block mt-4">
-        <b>数据来源与口径</b>
-        {data.notes.map((note) => (
-          <div key={note}>{note}</div>
-        ))}
-      </div>
     </>
   );
 }

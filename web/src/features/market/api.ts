@@ -135,3 +135,63 @@ export function fetchMarketOverview(): Promise<MarketOverview> {
 export function fetchMarketStatus(): Promise<MarketStatus> {
   return apiGet<MarketStatus>('/api/market/status');
 }
+
+/** 全市场列表的一行（对应后端 `MarketStockRowDto`）。 */
+export interface MarketStockRow {
+  code: string;
+  name: string;
+  py: string | null;
+  board: string;
+  industry: string | null;
+  /** 无行情（停牌 / 未采集）时为 null，界面显示「—」而不是 0。 */
+  price: number | null;
+  chg: number | null;
+  pct: number | null;
+  volRatio: number | null;
+  turnover: number | null;
+  pe: number | null;
+  pb: number | null;
+  cap: number | null;
+  isSt: boolean;
+}
+
+/** 全市场列表响应。 */
+export interface MarketStocks {
+  total: number;
+  page: number;
+  pageSize: number;
+  rows: MarketStockRow[];
+  /** 可选板块，由后端下发（不在前端硬编码）。 */
+  boards: string[];
+  asOf: string | null;
+  scopeNote: string | null;
+}
+
+/** 全市场列表参数。 */
+export interface MarketStocksParams {
+  board?: string;
+  q?: string;
+  sortBy?: string;
+  desc?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
+/**
+ * 取全市场列表（大盘概况页的主角）。
+ *
+ * 与 `/api/search` 分开：搜索的空查询返回空结果（搜索页依赖那个空态），
+ * 而大盘页需要「不给关键词也列出全市场」。
+ */
+export function fetchMarketStocks(params: MarketStocksParams = {}): Promise<MarketStocks> {
+  return apiGet<MarketStocks>('/api/market/stocks', {
+    query: {
+      board: params.board,
+      q: params.q,
+      sortBy: params.sortBy ?? 'cap',
+      desc: params.desc ?? true,
+      page: params.page ?? 1,
+      pageSize: params.pageSize ?? 60
+    }
+  });
+}

@@ -22,7 +22,6 @@ export function StockOverviewPage() {
   if (!data) {
     return (
       <>
-        <Head code={code} name={code} />
         <div className="card">
           <div className="card-body">
             <ErrorState error={error} onRetry={() => void refetch()} retryCount={failureCount} />
@@ -35,37 +34,11 @@ export function StockOverviewPage() {
   return <Content data={data} />;
 }
 
-function Head({ code, name, profile }: { code: string; name: string; profile?: StockOverview['profile'] }) {
-  return (
-    <div className="sa-pagehead">
-      <div>
-        <div className="breadcrumb">
-          <Link to="/search">股票搜索</Link>
-          <span className="sep">/</span>
-          <span>个股总览</span>
-        </div>
-        <h1>
-          {name}
-          <span className="mono fs-14 t-3" style={{ marginLeft: 8 }}>
-            {code}
-          </span>
-        </h1>
-        <div className="sub">
-          {profile?.industry ?? '行业待采集'}
-          {profile?.board ? ` · ${profile.board}` : ''}
-          {profile?.asOf ? ` · 行情时间 ${profile.asOf}` : ''}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function Content({ data }: { data: StockOverview }) {
   const { profile, modules, summary } = data;
 
   return (
     <>
-      <Head code={profile.code} name={profile.name} profile={profile} />
 
       {/* 行情条 */}
       <div className="card is-accent">
@@ -109,12 +82,6 @@ function Content({ data }: { data: StockOverview }) {
         ))}
       </div>
 
-      <div className="legend-block mt-4">
-        <b>数据来源与口径</b>
-        {data.notes.map((note) => (
-          <div key={note}>{note}</div>
-        ))}
-      </div>
     </>
   );
 }

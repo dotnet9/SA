@@ -2,8 +2,8 @@ import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate, Outlet, useLocation, useMatches, useParams } from 'react-router';
 import { AppShell } from '@/app/layout/AppShell';
 import { MobileShell } from '@/app/mobile/MobileShell';
-import { DefaultStockCode, landingPath, AnonymousLandingPath, StockModuleNames, tabOfModule } from '@/app/nav';
-import { StockTabbed } from '@/features/stock/StockTabBar';
+import { DefaultStockCode, landingPath, AnonymousLandingPath } from '@/app/nav';
+import { StockPane } from '@/features/stock/StockPane';
 import { readLastStock } from '@/app/useCurrentStock';
 import { ChangePasswordPage } from '@/features/auth/pages/ChangePasswordPage';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
@@ -27,50 +27,6 @@ const MarketPage = lazy(() =>
 /** 股票搜索。 */
 const SearchPage = lazy(() =>
   import('@/features/search/SearchPage').then((module) => ({ default: module.SearchPage }))
-);
-
-/** 个股总览（8 张摘要卡）。 */
-const ValueResearchPage = lazy(() =>
-  import('@/features/research/ValueResearchPage').then((module) => ({ default: module.ValueResearchPage }))
-);
-
-const StockOverviewPage = lazy(() =>
-  import('@/features/stock/StockOverviewPage').then((module) => ({ default: module.StockOverviewPage }))
-);
-
-/** 趋势与价格结构（K 线，分包体积最大）。 */
-const StockTrendPage = lazy(() =>
-  import('@/features/stock/StockTrendPage').then((module) => ({ default: module.StockTrendPage }))
-);
-
-/** 投资与股权结构。 */
-const StockEquityPage = lazy(() =>
-  import('@/features/equity/StockEquityPage').then((module) => ({ default: module.StockEquityPage }))
-);
-
-/** 资金面与筹码。 */
-const StockCapitalPage = lazy(() =>
-  import('@/features/capital/StockCapitalPage').then((module) => ({ default: module.StockCapitalPage }))
-);
-
-/** 行业与同业对比。 */
-const StockIndustryPage = lazy(() =>
-  import('@/features/industry/StockIndustryPage').then((module) => ({ default: module.StockIndustryPage }))
-);
-
-/** 事件与影响（含四种拓扑图）。 */
-const StockEventsPage = lazy(() =>
-  import('@/features/events/StockEventsPage').then((module) => ({ default: module.StockEventsPage }))
-);
-
-/** 风险与舆情监控。 */
-const StockRiskPage = lazy(() =>
-  import('@/features/risk/StockRiskPage').then((module) => ({ default: module.StockRiskPage }))
-);
-
-/** 机构评级与预测。 */
-const StockRatingPage = lazy(() =>
-  import('@/features/rating/StockRatingPage').then((module) => ({ default: module.StockRatingPage }))
 );
 
 /** 提醒规则。 */
@@ -133,6 +89,7 @@ const MobilePages = {
   Home: lazy(() => import('@/app/mobile/MobilePages').then((module) => ({ default: module.MobileHomePage }))),
   Watchlist: lazy(() => import('@/app/mobile/MobilePages').then((module) => ({ default: module.MobileWatchlistPage }))),
   Search: lazy(() => import('@/app/mobile/MobilePages').then((module) => ({ default: module.MobileSearchPage }))),
+  More: lazy(() => import('@/app/mobile/MobilePages').then((module) => ({ default: module.MobileMorePage }))),
   Alerts: lazy(() => import('@/app/mobile/MobilePages').then((module) => ({ default: module.MobileAlertsPage }))),
   Notifications: lazy(() =>
     import('@/app/mobile/MobilePages').then((module) => ({ default: module.MobileNotificationsPage }))
@@ -145,11 +102,6 @@ const MobilePages = {
 /** 自选股（含实时推送）。 */
 const WatchlistPage = lazy(() =>
   import('@/features/watchlist/WatchlistPage').then((module) => ({ default: module.WatchlistPage }))
-);
-
-/** 盈利与财务表现。 */
-const StockFinancePage = lazy(() =>
-  import('@/features/finance/StockFinancePage').then((module) => ({ default: module.StockFinancePage }))
 );
 
 /** 分包加载占位：沿用启动态样式，避免白屏。 */
@@ -236,7 +188,16 @@ function MobileShellGuard() {
  * 路由里用小写页面名（与 URL 段一致），这里映射到懒加载组件，
  * 避免为 8 个移动页面各写一段重复的 Suspense 包裹。
  */
-type MobilePageName = 'home' | 'search' | 'watchlist' | 'alerts' | 'notifications' | 'screener' | 'settings' | 'about';
+type MobilePageName =
+  | 'home'
+  | 'search'
+  | 'watchlist'
+  | 'more'
+  | 'alerts'
+  | 'notifications'
+  | 'screener'
+  | 'settings'
+  | 'about';
 
 function MobileRoute({ page }: { page: MobilePageName }) {
   const Component =
@@ -246,7 +207,9 @@ function MobileRoute({ page }: { page: MobilePageName }) {
         ? MobilePages.Search
         : page === 'watchlist'
           ? MobilePages.Watchlist
-          : page === 'alerts'
+          : page === 'more'
+            ? MobilePages.More
+            : page === 'alerts'
             ? MobilePages.Alerts
             : page === 'notifications'
               ? MobilePages.Notifications
@@ -264,49 +227,15 @@ function MobileRoute({ page }: { page: MobilePageName }) {
 }
 
 /**
- * 移动端个股模块页。
+ * 移动端个股页。
  *
- * 直接复用桌面组件：这些页面本身就是卡片式布局（K 线、指标、表格都是自适应的），
- * 为移动端再写一遍只会产生两份需要同步维护的实现。
- * 与桌面同样不套功能点守卫——个股模块是公开数据。
+ * 直接复用桌面的个股区：9 个 Tab 横向滚动，K 线、指标、表格本身都是自适应的，
+ * 为移动端再写一遍只会产生两份需要同步维护的实现。与桌面同样不套功能点守卫。
  */
 function MobileStockModulePage() {
-  const params = useParams();
-  const module = params.module ?? 'overview';
-  // 未知/已合并的旧 :module 值一律落到对应 Tab，不报 404（实施计划 §6.2）
-  const name = StockModuleNames[module] ?? StockModuleNames[tabOfModule(module)];
-
-  if (!name) {
-    return <NotFoundPage />;
-  }
-
   return (
     <Suspense fallback={<RouteFallback />}>
-      <StockTabbed module={module}>
-      {module === 'value' ? (
-        <ValueResearchPage />
-      ) : module === 'overview' ? (
-        <StockOverviewPage />
-      ) : module === 'trend' ? (
-        <StockTrendPage />
-      ) : module === 'finance' ? (
-        <StockFinancePage />
-      ) : module === 'equity' ? (
-        <StockEquityPage />
-      ) : module === 'capital' ? (
-        <StockCapitalPage />
-      ) : module === 'industry' ? (
-        <StockIndustryPage />
-      ) : module === 'events' ? (
-        <StockEventsPage />
-      ) : module === 'causal' ? (
-        <CausalChainPage />
-      ) : module === 'risk' ? (
-        <StockRiskPage />
-      ) : (
-        <StockRatingPage />
-      )}
-      </StockTabbed>
+      <StockPane listPath={null} />
     </Suspense>
   );
 }
@@ -355,48 +284,37 @@ function StockRedirect() {
 }
 
 /**
- * 个股模块页。
+ * 个股独立页（`/stock/:code`）。
  *
- * 不套功能点守卫：个股全部模块都是公开数据（后端 `AllowPublicRead`），
- * 前端再拦一道就会出现「接口放行但页面拒绝」的自相矛盾。
+ * 整页就是个股区，没有列表可返回，因此不显示「返回列表」。
+ * 与大盘页 / 自选页共用同一份 StockPane，不存在两套实现。
  */
 function StockModulePage() {
-  const params = useParams();
-  const module = params.module ?? 'overview';
-  // 未知/已合并的旧 :module 值一律落到对应 Tab，不报 404（实施计划 §6.2）
-  const name = StockModuleNames[module] ?? StockModuleNames[tabOfModule(module)];
-
-  if (!name) {
-    return <NotFoundPage />;
-  }
-
   return (
     <Suspense fallback={<RouteFallback />}>
-      <StockTabbed module={module}>
-      {module === 'value' ? (
-        <ValueResearchPage />
-      ) : module === 'overview' ? (
-        <StockOverviewPage />
-      ) : module === 'trend' ? (
-        <StockTrendPage />
-      ) : module === 'finance' ? (
-        <StockFinancePage />
-      ) : module === 'equity' ? (
-        <StockEquityPage />
-      ) : module === 'capital' ? (
-        <StockCapitalPage />
-      ) : module === 'industry' ? (
-        <StockIndustryPage />
-      ) : module === 'events' ? (
-        <StockEventsPage />
-      ) : module === 'causal' ? (
-        <CausalChainPage />
-      ) : module === 'risk' ? (
-        <StockRiskPage />
-      ) : (
-        <StockRatingPage />
-      )}
-      </StockTabbed>
+      <StockPane listPath={null} />
+    </Suspense>
+  );
+}
+
+/**
+ * 大盘概况内联的个股区（`/market/:code`）：右侧整块替换列表，带「返回列表」。
+ */
+function MarketStockPage() {
+  return (
+    <Suspense fallback={<RouteFallback />}>
+      <StockPane listPath="/market" />
+    </Suspense>
+  );
+}
+
+/**
+ * 自选股内联的个股区（`/watchlist/:code`）。
+ */
+function WatchlistStockPage() {
+  return (
+    <Suspense fallback={<RouteFallback />}>
+      <StockPane listPath="/watchlist" />
     </Suspense>
   );
 }
@@ -469,6 +387,7 @@ export const router = createBrowserRouter([
       { path: 'stock/:code', element: <MobileStockModulePage /> },
       { path: 'stock/:code/:module', element: <MobileStockModulePage /> },
       { path: 'watchlist', element: <MobileRoute page="watchlist" />, handle: RequireLogin },
+      { path: 'more', element: <MobileRoute page="more" /> },
       { path: 'alerts', element: <MobileRoute page="alerts" />, handle: RequireLogin },
       { path: 'notifications', element: <MobileRoute page="notifications" />, handle: RequireLogin },
       { path: 'screener', element: <MobileRoute page="screener" />, handle: RequireLogin },
@@ -500,6 +419,9 @@ export const router = createBrowserRouter([
           </Suspense>
         )
       },
+      // 个股区内联在大盘概况里：点表格任一行进来，右侧整块替换列表
+      { path: 'market/:code', element: <MarketStockPage /> },
+      { path: 'market/:code/:module', element: <MarketStockPage /> },
       {
         path: 'search',
         element: (
@@ -552,6 +474,9 @@ export const router = createBrowserRouter([
         ),
         handle: RequireLogin
       },
+      // 个股区内联在自选股里
+      { path: 'watchlist/:code', element: <WatchlistStockPage /> },
+      { path: 'watchlist/:code/:module', element: <WatchlistStockPage /> },
       {
         path: 'screener',
         element: (

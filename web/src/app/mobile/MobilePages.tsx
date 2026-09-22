@@ -1005,6 +1005,42 @@ export function MobileSettingsPage() {
    关于（数据口径）
    ------------------------------------------------------------------ */
 
+/**
+ * 移动端「更多」：选股 / 提醒 / 通知 / 搜索 / 设置等入口。
+ *
+ * 底部 Tab 只留三项（大盘 / 自选 / 更多），与桌面端一致：
+ * 其余功能收进这一页，而不是挤在底部栏里。
+ */
+export function MobileMorePage() {
+  const rows = [
+    { to: '/m/screener', icon: '⚙', text: '条件选股器' },
+    { to: '/m/alerts', icon: '◔', text: '提醒规则' },
+    { to: '/m/notifications', icon: '◍', text: '通知中心' },
+    { to: '/m/search', icon: '⌕', text: '股票搜索' },
+    { to: '/m/notify-preview', icon: '◫', text: '提醒形态预览' },
+    { to: '/m/settings', icon: '☰', text: '我的' }
+  ];
+
+  return (
+    <>
+      <MobilePageHead title="更多" />
+      <div className="card">
+        <div className="card-body is-flush">
+          {rows.map((row) => (
+            <Link key={row.to} className="row gap-3" style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-soft)' }} to={row.to}>
+              <span className="t-2" style={{ width: 20, textAlign: 'center' }}>
+                {row.icon}
+              </span>
+              <span className="fs-14 grow">{row.text}</span>
+              <span className="t-3 fs-12">›</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 export function MobileAboutPage() {
   return (
     <>

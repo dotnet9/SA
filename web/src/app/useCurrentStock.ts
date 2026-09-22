@@ -1,23 +1,23 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router';
-import { DefaultStockCode, StockTabModules, tabOfModule } from './nav';
+import { DefaultStockCode } from './nav';
 import { readString, writeString } from '@/lib/storage';
 
 const LastStockKey = 'lastStock';
 
 /**
- * 记住当前 Tab 的存储键。
+ * 记住当前个股模块。
  *
- * 存的是 Tab 键而不是模块名：同一个 Tab 下有多个模块（如「基本面」含财务与行业），
- * 记模块名会让用户下次进来落到上次那个子模块，而用户记住的是 Tab。
+ * 存的是模块名（trend / finance …）而不是「Tab」：新信息架构下 Tab 就是 URL 的一段，
+ * 这个值只用于「从列表点另一只股票时保持同一维度」——用户在「财务」看 A，
+ * 点 B 时期望还是看 B 的财务，而不是被弹回概览。
  */
-const LastStockTabKey = 'lastStockTab';
+const LastStockModuleKey = 'lastStockModule';
 
 /**
  * 当前分析的股票代码。
  *
- * 原型用一个固定的「焦点股」贯穿所有模块页；实现版把代码放进 URL，
- * 因此这里优先取 URL 中的 `:code`，并记住它供侧栏导航跳转使用。
+ * 优先取 URL 中的 `:code`，并记住它供导航跳转使用。
  */
 export function useCurrentStock(): string {
   const location = useLocation();
@@ -38,35 +38,28 @@ export function readLastStock(): string {
   return readString(LastStockKey, DefaultStockCode);
 }
 
-/** 记住当前 Tab（由个股模块页在渲染时调用）。 */
-export function rememberStockTab(module: string | undefined): void {
-  writeString(LastStockTabKey, tabOfModule(module));
+/** 记住当前个股模块（由个股区在渲染时调用）。 */
+export function rememberStockModule(module: string | undefined): void {
+  if (module) {
+    writeString(LastStockModuleKey, module);
+  }
 }
 
-/** 读取上次的 Tab 键；无记录返回 null。 */
-export function readLastStockTab(): string | null {
-  const stored = readString(LastStockTabKey, '');
-  return stored.length > 0 ? stored : null;
+/** 读取上次的模块名；无记录返回空串。 */
+export function readLastStockModule(): string {
+  return readString(LastStockModuleKey, '');
 }
 
 /**
- * 自选股等列表里切换标的时用的路径：**保持当前 Tab 不跳回第一个**。
+ * 列表页里切换标的时用的路径：**保持当前维度**。
  *
- * 实测体验问题：在「机构观点」Tab 上从自选股切到另一只股票，
- * 若直接跳 `/stock/{code}` 会回到「价值研究」，用户得重新点一次 Tab——
- * 而切换标的的目的恰恰是对比同一维度，跳回第一个 Tab 直接打断这个动作。
+ * 在「财务」上看 A 股，从列表点 B 股时期望还是看 B 的财务；
+ * 直接跳 `/market/{code}` 会回到概览，打断对比动作。
  *
  * @param code 目标标的代码。
- * @param currentModule 当前页面的模块（取自 URL）；为空时读上次记住的 Tab。
+ * @param listPath 列表路径（`/market` 或 `/watchlist`）。
  */
-export function stockPathKeepingTab(code: string, currentModule?: string): string {
-  const tab = currentModule ? tabOfModule(currentModule) : readLastStockTab();
-  if (!tab) {
-    return `/stock/${code}`;
-  }
-
-  // 落到该 Tab 的默认模块，而不是保持具体子模块：
-  // 「上次看的是财务」不代表「下一只股票也要看财务」，但「上次看的是基本面 Tab」有意义
-  const modules = StockTabModules[tab];
-  return modules && modules.length > 0 ? `/stock/${code}/${modules[0]}` : `/stock/${code}`;
+export function stockPathKeepingModule(code: string, listPath: string): string {
+  const module = readLastStockModule();
+  return module && module !== 'overview' ? `${listPath}/${code}/${module}` : `${listPath}/${code}`;
 }

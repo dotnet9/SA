@@ -490,175 +490,101 @@ html[data-numfont='ui'] {
 }
 
 /* ============================================================
-   11. 两栏外壳与自选横条（实施计划 §7.2）
-
-   与原型 `components.css` 的差别只在「多一行自选横条」：
-   原型是「品牌区 + 顶栏 / 侧栏 + 内容」两行两列网格，
-   这里在顶栏下方插入 44px 的横条行，其余网格不变。
-   横条默认展开、可收起为一行；不占常驻栏位（原型把自选放在侧栏）。
+   12. 两项主导航 / 个股 Tab / 全市场表 / 口径抽屉
+   （与原型 design/web/_shared/components.css 第 12 节同源）
    ============================================================ */
 
-/* 有横条时的网格：多一行，高度由 --strip-h 控制 */
-.sa-app.has-strip {
-  grid-template-rows: var(--topbar-h) var(--strip-h) minmax(0, 1fr);
-  grid-template-areas:
-    "brand topbar"
-    "sidenav strip"
-    "sidenav main";
-}
-
-/* 收起状态只有一行文字的高度 */
-.sa-app.has-strip.is-strip-collapsed {
-  --strip-h: 28px;
-}
-
-.sa-strip {
-  grid-area: strip;
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: 0 var(--sp-5);
-  background: var(--bg-panel);
-  border-top: 1px solid var(--border-soft);
-  border-bottom: 1px solid var(--border-soft);
-  overflow: hidden;
-}
-
-.sa-strip.is-collapsed {
-  justify-content: flex-start;
-}
-
-.sa-strip-toggle {
-  flex: 0 0 auto;
-  font-size: var(--fs-11);
-  color: var(--text-3);
-  padding: 2px 4px;
+/* ---- 侧栏「更多」折叠区 ---- */
+.sa-nav-more { margin-top: var(--sp-3); }
+.sa-nav-more-sum {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-11); color: var(--text-3);
+  letter-spacing: 0.08em; cursor: pointer; list-style: none;
   border-radius: var(--r-btn);
 }
-.sa-strip-toggle:hover {
-  color: var(--brand);
-  background: var(--bg-hover);
-}
+.sa-nav-more-sum::-webkit-details-marker { display: none; }
+.sa-nav-more-sum::before { content: "\25B8"; font-size: 9px; }
+.sa-nav-more[open] > .sa-nav-more-sum::before { content: "\25BE"; }
+.sa-nav-more-sum:hover { color: var(--brand); background: var(--bg-hover); }
+.sa-nav-more-body { padding-top: 2px; }
 
-.sa-strip-label {
-  flex: 0 0 auto;
-  font-size: var(--fs-11);
-  color: var(--text-3);
-  letter-spacing: 0.08em;
+/* ---- 指数横条（大盘概况顶部，单行五格） ---- */
+.index-strip {
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px; background: var(--border);
+  border: 1px solid var(--border); border-radius: var(--r-card);
+  overflow: hidden; margin-bottom: var(--sp-4);
 }
-
-.sa-strip-list {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-1);
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  white-space: nowrap;
+.index-strip-cell {
+  background: var(--bg-panel); padding: var(--sp-3) var(--sp-4);
+  display: flex; flex-direction: column; gap: 2px;
 }
-.sa-strip-list::-webkit-scrollbar {
-  display: none;
-}
-
-.sa-strip-item {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  padding: 3px 8px;
-  border-radius: var(--r-btn);
-  font-size: var(--fs-12);
-  color: var(--text-2);
-}
-.sa-strip-item:hover {
-  background: var(--bg-hover);
-  color: var(--text-1);
-}
-.sa-strip-item.is-up,
-.sa-strip-item.is-down,
-.sa-strip-item.is-flat {
-  color: var(--text-2);
-}
-/* 涨跌色只落在数字上，名称保持中性——整条染色会让横条变成噪声 */
-.sa-strip-item .is-up { color: var(--up); }
-.sa-strip-item .is-down { color: var(--down); }
-.sa-strip-item .is-flat { color: var(--flat); }
-
-/* 自选抽屉：从左侧滑出的覆盖式面板 */
-.sa-drawer-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(10, 11, 14, 0.32);
-  z-index: 60;
-  animation: sa-fade-in var(--t-fast) both;
-}
-
-.sa-drawer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 280px;
-  max-width: 86vw;
-  background: var(--bg-panel);
-  border-right: 1px solid var(--border);
-  box-shadow: var(--shadow-2);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.sa-drawer .card-body {
-  flex: 1 1 auto;
-  overflow-y: auto;
-}
-
-.sa-drawer-row {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border-soft);
-}
-.sa-drawer-row:hover {
-  background: var(--bg-hover);
-}
-
-/* 响应式四档（实施计划 §7.2）：
-   ≥1280 导航+内容+横条；1024–1280 导航缩为图标条；<1024 导航进抽屉；<768 底部 Tab */
-@media (max-width: 1279px) {
-  .sa-app.has-strip {
-    grid-template-columns: var(--sidenav-w-mini) minmax(0, 1fr);
-  }
-}
-
+.index-strip-name { font-size: var(--fs-12); color: var(--text-2); }
+.index-strip-value { font-size: var(--fs-18); font-weight: 700; }
+.index-strip-pct { font-size: var(--fs-12); }
 @media (max-width: 1023px) {
-  .sa-app.has-strip {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      "topbar"
-      "strip"
-      "main";
-  }
-  .sa-app.has-strip .sa-brand,
-  .sa-app.has-strip .sa-sidenav {
-    display: none;
-  }
+  .index-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 767px) {
+  .index-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-@media (max-width: 767px) {
-  /* 底部 Tab 由既有规则固定定位（见本文件第 4 节），因此这里不再为它留网格行，
-     否则会与 .sa-main 的 padding-bottom 叠加出双倍空白 */
-  .sa-app.has-strip {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      "topbar"
-      "strip"
-      "main";
-  }
-  .sa-strip {
-    padding: 0 var(--sp-3);
-  }
+/* ---- 个股区（内联在大盘 / 自选页时使用） ---- */
+.stock-pane-head {
+  display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  margin-bottom: var(--sp-3);
+}
+.stock-back {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: var(--fs-12); color: var(--text-2);
+  padding: 4px 8px; border-radius: var(--r-btn);
+  background: none; border: none; cursor: pointer;
+}
+.stock-back:hover { color: var(--brand); background: var(--bg-hover); }
+
+/* ---- 个股 9 Tab ---- */
+.stock-tabs {
+  position: sticky; top: 0; z-index: 5;
+  background: var(--bg-root);
+  padding: var(--sp-2) 0 var(--sp-3);
+  overflow-x: auto; scrollbar-width: none;
+}
+.stock-tabs::-webkit-scrollbar { display: none; }
+.stock-tabs .tabbar { flex-wrap: nowrap; }
+.stock-tabs .tab { white-space: nowrap; flex: 0 0 auto; }
+
+/* ---- 全市场表 ---- */
+.market-table { font-variant-numeric: tabular-nums; }
+.market-table tbody tr:hover { background: var(--bg-hover); }
+.market-table td, .market-table th { white-space: nowrap; }
+
+/* ---- 表头排序按钮 ---- */
+.sort-btn {
+  background: none; border: none; cursor: pointer;
+  font: inherit; color: inherit; padding: 0;
+  display: inline-flex; align-items: center; gap: 2px;
+}
+.sort-btn:hover { color: var(--brand); }
+.sort-caret { font-size: 9px; color: var(--brand); }
+
+/* ---- 口径抽屉 ---- */
+.spec-drawer { width: 460px; max-width: 94vw; }
+.spec-group { border-bottom: 1px solid var(--border-soft); }
+.spec-group:last-child { border-bottom: none; }
+.spec-group-title {
+  display: flex; align-items: center; gap: var(--sp-2);
+  width: 100%; padding: 10px 0;
+  font-size: var(--fs-12); font-weight: 600; color: var(--text-1);
+  background: none; border: none; cursor: pointer; text-align: left;
+}
+.spec-group-title:hover { color: var(--brand); }
+.spec-group ul { margin: 0 0 10px; padding-left: 18px; }
+.spec-group li {
+  font-size: var(--fs-12); color: var(--text-2);
+  line-height: 1.75; margin-bottom: 4px;
 }

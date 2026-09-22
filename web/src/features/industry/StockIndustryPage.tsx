@@ -89,7 +89,6 @@ export function StockIndustryPage() {
   if (!data) {
     return (
       <>
-        <Head code={code} name={code} />
         <div className="card">
           <div className="card-body">
             <ErrorState error={error} onRetry={() => void refetch()} retryCount={failureCount} />
@@ -102,35 +101,9 @@ export function StockIndustryPage() {
   return <Content data={data} />;
 }
 
-function Head({ code, name, data }: { code: string; name: string; data?: IndustryComparison }) {
-  return (
-    <div className="sa-pagehead">
-      <div>
-        <div className="breadcrumb">
-          <Link to={`/stock/${code}`}>个股总览</Link>
-          <span className="sep">/</span>
-          <span>行业与同业对比</span>
-        </div>
-        <h1>
-          {name}
-          <span className="mono fs-14 t-3" style={{ marginLeft: 8 }}>
-            {code}
-          </span>
-        </h1>
-        <div className="sub">
-          行业分类：东财行业
-          {data?.industry ? ` · 所属「${data.industry}」` : ''}
-          {data?.asOf ? ` · 行情时间 ${data.asOf}` : ''}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function Content({ data }: { data: IndustryComparison }) {
   return (
     <>
-      <Head code={data.code} name={data.name} data={data} />
 
       {data.insights.length > 0 ? (
         <div className="row gap-2 wrap">
@@ -302,12 +275,6 @@ function Content({ data }: { data: IndustryComparison }) {
 
       <FreshnessNote asOf={data.asOf} source="全市场快照 + 行业板块快照（本模块不新增采集源）" />
 
-      <div className="legend-block mt-4">
-        <b>数据来源与口径</b>
-        {data.notes.map((note) => (
-          <div key={note}>{note}</div>
-        ))}
-      </div>
     </>
   );
 }

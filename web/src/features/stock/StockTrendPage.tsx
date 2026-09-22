@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { area, band, kline, useChart } from '@/components/charts';
-import { EmptyState, ErrorState, FreshnessNote } from '@/components/ui/States';
+import { EmptyState, ErrorState } from '@/components/ui/States';
 import { useStockFreshness, useTrend } from './hooks';
 import type { Trend } from './api';
 
@@ -29,21 +29,6 @@ export function StockTrendPage() {
   if (!data) {
     return (
       <>
-        <div className="sa-pagehead">
-          <div>
-            <div className="breadcrumb">
-              <Link to={`/stock/${code}`}>个股总览</Link>
-              <span className="sep">/</span>
-              <span>趋势与价格结构</span>
-            </div>
-            <h1>
-              趋势与价格结构
-              <span className="mono fs-14 t-3" style={{ marginLeft: 8 }}>
-                {code}
-              </span>
-            </h1>
-          </div>
-        </div>
         <div className="card">
           <div className="card-body">
             <ErrorState error={error} onRetry={() => void refetch()} retryCount={failureCount} />
@@ -69,11 +54,6 @@ export function StockTrendPage() {
       onToggleBoll={() => setBollVisible((current) => !current)}
       onChangeSub={(value) => setSubIndicator(value)}
       onChangeLimit={(value) => setLimit(value)}
-      freshnessNote={
-        freshness
-          ? `日线至 ${freshness.dailyLastDate ?? '—'} · 指标至 ${freshness.indicatorLastDate ?? '—'}`
-          : undefined
-      }
     />
   );
 }
@@ -85,8 +65,7 @@ function Content({
   limit,
   onToggleBoll,
   onChangeSub,
-  onChangeLimit,
-  freshnessNote
+  onChangeLimit
 }: {
   data: Trend;
   bollVisible: boolean;
@@ -95,7 +74,6 @@ function Content({
   onToggleBoll: () => void;
   onChangeSub: (value: 'macd' | 'kdj') => void;
   onChangeLimit: (value: number) => void;
-  freshnessNote?: string;
 }) {
   const { ref: klineRef } = useChart(kline, {
     bars: data.candles,
@@ -128,25 +106,6 @@ function Content({
   // 趋势动能用 MACD 柱的最新值映射到 0–100，仅作为「动能强弱」的直观刻度
     return (
     <>
-      <div className="sa-pagehead">
-        <div>
-          <div className="breadcrumb">
-            <Link to={`/stock/${data.code}`}>个股总览</Link>
-            <span className="sep">/</span>
-            <span>趋势与价格结构</span>
-          </div>
-          <h1>
-            {data.name}
-            <span className="mono fs-14 t-3" style={{ marginLeft: 8 }}>
-              {data.code}
-            </span>
-          </h1>
-          <div className="sub">
-            日线 · 前复权 · 最新交易日 {data.asOf} · 样本 {data.levels.samples} 根
-            {freshnessNote ? ` · ${freshnessNote}` : ''}
-          </div>
-        </div>
-      </div>
 
       {/* 吸顶工具条 */}
       <div className="trend-toolbar">
@@ -291,13 +250,6 @@ function Content({
         </div>
       </div>
 
-      <div className="legend-block mt-4">
-        <b>数据来源与口径</b>
-        {data.notes.map((note) => (
-          <div key={note}>{note}</div>
-        ))}
-        <FreshnessNote asOf={data.asOf} source="东方财富公开接口 · 日线为前复权" />
-      </div>
     </>
   );
 }

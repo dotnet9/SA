@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { area, donut, hbar, useChart } from '@/components/charts';
 import { EmptyState, ErrorState, FreshnessNote } from '@/components/ui/States';
@@ -30,7 +30,6 @@ export function StockEquityPage() {
   if (!data) {
     return (
       <>
-        <Head code={code} name={code} />
         <div className="card">
           <div className="card-body">
             <ErrorState error={error} onRetry={() => void refetch()} retryCount={failureCount} />
@@ -43,31 +42,6 @@ export function StockEquityPage() {
   return <Content data={data} />;
 }
 
-function Head({ code, name, data }: { code: string; name: string; data?: Equity }) {
-  return (
-    <div className="sa-pagehead">
-      <div>
-        <div className="breadcrumb">
-          <Link to={`/stock/${code}`}>个股总览</Link>
-          <span className="sep">/</span>
-          <span>投资与股权结构</span>
-        </div>
-        <h1>
-          {name}
-          <span className="mono fs-14 t-3" style={{ marginLeft: 8 }}>
-            {code}
-          </span>
-        </h1>
-        <div className="sub">
-          F10 公开披露
-          {data?.latest ? ` · 十大股东报告期 ${data.latest.endDate}` : ''}
-          {data?.latestFreeFloat ? ` · 十大流通股东报告期 ${data.latestFreeFloat.endDate}` : ''}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function Content({ data }: { data: Equity }) {
   const [tab, setTab] = useState<'hold' | 'free'>('hold');
 
@@ -75,7 +49,6 @@ function Content({ data }: { data: Equity }) {
 
   return (
     <>
-      <Head code={data.code} name={data.name} data={data} />
 
       {data.insights.length > 0 ? (
         <div className="row gap-2 wrap">
@@ -198,12 +171,6 @@ function Content({ data }: { data: Equity }) {
 
       <FreshnessNote asOf={data.asOf} source="东方财富公开 F10 报表" />
 
-      <div className="legend-block mt-4">
-        <b>数据来源与口径</b>
-        {data.notes.map((note) => (
-          <div key={note}>{note}</div>
-        ))}
-      </div>
     </>
   );
 }

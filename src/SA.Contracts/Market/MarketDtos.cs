@@ -201,3 +201,60 @@ public sealed record MarketOverviewDto(
     IReadOnlyList<SectorDto> Industries,
     MarketRankingsDto Rankings,
     MarketStatusDto Status);
+
+/// <summary>
+/// 全市场列表的一行。
+/// </summary>
+/// <remarks>
+/// 大盘概况页要「一个页面搞定整个 A 股市场」，因此需要一个能排序 / 筛选 / 分页的全市场列表。
+/// 字段与 <see cref="SA.Contracts.Search.SearchRowDto"/> 保持一致（同一套行情快照与基础信息），
+/// 但不含 <c>MatchedBy</c>（那是搜索命中的解释，列表里没有意义）。
+/// </remarks>
+/// <param name="Code">代码。</param>
+/// <param name="Name">名称。</param>
+/// <param name="Py">拼音首字母（小写）。</param>
+/// <param name="Board">板块：沪市主板 / 深市主板 / 创业板 / 科创板 / 北交所。</param>
+/// <param name="Industry">东财行业。</param>
+/// <param name="Price">最新价（元）；无快照时为 null。</param>
+/// <param name="Chg">涨跌额（元）。</param>
+/// <param name="Pct">涨跌幅（百分数）。</param>
+/// <param name="VolRatio">量比。</param>
+/// <param name="Turnover">换手率（百分数）。</param>
+/// <param name="Pe">市盈率（动态）。</param>
+/// <param name="Pb">市净率。</param>
+/// <param name="Cap">总市值（亿元）。</param>
+/// <param name="IsSt">是否 ST / 退市风险标的。</param>
+public sealed record MarketStockRowDto(
+    string Code,
+    string Name,
+    string? Py,
+    string Board,
+    string? Industry,
+    decimal? Price,
+    decimal? Chg,
+    decimal? Pct,
+    decimal? VolRatio,
+    decimal? Turnover,
+    decimal? Pe,
+    decimal? Pb,
+    decimal? Cap,
+    bool IsSt);
+
+/// <summary>
+/// 全市场列表响应。
+/// </summary>
+/// <param name="Total">筛选后的总条数（未分页前）。</param>
+/// <param name="Page">当前页（1 起）。</param>
+/// <param name="PageSize">每页条数。</param>
+/// <param name="Rows">结果行。</param>
+/// <param name="Boards">可选板块（界面页签直接用，不在前端硬编码）。</param>
+/// <param name="AsOf">行情口径日。</param>
+/// <param name="ScopeNote">数据范围受限时的提示文案。</param>
+public sealed record MarketStocksDto(
+    int Total,
+    int Page,
+    int PageSize,
+    IReadOnlyList<MarketStockRowDto> Rows,
+    IReadOnlyList<string> Boards,
+    string? AsOf,
+    string? ScopeNote);

@@ -27,6 +27,7 @@ public static class MarketEndpoints
             .AllowPublicRead();
 
         group.MapGet("/overview", GetOverviewAsync);
+        group.MapGet("/stocks", GetStocksAsync);
         group.MapGet("/indices", GetIndicesAsync);
         group.MapGet("/breadth", GetBreadthAsync);
         group.MapGet("/fundflow", GetFundFlowAsync);
@@ -44,6 +45,26 @@ public static class MarketEndpoints
         CancellationToken cancellationToken)
     {
         var result = await market.GetOverviewAsync(cancellationToken).ConfigureAwait(false);
+        return ApiResults.From(context, result);
+    }
+
+    /// <summary>
+    /// 全市场列表：大盘概况页的主角。查询参数支持板块、关键词、排序与分页。
+    /// </summary>
+    private static async Task<IResult> GetStocksAsync(
+        HttpContext context,
+        MarketService market,
+        CancellationToken cancellationToken,
+        string? board = null,
+        string? q = null,
+        string? sortBy = null,
+        bool desc = true,
+        int page = 1,
+        int pageSize = 60)
+    {
+        var result = await market
+            .GetStocksAsync(board, q, sortBy, desc, page, pageSize, cancellationToken)
+            .ConfigureAwait(false);
         return ApiResults.From(context, result);
     }
 
