@@ -2,97 +2,41 @@
    SA · 股析 — 设计令牌 (Design Tokens)
    视觉语言：大气简约 —— 中性沉稳的底色、克制的单一品牌色、
    无装饰性渐变；层次靠底色差与留白表达，而非描边与阴影堆叠。
-   深色为主，可切换浅色；涨跌色可配置（默认红涨绿跌）
+   **浅色默认**，可切换深色；涨跌色可配置（默认红涨绿跌）
    本文件不依赖任何构建步骤，双击 html 即可生效
+
+   品牌色为橙色系（价值投资定位）。改这里即同时改应用与原型：
+   `web/vite.config.ts` 把 `@proto` 指向本目录，因此不存在两份色板。
    ============================================================ */
 
-/* ---------- 1. 深色主题（默认） ---------- */
+/* ---------- 1. 浅色主题（默认） ---------- */
+/* 同时匹配 `:root`（未设置 data-theme）与显式 `data-theme="light"`：
+   原型 app.js 与实现版都会写 data-theme，两种形态都要生效 */
 :root,
-[data-theme="dark"] {
-  /* 背景层次：接近纯黑的中性底，面板只比底亮一档 */
-  --bg-root: #0a0b0e;
-  --bg-panel: #131418;
-  --bg-elevated: #1a1c21;
-  --bg-hover: #1d1f25;
-  --bg-active: #23262e;
-  --bg-sunken: #0f1013;
-  --bg-glass: rgba(19, 20, 24, 0.86);
-
-  /* 描边：发丝线，只在必须分隔处使用 */
-  --border: #1e2026;
-  --border-soft: #191b20;
-  --border-strong: #2c2f38;
-
-  /* 文本 */
-  --text-1: #f0f1f4;
-  --text-2: #9aa0ac;
-  --text-3: #5d626c;
-  --text-inverse: #0a0b0e;
-
-  /* 品牌与语义：单一品牌色，语义色只做小面积点缀 */
-  --brand: #4f8cff;
-  --brand-hover: #6b9dff;
-  --brand-soft: rgba(79, 140, 255, 0.12);
-  --accent: #39c0d4;
-  --accent-soft: rgba(57, 192, 212, 0.12);
-  --warn: #e8a33d;
-  --warn-soft: rgba(232, 163, 61, 0.12);
-  --danger: #e5544b;
-  --danger-soft: rgba(229, 84, 75, 0.12);
-  --ok: #3fbf6f;
-  --ok-soft: rgba(63, 191, 111, 0.12);
-  --neutral: #6b7280;
-  --neutral-soft: rgba(107, 114, 128, 0.14);
-
-  /* 图表色板：低饱和、同一明度带 */
-  --chart-1: #5b8def;
-  --chart-2: #39c0d4;
-  --chart-3: #9d8cff;
-  --chart-4: #e0a83f;
-  --chart-5: #e5695f;
-  --chart-6: #48b971;
-  --chart-7: #d877a8;
-  --chart-8: #5aa9e6;
-
-  /* 阴影：几乎不可见，仅浮层使用 */
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.25);
-  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-3: 0 24px 64px rgba(0, 0, 0, 0.5);
-  --glow-brand: 0 0 0 3px rgba(79, 140, 255, 0.16);
-
-  /* 图表内部使用（供 charts.js 读取） */
-  --chart-axis: #2c2f38;
-  --chart-split: #191b20;
-  --chart-label: #9aa0ac;
-  --chart-tooltip-bg: rgba(26, 28, 33, 0.96);
-
-  color-scheme: dark;
-}
-
-/* ---------- 2. 浅色主题 ---------- */
 [data-theme="light"] {
-  --bg-root: #f5f5f7;
+  --bg-root: #f5f6f8;
   --bg-panel: #ffffff;
   --bg-elevated: #ffffff;
-  --bg-hover: #f2f3f5;
-  --bg-active: #e9effc;
-  --bg-sunken: #f7f7f9;
+  --bg-hover: #f1f2f4;
+  /* 选中态用品牌色的极淡底：既有指示性，又不抢主色 */
+  --bg-active: #fff4ec;
+  --bg-sunken: #fafafb;
   --bg-glass: rgba(255, 255, 255, 0.88);
 
-  --border: #ebebee;
-  --border-soft: #f0f0f2;
-  --border-strong: #d9dade;
+  --border: #ecedef;
+  --border-soft: #f2f3f4;
+  --border-strong: #d8dade;
 
-  --text-1: #17181b;
+  --text-1: #1a1d21;
   --text-2: #6b7078;
   --text-3: #9ba1ab;
   --text-inverse: #ffffff;
 
-  --brand: #2f6fed;
-  --brand-hover: #1d5bd8;
-  --brand-soft: rgba(47, 111, 237, 0.09);
-  --accent: #0e93a8;
-  --accent-soft: rgba(14, 147, 168, 0.09);
+  --brand: #f97316;
+  --brand-hover: #ea6a0a;
+  --brand-soft: rgba(249, 115, 22, 0.10);
+  --accent: #fb923c;
+  --accent-soft: rgba(251, 146, 60, 0.12);
   --warn: #c07c11;
   --warn-soft: rgba(192, 124, 17, 0.1);
   --danger: #d23c33;
@@ -102,7 +46,8 @@
   --neutral: #6b7280;
   --neutral-soft: rgba(107, 114, 128, 0.1);
 
-  --chart-1: #2f6fed;
+  /* 图表色板：第 1 位是品牌橙（多数图表只用 palette[0]），其余保持可区分 */
+  --chart-1: #f97316;
   --chart-2: #0e93a8;
   --chart-3: #7052d8;
   --chart-4: #c07c11;
@@ -114,14 +59,70 @@
   --shadow-1: 0 1px 2px rgba(20, 22, 26, 0.04);
   --shadow-2: 0 8px 24px rgba(20, 22, 26, 0.07);
   --shadow-3: 0 24px 64px rgba(20, 22, 26, 0.14);
-  --glow-brand: 0 0 0 3px rgba(47, 111, 237, 0.14);
+  --glow-brand: 0 0 0 3px rgba(249, 115, 22, 0.16);
 
-  --chart-axis: #d9dade;
-  --chart-split: #f0f0f2;
+  --chart-axis: #d8dade;
+  --chart-split: #f2f3f4;
   --chart-label: #6b7078;
   --chart-tooltip-bg: rgba(255, 255, 255, 0.97);
 
   color-scheme: light;
+}
+
+/* ---------- 2. 深色主题 ---------- */
+/* 中性色阶沿用原有的 #0a0b0e 家族，只把品牌色换成橙色系并提亮以保证对比度 */
+[data-theme="dark"] {
+  --bg-root: #0a0b0e;
+  --bg-panel: #131418;
+  --bg-elevated: #1a1c21;
+  --bg-hover: #1d1f25;
+  --bg-active: #2a1d13;
+  --bg-sunken: #0f1013;
+  --bg-glass: rgba(19, 20, 24, 0.86);
+
+  --border: #1e2026;
+  --border-soft: #191b20;
+  --border-strong: #2c2f38;
+
+  --text-1: #f0f1f4;
+  --text-2: #9aa0ac;
+  --text-3: #5d626c;
+  --text-inverse: #0a0b0e;
+
+  --brand: #fb923c;
+  --brand-hover: #fdba74;
+  --brand-soft: rgba(251, 146, 60, 0.14);
+  --accent: #fdba74;
+  --accent-soft: rgba(253, 186, 116, 0.12);
+  --warn: #e8a33d;
+  --warn-soft: rgba(232, 163, 61, 0.12);
+  --danger: #e5544b;
+  --danger-soft: rgba(229, 84, 75, 0.12);
+  --ok: #3fbf6f;
+  --ok-soft: rgba(63, 191, 111, 0.12);
+  --neutral: #6b7280;
+  --neutral-soft: rgba(107, 114, 128, 0.14);
+
+  --chart-1: #fb923c;
+  --chart-2: #39c0d4;
+  --chart-3: #9d8cff;
+  --chart-4: #e0a83f;
+  --chart-5: #e5695f;
+  --chart-6: #48b971;
+  --chart-7: #d877a8;
+  --chart-8: #5aa9e6;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-3: 0 24px 64px rgba(0, 0, 0, 0.5);
+  --glow-brand: 0 0 0 3px rgba(251, 146, 60, 0.18);
+
+  --chart-axis: #2c2f38;
+  --chart-split: #191b20;
+  --chart-label: #9aa0ac;
+  --chart-tooltip-bg: rgba(26, 28, 33, 0.96);
+
+  color-scheme: dark;
 }
 
 /* ---------- 3. 涨跌色（默认红涨绿跌） ---------- */
@@ -192,6 +193,7 @@
   --r-input: 10px;
 
   --topbar-h: 56px;
+  --strip-h: 44px;
   --sidenav-w: 232px;
   --sidenav-w-mini: 64px;
   --rail-w: 320px;

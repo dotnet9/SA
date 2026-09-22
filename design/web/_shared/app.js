@@ -32,7 +32,7 @@
      1. 主题与涨跌色
      ============================================================ */
   function applyTheme() {
-    var theme = get(LS.theme, "dark");
+    var theme = get(LS.theme, "light");
     var updown = get(LS.updown, "red-up");
     var root = document.documentElement;
     root.setAttribute("data-theme", theme);
@@ -41,11 +41,11 @@
   }
 
   function toggleTheme() {
-    set(LS.theme, get(LS.theme, "dark") === "dark" ? "light" : "dark");
+    set(LS.theme, get(LS.theme, "light") === "dark" ? "light" : "dark");
     applyTheme();
     var el = qs("#btnTheme");
-    if (el) el.textContent = get(LS.theme, "dark") === "dark" ? "☾" : "☀";
-    toast("已切换到" + (get(LS.theme, "dark") === "dark" ? "深色" : "浅色") + "主题", "info");
+    if (el) el.textContent = get(LS.theme, "light") === "dark" ? "☾" : "☀";
+    toast("已切换到" + (get(LS.theme, "light") === "dark" ? "深色" : "浅色") + "主题", "info");
   }
 
   function toggleUpdown() {
@@ -148,7 +148,7 @@
     if (!host) return;
     var role = currentRole();
     var isAdmin = role.id === "admin";
-    var themeIcon = get(LS.theme, "dark") === "dark" ? "☾" : "☀";
+    var themeIcon = get(LS.theme, "light") === "dark" ? "☾" : "☀";
 
     host.innerHTML =
       '<div class="sa-search">' +

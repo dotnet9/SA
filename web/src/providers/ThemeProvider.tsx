@@ -31,7 +31,7 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
  * 因此图表只要从 CSS 变量取色就会自动跟随（实施计划 §3.4、§5.9）。
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeName>(() => readString(StorageKeys.Theme, 'dark') as ThemeName);
+  const [theme, setThemeState] = useState<ThemeName>(() => readString(StorageKeys.Theme, 'light') as ThemeName);
   const [updown, setUpdownState] = useState<UpDownMode>(() => readString(StorageKeys.UpDown, 'red-up') as UpDownMode);
   const [density, setDensityState] = useState<Density>(
     () => readString(StorageKeys.Density, 'compact') as Density

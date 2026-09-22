@@ -488,3 +488,177 @@ html[data-numfont='ui'] {
 .app-tab.is-locked .at-icon {
   color: var(--text-3);
 }
+
+/* ============================================================
+   11. 两栏外壳与自选横条（实施计划 §7.2）
+
+   与原型 `components.css` 的差别只在「多一行自选横条」：
+   原型是「品牌区 + 顶栏 / 侧栏 + 内容」两行两列网格，
+   这里在顶栏下方插入 44px 的横条行，其余网格不变。
+   横条默认展开、可收起为一行；不占常驻栏位（原型把自选放在侧栏）。
+   ============================================================ */
+
+/* 有横条时的网格：多一行，高度由 --strip-h 控制 */
+.sa-app.has-strip {
+  grid-template-rows: var(--topbar-h) var(--strip-h) minmax(0, 1fr);
+  grid-template-areas:
+    "brand topbar"
+    "sidenav strip"
+    "sidenav main";
+}
+
+/* 收起状态只有一行文字的高度 */
+.sa-app.has-strip.is-strip-collapsed {
+  --strip-h: 28px;
+}
+
+.sa-strip {
+  grid-area: strip;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-5);
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+  overflow: hidden;
+}
+
+.sa-strip.is-collapsed {
+  justify-content: flex-start;
+}
+
+.sa-strip-toggle {
+  flex: 0 0 auto;
+  font-size: var(--fs-11);
+  color: var(--text-3);
+  padding: 2px 4px;
+  border-radius: var(--r-btn);
+}
+.sa-strip-toggle:hover {
+  color: var(--brand);
+  background: var(--bg-hover);
+}
+
+.sa-strip-label {
+  flex: 0 0 auto;
+  font-size: var(--fs-11);
+  color: var(--text-3);
+  letter-spacing: 0.08em;
+}
+
+.sa-strip-list {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  white-space: nowrap;
+}
+.sa-strip-list::-webkit-scrollbar {
+  display: none;
+}
+
+.sa-strip-item {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: var(--r-btn);
+  font-size: var(--fs-12);
+  color: var(--text-2);
+}
+.sa-strip-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-1);
+}
+.sa-strip-item.is-up,
+.sa-strip-item.is-down,
+.sa-strip-item.is-flat {
+  color: var(--text-2);
+}
+/* 涨跌色只落在数字上，名称保持中性——整条染色会让横条变成噪声 */
+.sa-strip-item .is-up { color: var(--up); }
+.sa-strip-item .is-down { color: var(--down); }
+.sa-strip-item .is-flat { color: var(--flat); }
+
+/* 自选抽屉：从左侧滑出的覆盖式面板 */
+.sa-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 11, 14, 0.32);
+  z-index: 60;
+  animation: sa-fade-in var(--t-fast) both;
+}
+
+.sa-drawer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  max-width: 86vw;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  box-shadow: var(--shadow-2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sa-drawer .card-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+
+.sa-drawer-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.sa-drawer-row:hover {
+  background: var(--bg-hover);
+}
+
+/* 响应式四档（实施计划 §7.2）：
+   ≥1280 导航+内容+横条；1024–1280 导航缩为图标条；<1024 导航进抽屉；<768 底部 Tab */
+@media (max-width: 1279px) {
+  .sa-app.has-strip {
+    grid-template-columns: var(--sidenav-w-mini) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1023px) {
+  .sa-app.has-strip {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "topbar"
+      "strip"
+      "main";
+  }
+  .sa-app.has-strip .sa-brand,
+  .sa-app.has-strip .sa-sidenav {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  /* 底部 Tab 由既有规则固定定位（见本文件第 4 节），因此这里不再为它留网格行，
+     否则会与 .sa-main 的 padding-bottom 叠加出双倍空白 */
+  .sa-app.has-strip {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "topbar"
+      "strip"
+      "main";
+  }
+  .sa-strip {
+    padding: 0 var(--sp-3);
+  }
+}

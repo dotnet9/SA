@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { area, band, gauge, kline, useChart } from '@/components/charts';
+import { area, band, kline, useChart } from '@/components/charts';
 import { EmptyState, ErrorState, FreshnessNote } from '@/components/ui/States';
 import { useStockFreshness, useTrend } from './hooks';
 import type { Trend } from './api';
@@ -126,18 +126,7 @@ function Content({
   });
 
   // 趋势动能用 MACD 柱的最新值映射到 0–100，仅作为「动能强弱」的直观刻度
-  const macdLast = data.macd.macd.at(-1) ?? 0;
-  const highest = Math.max(1, Math.abs(macdLast));
-  const { ref: gaugeRef } = useChart(gauge, {
-    value: Math.min(100, Math.max(0, 50 + (macdLast / highest) * 50)),
-    max: 100,
-    name: 'MACD 动能',
-    warnAt: 60,
-    dangerAt: 85,
-    decimals: 0
-  });
-
-  return (
+    return (
     <>
       <div className="sa-pagehead">
         <div>
@@ -274,19 +263,7 @@ function Content({
           </div>
         </div>
 
-        <div className="card">
-          <div className="card-head">
-            <span className="card-title">动能刻度</span>
-            <span className="card-sub">由 MACD 柱映射，非评分</span>
-          </div>
-          <div className="card-body">
-            <div className="chart chart-md" ref={gaugeRef} />
-            <div className="chart-note">
-              该刻度只把 MACD 柱的正负与幅度映射到 0–100，便于一眼看出动能方向；不参与任何评分。
-            </div>
-          </div>
-        </div>
-      </div>
+              </div>
 
       {/* 布林带 */}
       <div className="card mt-4">

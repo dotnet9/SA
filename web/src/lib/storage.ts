@@ -66,6 +66,8 @@ export const StorageKeys = {
   NumFont: 'numfont',
   /** 默认首页路径。 */
   HomePath: 'home',
+  /** 鑷€夋í鏉℃槸鍚﹀凡鏀惰捣锛?1' / '0'锛夛細甯冨眬鍋忓ソ锛屼笉璇ユ瘡娆″埛鏂伴兘閲嶇疆銆?*/
+  WatchStripCollapsed: 'stripcollapsed',
   /** 推送到达时高亮数字。 */
   FlashOnPush: 'flash',
   /** 顶栏常驻显示行情时间戳。 */

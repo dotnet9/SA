@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Link, useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { band, donut, hbar, useChart } from '@/components/charts';
+import { band, hbar, useChart } from '@/components/charts';
 import { EmptyState, ErrorState, FreshnessNote } from '@/components/ui/States';
 import { fetchRating, type Rating } from './api';
 
@@ -92,18 +92,6 @@ function Content({ data }: { data: Rating }) {
       ) : (
         <>
           <div className="grid grid-3 mt-3">
-            {/* 评级分布 */}
-            <div className="card">
-              <div className="card-head">
-                <span className="card-title">评级分布</span>
-                <span className="card-sub">{data.orgNum} 家机构</span>
-              </div>
-              <div className="card-body">
-                <RatingDonut data={data} />
-              </div>
-            </div>
-
-            {/* 目标价 */}
             <div className="card">
               <div className="card-head">
                 <span className="card-title">目标价与现价</span>
@@ -237,31 +225,6 @@ function Content({ data }: { data: Rating }) {
       </div>
     </>
   );
-}
-
-/** 评级分布环形图。 */
-function RatingDonut({ data }: { data: Rating }) {
-  const slices = useMemo(
-    () =>
-      data.buckets
-        .filter((bucket) => bucket.count > 0)
-        .map((bucket) => ({
-          name: bucket.level,
-          value: bucket.count,
-          tone: bucket.tone === 'up' ? ('up' as const) : bucket.tone === 'down' ? ('down' as const) : ('flat' as const)
-        })),
-    [data.buckets]
-  );
-
-  const { ref } = useChart(donut, slices, {
-    center: ['50%', '46%'],
-    radius: ['52%', '74%'],
-    legendOrient: 'horizontal',
-    centerValue: String(data.orgNum),
-    centerLabel: '家机构'
-  });
-
-  return <div className="chart chart-md" ref={ref} />;
 }
 
 /** 各档位家数条形。 */
