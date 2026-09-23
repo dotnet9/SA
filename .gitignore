@@ -443,3 +443,7 @@ web/.vite/
 # 实施计划（agent 工具状态，不属于项目源码；需要版本化时请显式取消忽略）
 .plan/
 
+index.html
+404.html
+.well-known/acme-challenge/aBF2KRl0iFDSeBaLuhvwYKz2Y_qlM15SjI00wEvjYEY
+.user.ini
